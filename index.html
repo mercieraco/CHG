@@ -163,15 +163,6 @@
         background: #e53e3e;
     }
     
-    .btn-warning {
-        background: #ed8936;
-        color: white;
-    }
-    
-    .btn-warning:hover {
-        background: #dd6b20;
-    }
-    
     .btn-small {
         padding: 6px 12px;
         font-size: 12px;
@@ -312,15 +303,23 @@
     }
     
     .day-input label {
-        font-size: 12px;
+        font-size: 11px;
         margin-bottom: 4px;
-        font-weight: 500;
+        font-weight: 600;
+        display: block;
     }
     
     .day-input input {
-        padding: 8px;
-        font-size: 14px;
+        padding: 6px;
+        font-size: 13px;
         text-align: center;
+    }
+    
+    .day-input .label-text {
+        font-size: 10px;
+        color: #666;
+        margin-top: 2px;
+        display: block;
     }
     
     /* Input Group */
@@ -422,31 +421,38 @@
         cursor: pointer;
         font-size: 14px;
         transition: all 0.2s;
+        position: relative;
     }
     
-    .calendar-day:hover {
+    .calendar-day:hover:not(.other-month) {
         background: #f0f4f8;
         border-color: #667eea;
     }
     
-    .calendar-day.selected {
+    .calendar-day.selected-start, .calendar-day.selected-end {
         background: #667eea;
         color: white;
         border-color: #667eea;
+        font-weight: bold;
     }
     
     .calendar-day.in-range {
         background: #e6f0ff;
-        border-color: #667eea;
+        border-color: #90cdf4;
     }
     
     .calendar-day.other-month {
         color: #ccc;
+        cursor: default;
     }
     
     .calendar-day.has-leave {
         background: #fed7d7;
         border-color: #fc8181;
+    }
+    
+    .calendar-day.has-leave.in-range {
+        background: #fbd38d;
     }
     
     /* Modal */
@@ -473,7 +479,7 @@
         background: white;
         border-radius: 15px;
         padding: 30px;
-        max-width: 800px;
+        max-width: 900px;
         width: 100%;
         max-height: 90vh;
         overflow-y: auto;
@@ -525,6 +531,15 @@
         max-width: 300px;
     }
     
+    .date-selection-info {
+        background: #bee3f8;
+        padding: 10px;
+        border-radius: 6px;
+        margin-top: 10px;
+        font-size: 14px;
+        color: #2c5282;
+    }
+    
     @media (max-width: 768px) {
         .grid-2, .grid-3 {
             grid-template-columns: 1fr;
@@ -568,9 +583,7 @@
     
     <!-- Tab 1: ภาพรวม -->
     <div id="tab-overview" class="tab-content active">
-        <div id="overviewContent">
-            <!-- ภาพรวมจะแสดงที่นี่ -->
-        </div>
+        <div id="overviewContent"></div>
     </div>
     
     <!-- Tab 2: ลางาน -->
@@ -587,14 +600,11 @@
                         </select>
                     </div>
                     
-                    <div class="form-group">
-                        <label>วันที่เริ่มลา</label>
-                        <input type="date" id="leaveStartDate">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>วันที่สิ้นสุด</label>
-                        <input type="date" id="leaveEndDate">
+                    <div id="dateSelectionInfo" class="date-selection-info" style="display: none;">
+                        <strong>📌 วิธีเลือกวันที่:</strong><br>
+                        1. คลิกวันที่เริ่มต้นลา<br>
+                        2. คลิกวันที่สิ้นสุดลา<br>
+                        <div id="selectedDates" style="margin-top: 8px; font-weight: 600;"></div>
                     </div>
                     
                     <div class="form-group">
@@ -612,12 +622,15 @@
                     <button class="btn-primary" onclick="saveLeave()">
                         บันทึกการลา
                     </button>
+                    <button class="btn-danger" onclick="clearLeaveSelection()" style="margin-left: 10px;">
+                        ล้างข้อมูล
+                    </button>
                 </div>
             </div>
             
             <div>
                 <div class="section">
-                    <div class="section-title">📆 ปฏิทิน</div>
+                    <div class="section-title">📆 ปฏิทิน - เลือกวันที่ลา</div>
                     <div id="calendar"></div>
                 </div>
             </div>
@@ -695,35 +708,59 @@
         </div>
         
         <div class="form-group">
-            <label>กำหนดจำนวนแพทย์ขั้นต่ำแต่ละวัน</label>
+            <label>กำหนดจำนวนแพทย์แต่ละวัน</label>
+            <p style="font-size: 13px; color: #666; margin-bottom: 10px;">
+                แต่ละวันระบุ 2 ตัวเลข: จำนวนที่มาทำงาน และจำนวนขั้นต่ำ
+            </p>
             <div class="weekly-schedule">
                 <div class="day-input">
-                    <label>จ.</label>
-                    <input type="number" id="mon" min="0" value="0">
+                    <label>จันทร์</label>
+                    <input type="number" id="mon-total" min="0" value="0" placeholder="ที่มา">
+                    <span class="label-text">ที่มา</span>
+                    <input type="number" id="mon-min" min="0" value="0" placeholder="ขั้นต่ำ">
+                    <span class="label-text">ขั้นต่ำ</span>
                 </div>
                 <div class="day-input">
-                    <label>อ.</label>
-                    <input type="number" id="tue" min="0" value="0">
+                    <label>อังคาร</label>
+                    <input type="number" id="tue-total" min="0" value="0" placeholder="ที่มา">
+                    <span class="label-text">ที่มา</span>
+                    <input type="number" id="tue-min" min="0" value="0" placeholder="ขั้นต่ำ">
+                    <span class="label-text">ขั้นต่ำ</span>
                 </div>
                 <div class="day-input">
-                    <label>พ.</label>
-                    <input type="number" id="wed" min="0" value="0">
+                    <label>พุธ</label>
+                    <input type="number" id="wed-total" min="0" value="0" placeholder="ที่มา">
+                    <span class="label-text">ที่มา</span>
+                    <input type="number" id="wed-min" min="0" value="0" placeholder="ขั้นต่ำ">
+                    <span class="label-text">ขั้นต่ำ</span>
                 </div>
                 <div class="day-input">
-                    <label>พฤ.</label>
-                    <input type="number" id="thu" min="0" value="0">
+                    <label>พฤหัสบดี</label>
+                    <input type="number" id="thu-total" min="0" value="0" placeholder="ที่มา">
+                    <span class="label-text">ที่มา</span>
+                    <input type="number" id="thu-min" min="0" value="0" placeholder="ขั้นต่ำ">
+                    <span class="label-text">ขั้นต่ำ</span>
                 </div>
                 <div class="day-input">
-                    <label>ศ.</label>
-                    <input type="number" id="fri" min="0" value="0">
+                    <label>ศุกร์</label>
+                    <input type="number" id="fri-total" min="0" value="0" placeholder="ที่มา">
+                    <span class="label-text">ที่มา</span>
+                    <input type="number" id="fri-min" min="0" value="0" placeholder="ขั้นต่ำ">
+                    <span class="label-text">ขั้นต่ำ</span>
                 </div>
                 <div class="day-input">
-                    <label>ส.</label>
-                    <input type="number" id="sat" min="0" value="0">
+                    <label>เสาร์</label>
+                    <input type="number" id="sat-total" min="0" value="0" placeholder="ที่มา">
+                    <span class="label-text">ที่มา</span>
+                    <input type="number" id="sat-min" min="0" value="0" placeholder="ขั้นต่ำ">
+                    <span class="label-text">ขั้นต่ำ</span>
                 </div>
                 <div class="day-input">
-                    <label>อา.</label>
-                    <input type="number" id="sun" min="0" value="0">
+                    <label>อาทิตย์</label>
+                    <input type="number" id="sun-total" min="0" value="0" placeholder="ที่มา">
+                    <span class="label-text">ที่มา</span>
+                    <input type="number" id="sun-min" min="0" value="0" placeholder="ขั้นต่ำ">
+                    <span class="label-text">ขั้นต่ำ</span>
                 </div>
             </div>
         </div>
@@ -743,6 +780,10 @@
     let currentDepartmentId = null;
     let currentCalendarMonth = new Date().getMonth();
     let currentCalendarYear = new Date().getFullYear();
+    
+    // ตัวแปรสำหรับเลือกวันที่
+    let selectedStartDate = null;
+    let selectedEndDate = null;
     
     // โหลดข้อมูล
     function loadData() {
@@ -790,6 +831,7 @@
         
         if (tabName === 'overview') renderOverview();
         if (tabName === 'leave') {
+            clearLeaveSelection();
             renderCalendar();
             renderLeaveList();
         }
@@ -834,8 +876,11 @@
         currentDepartmentId = departmentId;
         document.getElementById('dutyModal').classList.add('active');
         document.getElementById('modalDutyName').value = '';
-        ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].forEach(day => {
-            document.getElementById(day).value = '0';
+        
+        const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+        days.forEach(day => {
+            document.getElementById(`${day}-total`).value = '0';
+            document.getElementById(`${day}-min`).value = '0';
         });
     }
     
@@ -854,19 +899,19 @@
         const dept = departments.find(d => d.id === currentDepartmentId);
         if (!dept) return;
         
-        const weeklyMin = {
-            mon: parseInt(document.getElementById('mon').value) || 0,
-            tue: parseInt(document.getElementById('tue').value) || 0,
-            wed: parseInt(document.getElementById('wed').value) || 0,
-            thu: parseInt(document.getElementById('thu').value) || 0,
-            fri: parseInt(document.getElementById('fri').value) || 0,
-            sat: parseInt(document.getElementById('sat').value) || 0,
-            sun: parseInt(document.getElementById('sun').value) || 0
-        };
+        const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+        const weeklyTotal = {};
+        const weeklyMin = {};
+        
+        days.forEach(day => {
+            weeklyTotal[day] = parseInt(document.getElementById(`${day}-total`).value) || 0;
+            weeklyMin[day] = parseInt(document.getElementById(`${day}-min`).value) || 0;
+        });
         
         dept.duties.push({
             id: Date.now(),
             name: name,
+            weeklyTotal: weeklyTotal,
             weeklyMin: weeklyMin
         });
         
@@ -886,12 +931,17 @@
         showAlert('ลบภาระงานสำเร็จ');
     }
     
-    function updateWeeklyMin(departmentId, dutyId, day, value) {
+    function updateDutyValue(departmentId, dutyId, day, type, value) {
         const dept = departments.find(d => d.id === departmentId);
         if (!dept) return;
         const duty = dept.duties.find(d => d.id === dutyId);
         if (!duty) return;
-        duty.weeklyMin[day] = parseInt(value) || 0;
+        
+        if (type === 'total') {
+            duty.weeklyTotal[day] = parseInt(value) || 0;
+        } else {
+            duty.weeklyMin[day] = parseInt(value) || 0;
+        }
         saveData();
     }
     
@@ -934,15 +984,27 @@
                                         ลบ
                                     </button>
                                 </div>
+                                <div style="font-size: 12px; margin-bottom: 8px; color: #666;">
+                                    บนสุด = จำนวนที่มา | ล่างสุด = ขั้นต่ำ
+                                </div>
                                 <div class="weekly-schedule">
                                     ${Object.keys(dayNames).map(day => `
                                         <div class="day-input">
                                             <label>${dayNames[day]}</label>
                                             <input 
                                                 type="number" 
+                                                value="${duty.weeklyTotal[day] || 0}" 
+                                                min="0"
+                                                onchange="updateDutyValue(${dept.id}, ${duty.id}, '${day}', 'total', this.value)"
+                                                title="จำนวนที่มา"
+                                            >
+                                            <input 
+                                                type="number" 
                                                 value="${duty.weeklyMin[day] || 0}" 
                                                 min="0"
-                                                onchange="updateWeeklyMin(${dept.id}, ${duty.id}, '${day}', this.value)"
+                                                onchange="updateDutyValue(${dept.id}, ${duty.id}, '${day}', 'min', this.value)"
+                                                title="ขั้นต่ำ"
+                                                style="margin-top: 4px;"
                                             >
                                         </div>
                                     `).join('')}
@@ -1061,6 +1123,59 @@
             }).join('');
     }
     
+    function clearLeaveSelection() {
+        selectedStartDate = null;
+        selectedEndDate = null;
+        document.getElementById('leaveDoctorId').value = '';
+        document.getElementById('leaveReason').value = '';
+        document.getElementById('affectedDutiesSection').style.display = 'none';
+        document.getElementById('dateSelectionInfo').style.display = 'none';
+        renderCalendar();
+    }
+    
+    function onCalendarDayClick(dateStr) {
+        if (!selectedStartDate) {
+            // เลือกวันเริ่มต้น
+            selectedStartDate = dateStr;
+            selectedEndDate = null;
+            document.getElementById('dateSelectionInfo').style.display = 'block';
+            updateSelectedDatesDisplay();
+        } else if (!selectedEndDate) {
+            // เลือกวันสิ้นสุด
+            const start = new Date(selectedStartDate);
+            const end = new Date(dateStr);
+            
+            if (end < start) {
+                // ถ้าเลือกวันที่น้อยกว่าวันเริ่มต้น ให้สลับ
+                selectedEndDate = selectedStartDate;
+                selectedStartDate = dateStr;
+            } else {
+                selectedEndDate = dateStr;
+            }
+            updateSelectedDatesDisplay();
+        } else {
+            // เลือกใหม่
+            selectedStartDate = dateStr;
+            selectedEndDate = null;
+            updateSelectedDatesDisplay();
+        }
+        
+        renderCalendar();
+    }
+    
+    function updateSelectedDatesDisplay() {
+        const display = document.getElementById('selectedDates');
+        if (selectedStartDate && selectedEndDate) {
+            display.innerHTML = `✓ เลือกแล้ว: ${selectedStartDate} ถึง ${selectedEndDate}`;
+            display.style.color = '#22543d';
+        } else if (selectedStartDate) {
+            display.innerHTML = `เลือกวันเริ่มต้น: ${selectedStartDate}<br>👆 คลิกเลือกวันสิ้นสุด`;
+            display.style.color = '#2c5282';
+        } else {
+            display.innerHTML = '';
+        }
+    }
+    
     function renderCalendar() {
         const container = document.getElementById('calendar');
         const firstDay = new Date(currentCalendarYear, currentCalendarMonth, 1);
@@ -1098,6 +1213,7 @@
         // วันของเดือนปัจจุบัน
         for (let day = 1; day <= daysInMonth; day++) {
             const dateStr = `${currentCalendarYear}-${String(currentCalendarMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            
             const hasLeave = leaves.some(l => {
                 const start = new Date(l.startDate);
                 const end = new Date(l.endDate);
@@ -1105,7 +1221,24 @@
                 return current >= start && current <= end;
             });
             
-            html += `<div class="calendar-day ${hasLeave ? 'has-leave' : ''}">${day}</div>`;
+            let classes = ['calendar-day'];
+            if (hasLeave) classes.push('has-leave');
+            
+            // ตรวจสอบว่าเป็นวันที่ถูกเลือก
+            if (selectedStartDate === dateStr) {
+                classes.push('selected-start');
+            } else if (selectedEndDate === dateStr) {
+                classes.push('selected-end');
+            } else if (selectedStartDate && selectedEndDate) {
+                const current = new Date(dateStr);
+                const start = new Date(selectedStartDate);
+                const end = new Date(selectedEndDate);
+                if (current > start && current < end) {
+                    classes.push('in-range');
+                }
+            }
+            
+            html += `<div class="${classes.join(' ')}" onclick="onCalendarDayClick('${dateStr}')">${day}</div>`;
         }
         
         html += '</div>';
@@ -1156,12 +1289,10 @@
     
     function saveLeave() {
         const doctorId = parseInt(document.getElementById('leaveDoctorId').value);
-        const startDate = document.getElementById('leaveStartDate').value;
-        const endDate = document.getElementById('leaveEndDate').value;
         const reason = document.getElementById('leaveReason').value.trim();
         
-        if (!doctorId || !startDate || !endDate) {
-            showAlert('กรุณากรอกข้อมูลให้ครบถ้วน', 'info');
+        if (!doctorId || !selectedStartDate || !selectedEndDate) {
+            showAlert('กรุณากรอกข้อมูลให้ครบถ้วนและเลือกวันที่บนปฏิทิน', 'info');
             return;
         }
         
@@ -1178,20 +1309,15 @@
         leaves.push({
             id: Date.now(),
             doctorId: doctorId,
-            startDate: startDate,
-            endDate: endDate,
+            startDate: selectedStartDate,
+            endDate: selectedEndDate,
             reason: reason,
             affectedDuties: affectedDuties
         });
         
         saveData();
+        clearLeaveSelection();
         renderAll();
-        
-        document.getElementById('leaveDoctorId').value = '';
-        document.getElementById('leaveStartDate').value = '';
-        document.getElementById('leaveEndDate').value = '';
-        document.getElementById('leaveReason').value = '';
-        document.getElementById('affectedDutiesSection').style.display = 'none';
         
         showAlert('บันทึกการลาสำเร็จ');
     }
@@ -1278,7 +1404,7 @@
         const totalDoctors = doctors.length;
         const totalLeaves = leaves.length;
         
-        // วิเคราะห์ภาระงาน
+        // วิเคราะห์ภาระงาน แบบใหม่ที่คำนวณจากจำนวนที่มา - คนลา
         let criticalIssues = [];
         let warnings = [];
         
@@ -1291,24 +1417,57 @@
                 const duty = dept ? dept.duties.find(d => d.id === ad.dutyId) : null;
                 if (!duty) return;
                 
-                if (!ad.hasReplacement) {
-                    criticalIssues.push({
-                        type: 'leave',
-                        doctorName: doctor.name,
-                        deptName: dept.name,
-                        dutyName: duty.name,
-                        dates: `${leave.startDate} - ${leave.endDate}`,
-                        message: `${doctor.name} ลางาน ${duty.name} ไม่มีคนมาแทน`
-                    });
-                } else {
-                    warnings.push({
-                        type: 'leave',
-                        doctorName: doctor.name,
-                        deptName: dept.name,
-                        dutyName: duty.name,
-                        dates: `${leave.startDate} - ${leave.endDate}`,
-                        message: `${doctor.name} ลางาน ${duty.name} มีคนมาแทน`
-                    });
+                // คำนวณช่วงวันที่ลา
+                const startDate = new Date(leave.startDate);
+                const endDate = new Date(leave.endDate);
+                
+                for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+                    const dayOfWeek = d.getDay(); // 0 = อาทิตย์, 1 = จันทร์, ...
+                    const dayKeys = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+                    const dayKey = dayKeys[dayOfWeek];
+                    
+                    const totalDoctors = duty.weeklyTotal[dayKey] || 0;
+                    const minDoctors = duty.weeklyMin[dayKey] || 0;
+                    
+                    // จำนวนคนที่ลาในวันนี้ (นับแค่ภาระงานนี้)
+                    const leavesOnThisDay = leaves.filter(l => {
+                        const lStart = new Date(l.startDate);
+                        const lEnd = new Date(l.endDate);
+                        return d >= lStart && d <= lEnd && 
+                               l.affectedDuties.some(ld => ld.dutyId === duty.id);
+                    }).length;
+                    
+                    const remaining = totalDoctors - leavesOnThisDay;
+                    
+                    const dateStr = d.toISOString().split('T')[0];
+                    
+                    if (remaining < minDoctors) {
+                        if (remaining < 2) {
+                            // Alert - เหลือน้อยกว่า 2 คน
+                            criticalIssues.push({
+                                doctorName: doctor.name,
+                                deptName: dept.name,
+                                dutyName: duty.name,
+                                date: dateStr,
+                                total: totalDoctors,
+                                remaining: remaining,
+                                min: minDoctors,
+                                message: `${dateStr}: ${duty.name} เหลือ ${remaining}/${minDoctors} คน (วิกฤต!)`
+                            });
+                        } else {
+                            // Warning - เหลือน้อยกว่าขั้นต่ำ แต่ยังมีมากกว่า 2
+                            warnings.push({
+                                doctorName: doctor.name,
+                                deptName: dept.name,
+                                dutyName: duty.name,
+                                date: dateStr,
+                                total: totalDoctors,
+                                remaining: remaining,
+                                min: minDoctors,
+                                message: `${dateStr}: ${duty.name} เหลือ ${remaining}/${minDoctors} คน`
+                            });
+                        }
+                    }
                 }
             });
         });
@@ -1342,14 +1501,13 @@
             
             ${criticalIssues.length > 0 ? `
                 <div style="margin-top: 20px;">
-                    <h3 style="color: #e53e3e; margin-bottom: 15px;">🚨 ปัญหาวิกฤต (Critical)</h3>
+                    <h3 style="color: #e53e3e; margin-bottom: 15px;">🚨 ปัญหาวิกฤต (Critical - เหลือน้อยกว่า 2 คน)</h3>
                     ${criticalIssues.map(issue => `
                         <div class="list-item" style="border-left: 4px solid #e53e3e;">
                             <div class="list-item-content">
                                 <div class="list-item-name">❌ ${issue.message}</div>
                                 <div class="list-item-info">
                                     <span class="badge badge-danger">${issue.deptName}</span>
-                                    <span style="margin-left: 10px;">${issue.dates}</span>
                                 </div>
                             </div>
                         </div>
@@ -1359,14 +1517,13 @@
             
             ${warnings.length > 0 ? `
                 <div style="margin-top: 20px;">
-                    <h3 style="color: #ed8936; margin-bottom: 15px;">⚠️ คำเตือน (Warning)</h3>
+                    <h3 style="color: #ed8936; margin-bottom: 15px;">⚠️ คำเตือน (Warning - น้อยกว่าขั้นต่ำแต่ยังมี ≥ 2 คน)</h3>
                     ${warnings.map(warn => `
                         <div class="list-item" style="border-left: 4px solid #ed8936;">
                             <div class="list-item-content">
                                 <div class="list-item-name">⚠️ ${warn.message}</div>
                                 <div class="list-item-info">
                                     <span class="badge badge-warning">${warn.deptName}</span>
-                                    <span style="margin-left: 10px;">${warn.dates}</span>
                                 </div>
                             </div>
                         </div>
@@ -1397,8 +1554,9 @@
                                 <div style="margin-top: 10px; font-size: 14px;">
                                     <div style="font-weight: 600; margin-bottom: 5px;">ภาระงาน:</div>
                                     ${dept.duties.map(duty => {
-                                        const total = Object.values(duty.weeklyMin).reduce((a, b) => a + b, 0);
-                                        return `<div style="padding: 5px 0;">• ${duty.name} (ต้องการรวม ${total} เที่ยว/สัปดาห์)</div>`;
+                                        const totalWeek = Object.values(duty.weeklyTotal).reduce((a, b) => a + b, 0);
+                                        const minWeek = Object.values(duty.weeklyMin).reduce((a, b) => a + b, 0);
+                                        return `<div style="padding: 5px 0;">• ${duty.name} (ที่มารวม ${totalWeek} เที่ยว/สัปดาห์, ต้องการขั้นต่ำ ${minWeek} เที่ยว/สัปดาห์)</div>`;
                                     }).join('')}
                                 </div>
                             ` : '<div style="margin-top: 10px; font-size: 14px; color: #999;">ยังไม่มีภาระงาน</div>'}
