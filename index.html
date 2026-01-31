@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบจัดการแพทย์โรงพยาบาล</title>
+    <title>ระบบจัดการแพทย์โรงพยาบาล v6</title>
     <style>
         * {
             margin: 0;
@@ -559,7 +559,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>🏥 ระบบจัดการแพทย์โรงพยาบาล</h1>
+        <h1>🏥 ระบบจัดการแพทย์โรงพยาบาล v6</h1>
         <p class="subtitle">Hospital Doctor Management System</p>
 
 ```
@@ -1354,18 +1354,56 @@
             const doctor = doctors.find(d => d.id === leave.doctorId);
             const dept = doctor ? departments.find(d => d.id === doctor.departmentId) : null;
             
-            const criticalDuties = leave.affectedDuties.filter(ad => !ad.hasReplacement);
-            const warningDuties = leave.affectedDuties.filter(ad => ad.hasReplacement);
+            // คำนวณ status จริงๆ เดียวกับ overview
+            // วนทุกวันในช่วงลา แล้วหาว่า remaining < min ไหม
+            let hasCritical = false;
+            let hasWarning = false;
+            
+            if (dept) {
+                leave.affectedDuties.forEach(ad => {
+                    const duty = dept.duties.find(d => d.id === ad.dutyId);
+                    if (!duty) return;
+                    
+                    const startDate = new Date(leave.startDate + 'T00:00:00');
+                    const endDate = new Date(leave.endDate + 'T00:00:00');
+                    const dayKeys = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+                    
+                    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+                        const dayKey = dayKeys[d.getDay()];
+                        const total = duty.weeklyTotal[dayKey] || 0;
+                        const min = duty.weeklyMin[dayKey] || 0;
+                        if (total === 0 && min === 0) continue; // วันหยุด skip
+                        
+                        // นับคนที่ลาในวันนี้สำหรับ duty นี้
+                        const leavesOnDay = leaves.filter(l => {
+                            const lStart = new Date(l.startDate + 'T00:00:00');
+                            const lEnd = new Date(l.endDate + 'T00:00:00');
+                            return d >= lStart && d <= lEnd &&
+                                   l.affectedDuties.some(ld => ld.dutyId === duty.id);
+                        }).length;
+                        
+                        const remaining = total - leavesOnDay;
+                        
+                        if (remaining < min) {
+                            if (remaining < 2) {
+                                hasCritical = true;
+                            } else {
+                                hasWarning = true;
+                            }
+                        }
+                    }
+                });
+            }
             
             let badgeClass = 'badge-success';
             let statusText = 'ปกติ';
             
-            if (criticalDuties.length > 0) {
+            if (hasCritical) {
                 badgeClass = 'badge-danger';
-                statusText = 'วิกฤต - ไม่มีคนมาแทน';
-            } else if (warningDuties.length > 0) {
+                statusText = 'วิกฤต';
+            } else if (hasWarning) {
                 badgeClass = 'badge-warning';
-                statusText = 'เตือน - มีคนมาแทน';
+                statusText = 'เตือน';
             }
             
             return `
@@ -1388,12 +1426,48 @@
                             <strong>ภาระงานที่กระทบ:</strong>
                             ${leave.affectedDuties.map(ad => {
                                 const duty = dept ? dept.duties.find(d => d.id === ad.dutyId) : null;
-                                return `<div style="margin-top: 4px;">
-                                    • ${duty ? duty.name : '-'} 
-                                    ${ad.hasReplacement 
-                                        ? '<span style="color: #ed8936;">⚠️ มีคนมาแทน</span>' 
-                                        : '<span style="color: #e53e3e;">❌ ไม่มีคนมาแทน</span>'}
-                                </div>`;
+                                if (!duty) return '<div style="margin-top:4px;">• ไม่พบภาระงาน</div>';
+                                
+                                // คำนวณ worst case remaining สำหรับ duty นี้
+                                const dayKeys = ['sun','mon','tue','wed','thu','fri','sat'];
+                                let worstRemaining = Infinity;
+                                let worstMin = 0;
+                                let worstTotal = 0;
+                                const startDate = new Date(leave.startDate + 'T00:00:00');
+                                const endDate = new Date(leave.endDate + 'T00:00:00');
+                                
+                                for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate()+1)) {
+                                    const dayKey = dayKeys[d.getDay()];
+                                    const total = duty.weeklyTotal[dayKey] || 0;
+                                    const min = duty.weeklyMin[dayKey] || 0;
+                                    if (total === 0 && min === 0) continue;
+                                    
+                                    const leavesOnDay = leaves.filter(l => {
+                                        const lS = new Date(l.startDate + 'T00:00:00');
+                                        const lE = new Date(l.endDate + 'T00:00:00');
+                                        return d >= lS && d <= lE && l.affectedDuties.some(ld => ld.dutyId === duty.id);
+                                    }).length;
+                                    
+                                    const rem = total - leavesOnDay;
+                                    if (rem < worstRemaining) {
+                                        worstRemaining = rem;
+                                        worstMin = min;
+                                        worstTotal = total;
+                                    }
+                                }
+                                
+                                if (worstRemaining === Infinity) worstRemaining = 0;
+                                
+                                let icon = '';
+                                if (worstRemaining < worstMin && worstRemaining < 2) {
+                                    icon = '<span style="color:#e53e3e;">🚨 วิกฤต (เหลือ ' + worstRemaining + '/' + worstMin + ')</span>';
+                                } else if (worstRemaining < worstMin) {
+                                    icon = '<span style="color:#ed8936;">⚠️ เตือน (เหลือ ' + worstRemaining + '/' + worstMin + ')</span>';
+                                } else {
+                                    icon = '<span style="color:#48bb78;">✓ ปกติ (เหลือ ' + worstRemaining + '/' + worstMin + ')</span>';
+                                }
+                                
+                                return '<div style="margin-top: 4px;">• ' + duty.name + ' ' + icon + '</div>';
                             }).join('')}
                         </div>
                     ` : ''}
