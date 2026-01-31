@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบจัดการแพทย์โรงพยาบาล</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+```
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 20px;
+    }
+    
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    
+    h1 {
+        color: #667eea;
+        margin-bottom: 10px;
+        text-align: center;
+    }
+    
+    .subtitle {
+        text-align: center;
+        color: #666;
+        margin-bottom: 30px;
+    }
+    
+    /* Tab Navigation */
+    .tabs {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 30px;
+        border-bottom: 2px solid #e0e0e0;
+    }
+    
+    .tab {
+        padding: 12px 24px;
+        background: none;
+        border: none;
+        border-bottom: 3px solid transparent;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 600;
+        color: #666;
+        transition: all 0.3s;
+    }
+    
+    .tab:hover {
+        color: #667eea;
+    }
+    
+    .tab.active {
+        color: #667eea;
+        border-bottom-color: #667eea;
+    }
+    
+    .tab-content {
+        display: none;
+    }
+    
+    .tab-content.active {
+        display: block;
+    }
+    
+    /* Section Styles */
+    .section {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+    
+    .section-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .form-group {
+        margin-bottom: 15px;
+    }
+    
+    label {
+        display: block;
+        margin-bottom: 8px;
+        color: #333;
+        font-weight: 600;
+        font-size: 14px;
+    }
+    
+    input, select {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 16px;
+        transition: border-color 0.3s;
+    }
+    
+    input:focus, select:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+    
+    /* Button Styles */
+    button {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .btn-primary {
+        background: #667eea;
+        color: white;
+    }
+    
+    .btn-primary:hover {
+        background: #5568d3;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn-success {
+        background: #48bb78;
+        color: white;
+    }
+    
+    .btn-success:hover {
+        background: #38a169;
+    }
+    
+    .btn-danger {
+        background: #f56565;
+        color: white;
+    }
+    
+    .btn-danger:hover {
+        background: #e53e3e;
+    }
+    
+    .btn-small {
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+    
+    /* Card Styles */
+    .card {
+        background: white;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 15px;
+        transition: all 0.3s;
+    }
+    
+    .card:hover {
+        border-color: #667eea;
+        box-shadow: 0 3px 10px rgba(102, 126, 234, 0.1);
+    }
+    
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+    
+    .card-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #333;
+    }
+    
+    .card-actions {
+        display: flex;
+        gap: 5px;
+    }
+    
+    /* List Styles */
+    .list-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px;
+        background: white;
+        border: 1px solid #e0e0e0;
+        border-radius: 6px;
+        margin-bottom: 8px;
+    }
+    
+    .list-item-content {
+        flex: 1;
+    }
+    
+    .list-item-name {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 4px;
+    }
+    
+    .list-item-info {
+        font-size: 13px;
+        color: #666;
+    }
+    
+    .list-item-actions {
+        display: flex;
+        gap: 5px;
+    }
+    
+    /* Badge */
+    .badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+        background: #e0e0e0;
+        color: #333;
+    }
+    
+    .badge-primary {
+        background: #bee3f8;
+        color: #2c5282;
+    }
+    
+    .badge-success {
+        background: #c6f6d5;
+        color: #22543d;
+    }
+    
+    .badge-warning {
+        background: #feebc8;
+        color: #7c2d12;
+    }
+    
+    /* Nested List */
+    .nested-list {
+        margin-left: 20px;
+        margin-top: 10px;
+    }
+    
+    .duty-item {
+        background: #f0f4f8;
+        padding: 10px;
+        border-radius: 6px;
+        margin-bottom: 8px;
+        border-left: 3px solid #667eea;
+    }
+    
+    .duty-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+    
+    .duty-name {
+        font-weight: 600;
+        color: #333;
+    }
+    
+    .duty-min-doctors {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 5px;
+    }
+    
+    .duty-min-doctors input {
+        width: 80px;
+        padding: 6px;
+        font-size: 14px;
+    }
+    
+    /* Input Group */
+    .input-group {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .input-group input {
+        flex: 1;
+    }
+    
+    /* Alert */
+    .alert {
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        display: none;
+    }
+    
+    .alert-success {
+        background: #c6f6d5;
+        color: #22543d;
+        border: 1px solid #9ae6b4;
+    }
+    
+    .alert-info {
+        background: #bee3f8;
+        color: #2c5282;
+        border: 1px solid #90cdf4;
+    }
+    
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 40px;
+        color: #999;
+    }
+    
+    .empty-state-icon {
+        font-size: 48px;
+        margin-bottom: 10px;
+    }
+    
+    /* Grid Layout */
+    .grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+    
+    @media (max-width: 768px) {
+        .grid-2 {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+```
+
+</head>
+<body>
+    <div class="container">
+        <h1>🏥 ระบบจัดการแพทย์โรงพยาบาล</h1>
+        <p class="subtitle">Hospital Doctor Management System</p>
+
+```
+    <div id="alertBox" class="alert"></div>
+    
+    <!-- Tabs -->
+    <div class="tabs">
+        <button class="tab active" onclick="switchTab('departments')">
+            📋 จัดการแผนก
+        </button>
+        <button class="tab" onclick="switchTab('doctors')">
+            👨‍⚕️ จัดการแพทย์
+        </button>
+        <button class="tab" onclick="switchTab('overview')">
+            📊 ภาพรวม
+        </button>
+    </div>
+    
+    <!-- Tab 1: จัดการแผนก -->
+    <div id="tab-departments" class="tab-content active">
+        <div class="section">
+            <div class="section-title">
+                ➕ เพิ่มแผนกใหม่
+            </div>
+            <div class="input-group">
+                <input type="text" id="newDepartmentName" placeholder="ชื่อแผนก เช่น กระดูกและข้อ">
+                <button class="btn-primary" onclick="addDepartment()">
+                    เพิ่มแผนก
+                </button>
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">
+                📂 รายการแผนก
+            </div>
+            <div id="departmentsList">
+                <!-- แผนกจะแสดงที่นี่ -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tab 2: จัดการแพทย์ -->
+    <div id="tab-doctors" class="tab-content">
+        <div class="section">
+            <div class="section-title">
+                ➕ เพิ่มแพทย์ใหม่
+            </div>
+            <div class="form-group">
+                <label>ชื่อ-นามสกุล แพทย์</label>
+                <input type="text" id="newDoctorName" placeholder="เช่น นพ.สมชาย ใจดี">
+            </div>
+            <div class="form-group">
+                <label>แผนก</label>
+                <select id="newDoctorDepartment">
+                    <option value="">-- เลือกแผนก --</option>
+                </select>
+            </div>
+            <button class="btn-primary" onclick="addDoctor()">
+                เพิ่มแพทย์
+            </button>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">
+                👥 รายชื่อแพทย์
+            </div>
+            <div id="doctorsList">
+                <!-- รายชื่อแพทย์จะแสดงที่นี่ -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tab 3: ภาพรวม -->
+    <div id="tab-overview" class="tab-content">
+        <div class="section">
+            <div class="section-title">
+                📊 สรุปภาพรวมระบบ
+            </div>
+            <div id="overviewContent">
+                <!-- ภาพรวมจะแสดงที่นี่ -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ระบบจัดเก็บข้อมูล (ใช้ localStorage)
+    let departments = [];
+    let doctors = [];
+    
+    // โหลดข้อมูลจาก localStorage เมื่อเริ่มต้น
+    function loadData() {
+        const savedDepartments = localStorage.getItem('hospital_departments');
+        const savedDoctors = localStorage.getItem('hospital_doctors');
+        
+        if (savedDepartments) {
+            departments = JSON.parse(savedDepartments);
+        }
+        
+        if (savedDoctors) {
+            doctors = JSON.parse(savedDoctors);
+        }
+        
+        renderDepartments();
+        renderDoctors();
+        renderOverview();
+        updateDoctorDepartmentSelect();
+    }
+    
+    // บันทึกข้อมูลลง localStorage
+    function saveData() {
+        localStorage.setItem('hospital_departments', JSON.stringify(departments));
+        localStorage.setItem('hospital_doctors', JSON.stringify(doctors));
+    }
+    
+    // แสดง Alert
+    function showAlert(message, type = 'success') {
+        const alertBox = document.getElementById('alertBox');
+        alertBox.className = `alert alert-${type}`;
+        alertBox.textContent = message;
+        alertBox.style.display = 'block';
+        
+        setTimeout(() => {
+            alertBox.style.display = 'none';
+        }, 3000);
+    }
+    
+    // สลับ Tab
+    function switchTab(tabName) {
+        // ซ่อน content ทั้งหมด
+        document.querySelectorAll('.tab-content').forEach(content => {
+            content.classList.remove('active');
+        });
+        
+        // ซ่อน tab ทั้งหมด
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        
+        // แสดง content ที่เลือก
+        document.getElementById('tab-' + tabName).classList.add('active');
+        
+        // แสดง tab ที่เลือก
+        event.target.classList.add('active');
+        
+        // อัพเดทภาพรวมถ้าเปิด tab overview
+        if (tabName === 'overview') {
+            renderOverview();
+        }
+    }
+    
+    // ===== จัดการแผนก =====
+    
+    function addDepartment() {
+        const name = document.getElementById('newDepartmentName').value.trim();
+        
+        if (!name) {
+            showAlert('กรุณากรอกชื่อแผนก', 'info');
+            return;
+        }
+        
+        // ตรวจสอบว่ามีแผนกนี้แล้วหรือไม่
+        if (departments.find(d => d.name === name)) {
+            showAlert('มีแผนกนี้อยู่แล้ว', 'info');
+            return;
+        }
+        
+        const department = {
+            id: Date.now(),
+            name: name,
+            duties: []
+        };
+        
+        departments.push(department);
+        saveData();
+        renderDepartments();
+        updateDoctorDepartmentSelect();
+        
+        document.getElementById('newDepartmentName').value = '';
+        showAlert(`เพิ่มแผนก "${name}" สำเร็จ`);
+    }
+    
+    function deleteDepartment(id) {
+        if (!confirm('ต้องการลบแผนกนี้ใช่หรือไม่?')) return;
+        
+        departments = departments.filter(d => d.id !== id);
+        // ลบแพทย์ในแผนกนี้ด้วย
+        doctors = doctors.filter(doc => doc.departmentId !== id);
+        
+        saveData();
+        renderDepartments();
+        renderDoctors();
+        updateDoctorDepartmentSelect();
+        showAlert('ลบแผนกสำเร็จ');
+    }
+    
+    function addDuty(departmentId) {
+        const dutyName = prompt('ชื่อภาระหน้าที่ (เช่น ออกตรวจผู้ป่วยนอก, อยู่เวร):');
+        
+        if (!dutyName) return;
+        
+        const minDoctors = prompt('จำนวนแพทย์ขั้นต่ำ:', '1');
+        
+        if (!minDoctors || isNaN(minDoctors)) return;
+        
+        const dept = departments.find(d => d.id === departmentId);
+        if (!dept) return;
+        
+        const duty = {
+            id: Date.now(),
+            name: dutyName,
+            minDoctors: parseInt(minDoctors)
+        };
+        
+        dept.duties.push(duty);
+        saveData();
+        renderDepartments();
+        showAlert(`เพิ่มภาระหน้าที่ "${dutyName}" สำเร็จ`);
+    }
+    
+    function deleteDuty(departmentId, dutyId) {
+        if (!confirm('ต้องการลบภาระหน้าที่นี้ใช่หรือไม่?')) return;
+        
+        const dept = departments.find(d => d.id === departmentId);
+        if (!dept) return;
+        
+        dept.duties = dept.duties.filter(duty => duty.id !== dutyId);
+        saveData();
+        renderDepartments();
+        showAlert('ลบภาระหน้าที่สำเร็จ');
+    }
+    
+    function updateMinDoctors(departmentId, dutyId, value) {
+        const dept = departments.find(d => d.id === departmentId);
+        if (!dept) return;
+        
+        const duty = dept.duties.find(d => d.id === dutyId);
+        if (!duty) return;
+        
+        duty.minDoctors = parseInt(value) || 0;
+        saveData();
+    }
+    
+    function renderDepartments() {
+        const container = document.getElementById('departmentsList');
+        
+        if (departments.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">📭</div>
+                    <p>ยังไม่มีแผนก กรุณาเพิ่มแผนกใหม่</p>
+                </div>
+            `;
+            return;
+        }
+        
+        container.innerHTML = departments.map(dept => `
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">🏥 ${dept.name}</div>
+                    <div class="card-actions">
+                        <button class="btn-success btn-small" onclick="addDuty(${dept.id})">
+                            + ภาระหน้าที่
+                        </button>
+                        <button class="btn-danger btn-small" onclick="deleteDepartment(${dept.id})">
+                            ลบแผนก
+                        </button>
+                    </div>
+                </div>
+                
+                ${dept.duties.length > 0 ? `
+                    <div class="nested-list">
+                        ${dept.duties.map(duty => `
+                            <div class="duty-item">
+                                <div class="duty-header">
+                                    <div class="duty-name">📌 ${duty.name}</div>
+                                    <button class="btn-danger btn-small" onclick="deleteDuty(${dept.id}, ${duty.id})">
+                                        ลบ
+                                    </button>
+                                </div>
+                                <div class="duty-min-doctors">
+                                    <label style="margin: 0; font-size: 13px;">จำนวนแพทย์ขั้นต่ำ:</label>
+                                    <input 
+                                        type="number" 
+                                        value="${duty.minDoctors}" 
+                                        min="0"
+                                        onchange="updateMinDoctors(${dept.id}, ${duty.id}, this.value)"
+                                    >
+                                    <span style="font-size: 13px;">คน</span>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                ` : `
+                    <p style="color: #999; font-size: 14px; margin-top: 10px;">
+                        ยังไม่มีภาระหน้าที่ คลิก "+ ภาระหน้าที่" เพื่อเพิ่ม
+                    </p>
+                `}
+            </div>
+        `).join('');
+    }
+    
+    // ===== จัดการแพทย์ =====
+    
+    function updateDoctorDepartmentSelect() {
+        const select = document.getElementById('newDoctorDepartment');
+        select.innerHTML = '<option value="">-- เลือกแผนก --</option>' +
+            departments.map(dept => `
+                <option value="${dept.id}">${dept.name}</option>
+            `).join('');
+    }
+    
+    function addDoctor() {
+        const name = document.getElementById('newDoctorName').value.trim();
+        const departmentId = parseInt(document.getElementById('newDoctorDepartment').value);
+        
+        if (!name) {
+            showAlert('กรุณากรอกชื่อแพทย์', 'info');
+            return;
+        }
+        
+        if (!departmentId) {
+            showAlert('กรุณาเลือกแผนก', 'info');
+            return;
+        }
+        
+        const doctor = {
+            id: Date.now(),
+            name: name,
+            departmentId: departmentId
+        };
+        
+        doctors.push(doctor);
+        saveData();
+        renderDoctors();
+        renderOverview();
+        
+        document.getElementById('newDoctorName').value = '';
+        document.getElementById('newDoctorDepartment').value = '';
+        showAlert(`เพิ่มแพทย์ "${name}" สำเร็จ`);
+    }
+    
+    function deleteDoctor(id) {
+        if (!confirm('ต้องการลบแพทย์ท่านนี้ใช่หรือไม่?')) return;
+        
+        doctors = doctors.filter(d => d.id !== id);
+        saveData();
+        renderDoctors();
+        renderOverview();
+        showAlert('ลบแพทย์สำเร็จ');
+    }
+    
+    function renderDoctors() {
+        const container = document.getElementById('doctorsList');
+        
+        if (doctors.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">👤</div>
+                    <p>ยังไม่มีแพทย์ กรุณาเพิ่มแพทย์ใหม่</p>
+                </div>
+            `;
+            return;
+        }
+        
+        container.innerHTML = doctors.map(doctor => {
+            const dept = departments.find(d => d.id === doctor.departmentId);
+            const deptName = dept ? dept.name : 'ไม่ระบุแผนก';
+            
+            return `
+                <div class="list-item">
+                    <div class="list-item-content">
+                        <div class="list-item-name">👨‍⚕️ ${doctor.name}</div>
+                        <div class="list-item-info">
+                            <span class="badge badge-primary">${deptName}</span>
+                        </div>
+                    </div>
+                    <div class="list-item-actions">
+                        <button class="btn-danger btn-small" onclick="deleteDoctor(${doctor.id})">
+                            ลบ
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+    
+    // ===== ภาพรวม =====
+    
+    function renderOverview() {
+        const container = document.getElementById('overviewContent');
+        
+        // สรุปข้อมูล
+        const totalDepartments = departments.length;
+        const totalDoctors = doctors.length;
+        
+        let warningHtml = '';
+        
+        // ตรวจสอบแต่ละแผนก
+        departments.forEach(dept => {
+            const deptDoctors = doctors.filter(d => d.departmentId === dept.id);
+            const deptDoctorCount = deptDoctors.length;
+            
+            dept.duties.forEach(duty => {
+                if (deptDoctorCount < duty.minDoctors) {
+                    const shortage = duty.minDoctors - deptDoctorCount;
+                    warningHtml += `
+                        <div class="list-item" style="border-left: 4px solid #f56565;">
+                            <div class="list-item-content">
+                                <div class="list-item-name">⚠️ ${dept.name} - ${duty.name}</div>
+                                <div class="list-item-info">
+                                    ต้องการ ${duty.minDoctors} คน | มี ${deptDoctorCount} คน | 
+                                    <span style="color: #e53e3e; font-weight: 600;">ขาด ${shortage} คน</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+        });
+        
+        container.innerHTML = `
+            <div class="grid-2">
+                <div class="card">
+                    <div style="text-align: center;">
+                        <div style="font-size: 48px; margin-bottom: 10px;">🏥</div>
+                        <div style="font-size: 32px; font-weight: 600; color: #667eea;">${totalDepartments}</div>
+                        <div style="color: #666;">จำนวนแผนก</div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div style="text-align: center;">
+                        <div style="font-size: 48px; margin-bottom: 10px;">👨‍⚕️</div>
+                        <div style="font-size: 32px; font-weight: 600; color: #48bb78;">${totalDoctors}</div>
+                        <div style="color: #666;">จำนวนแพทย์</div>
+                    </div>
+                </div>
+            </div>
+            
+            ${warningHtml ? `
+                <div style="margin-top: 20px;">
+                    <h3 style="color: #e53e3e; margin-bottom: 15px;">🚨 แผนกที่ขาดแพทย์</h3>
+                    ${warningHtml}
+                </div>
+            ` : `
+                <div style="text-align: center; padding: 40px; color: #48bb78;">
+                    <div style="font-size: 48px; margin-bottom: 10px;">✅</div>
+                    <div style="font-size: 18px; font-weight: 600;">จำนวนแพทย์เพียงพอทุกแผนก</div>
+                </div>
+            `}
+            
+            <div style="margin-top: 30px;">
+                <h3 style="margin-bottom: 15px;">📋 รายละเอียดแต่ละแผนก</h3>
+                ${departments.map(dept => {
+                    const deptDoctors = doctors.filter(d => d.departmentId === dept.id);
+                    return `
+                        <div class="card">
+                            <div style="font-weight: 600; color: #333; margin-bottom: 10px;">
+                                🏥 ${dept.name}
+                            </div>
+                            <div style="font-size: 14px; color: #666;">
+                                จำนวนแพทย์: ${deptDoctors.length} คน
+                            </div>
+                            ${dept.duties.length > 0 ? `
+                                <div style="margin-top: 10px; font-size: 14px;">
+                                    ${dept.duties.map(duty => `
+                                        <div style="padding: 5px 0;">
+                                            📌 ${duty.name}: 
+                                            ${deptDoctors.length >= duty.minDoctors 
+                                                ? `<span style="color: #48bb78;">✓ เพียงพอ</span>` 
+                                                : `<span style="color: #e53e3e;">✗ ขาด ${duty.minDoctors - deptDoctors.length} คน</span>`
+                                            }
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
+    }
+    
+    // โหลดข้อมูลเมื่อเริ่มต้น
+    loadData();
+</script>
+```
+
+</body>
+</html>
