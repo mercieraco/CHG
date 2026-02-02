@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบจัดการแพทย์โรงพยาบาล v6</title>
+    <title>ระบบจัดการแพทย์โรงพยาบาล v7</title>
     <style>
         * {
             margin: 0;
@@ -559,7 +559,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>🏥 ระบบจัดการแพทย์โรงพยาบาล v6</h1>
+        <h1>🏥 ระบบจัดการแพทย์โรงพยาบาล v7</h1>
         <p class="subtitle">Hospital Doctor Management System</p>
 
 ```
@@ -1279,18 +1279,16 @@
             
             document.getElementById('affectedDutiesSection').style.display = 'block';
             const container = document.getElementById('affectedDutiesList');
-            container.innerHTML = dept.duties.map(duty => `
-                <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 8px;">
-                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; margin: 0;">
-                        <input type="checkbox" class="duty-checkbox" value="${duty.id}">
-                        ${duty.name}
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 4px; cursor: pointer; margin: 0; font-size: 13px; color: #666;">
-                        <input type="checkbox" class="replacement-checkbox" data-duty-id="${duty.id}">
-                        มีคนมาแทน
-                    </label>
-                </div>
-            `).join('');
+            container.innerHTML = `
+                <select id="selectedDutyId" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; margin-bottom: 10px;">
+                    <option value="">-- เลือกภาระงานที่กระทบ --</option>
+                    ${dept.duties.map(duty => `<option value="${duty.id}">${duty.name}</option>`).join('')}
+                </select>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin-top: 8px;">
+                    <input type="checkbox" id="hasReplacementCheckbox">
+                    มีคนมาแทน
+                </label>
+            `;
         });
     }
     
@@ -1303,15 +1301,19 @@
             return;
         }
         
-        const affectedDuties = [];
-        document.querySelectorAll('.duty-checkbox:checked').forEach(cb => {
-            const dutyId = parseInt(cb.value);
-            const hasReplacement = document.querySelector(`.replacement-checkbox[data-duty-id="${dutyId}"]`).checked;
-            affectedDuties.push({
-                dutyId: dutyId,
-                hasReplacement: hasReplacement
-            });
-        });
+        // อ่านจาก dropdown
+        const selectedDutyId = parseInt(document.getElementById('selectedDutyId')?.value);
+        if (!selectedDutyId) {
+            showAlert('กรุณาเลือกภาระงานที่กระทบ', 'info');
+            return;
+        }
+        
+        const hasReplacement = document.getElementById('hasReplacementCheckbox')?.checked || false;
+        
+        const affectedDuties = [{
+            dutyId: selectedDutyId,
+            hasReplacement: hasReplacement
+        }];
         
         leaves.push({
             id: Date.now(),
@@ -1374,12 +1376,15 @@
                         const min = duty.weeklyMin[dayKey] || 0;
                         if (total === 0 && min === 0) continue; // วันหยุด skip
                         
-                        // นับคนที่ลาในวันนี้สำหรับ duty นี้
+                        // นับคนที่ลาในวันนี้สำหรับ duty นี้ แต่ไม่นับคนที่มีคนมาแทน
                         const leavesOnDay = leaves.filter(l => {
                             const lStart = new Date(l.startDate + 'T00:00:00');
                             const lEnd = new Date(l.endDate + 'T00:00:00');
-                            return d >= lStart && d <= lEnd &&
-                                   l.affectedDuties.some(ld => ld.dutyId === duty.id);
+                            if (!(d >= lStart && d <= lEnd)) return false;
+                            
+                            // เช็คว่า duty นี้ถูก affect และไม่มีคนมาแทน
+                            const affectedDuty = l.affectedDuties.find(ld => ld.dutyId === duty.id);
+                            return affectedDuty && !affectedDuty.hasReplacement;
                         }).length;
                         
                         const remaining = total - leavesOnDay;
@@ -1445,7 +1450,11 @@
                                     const leavesOnDay = leaves.filter(l => {
                                         const lS = new Date(l.startDate + 'T00:00:00');
                                         const lE = new Date(l.endDate + 'T00:00:00');
-                                        return d >= lS && d <= lE && l.affectedDuties.some(ld => ld.dutyId === duty.id);
+                                        if (!(d >= lS && d <= lE)) return false;
+                                        
+                                        // เช็คว่า duty นี้ถูก affect และไม่มีคนมาแทน
+                                        const affectedDuty = l.affectedDuties.find(ld => ld.dutyId === duty.id);
+                                        return affectedDuty && !affectedDuty.hasReplacement;
                                     }).length;
                                     
                                     const rem = total - leavesOnDay;
@@ -1459,7 +1468,12 @@
                                 if (worstRemaining === Infinity) worstRemaining = 0;
                                 
                                 let icon = '';
-                                if (worstRemaining < worstMin && worstRemaining < 2) {
+                                const replacementText = ad.hasReplacement ? ' (มีคนมาแทน)' : '';
+                                
+                                if (ad.hasReplacement) {
+                                    // ถ้ามีคนมาแทน จะไม่กระทบ
+                                    icon = '<span style="color:#48bb78;">✓ มีคนมาแทน</span>';
+                                } else if (worstRemaining < worstMin && worstRemaining < 2) {
                                     icon = '<span style="color:#e53e3e;">🚨 วิกฤต (เหลือ ' + worstRemaining + '/' + worstMin + ')</span>';
                                 } else if (worstRemaining < worstMin) {
                                     icon = '<span style="color:#ed8936;">⚠️ เตือน (เหลือ ' + worstRemaining + '/' + worstMin + ')</span>';
@@ -1510,12 +1524,15 @@
                     const totalDoctors = duty.weeklyTotal[dayKey] || 0;
                     const minDoctors = duty.weeklyMin[dayKey] || 0;
                     
-                    // จำนวนคนที่ลาในวันนี้ (นับแค่ภาระงานนี้)
+                    // จำนวนคนที่ลาในวันนี้ (นับแค่ภาระงานนี้) แต่ไม่นับคนที่มีคนมาแทน
                     const leavesOnThisDay = leaves.filter(l => {
                         const lStart = new Date(l.startDate);
                         const lEnd = new Date(l.endDate);
-                        return d >= lStart && d <= lEnd && 
-                               l.affectedDuties.some(ld => ld.dutyId === duty.id);
+                        if (!(d >= lStart && d <= lEnd)) return false;
+                        
+                        // เช็คว่า duty นี้ถูก affect และไม่มีคนมาแทน
+                        const affectedDuty = l.affectedDuties.find(ld => ld.dutyId === duty.id);
+                        return affectedDuty && !affectedDuty.hasReplacement;
                     }).length;
                     
                     const remaining = totalDoctors - leavesOnThisDay;
