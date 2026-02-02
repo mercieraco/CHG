@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบจัดการแพทย์โรงพยาบาล v8</title>
+    <title>ระบบจัดการแพทย์โรงพยาบาล v10</title>
     <style>
         * {
             margin: 0;
@@ -559,7 +559,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>🏥 ระบบจัดการแพทย์โรงพยาบาล v8</h1>
+        <h1>🏥 ระบบจัดการแพทย์โรงพยาบาล v10</h1>
         <p class="subtitle">Hospital Doctor Management System</p>
 
 ```
@@ -606,7 +606,7 @@
                     
                     <div id="affectedDutiesSection" style="display: none;">
                         <div class="form-group">
-                            <label>ภาระงานที่กระทบ (เลือกได้หลายรายการ)</label>
+                            <label>ภาระงานที่กระทบ</label>
                             <div id="affectedDutiesList"></div>
                         </div>
                     </div>
@@ -828,9 +828,10 @@
         if (tabName === 'overview') renderOverview();
         if (tabName === 'leave') {
             clearLeaveSelection();
+            updateLeaveDoctorSelect(); // populate dropdown ก่อน
             renderCalendar();
             renderLeaveList();
-            bindLeaveDoctorEvent();
+            bindLeaveDoctorEvent(); // bind event หลัง
         }
     });
     
@@ -1126,6 +1127,7 @@
         document.getElementById('leaveDoctorId').value = '';
         document.getElementById('leaveReason').value = '';
         document.getElementById('affectedDutiesSection').style.display = 'none';
+        document.getElementById('affectedDutiesList').innerHTML = ''; // clear content
         document.getElementById('dateSelectionInfo').style.display = 'none';
         renderCalendar();
     }
@@ -1281,28 +1283,29 @@
             const container = document.getElementById('affectedDutiesList');
             container.innerHTML = `
                 <div style="margin-bottom: 15px;">
-                    <label style="font-weight: 600; font-size: 14px; margin-bottom: 8px; display: block;">ภาระงานที่กระทบ</label>
                     <select id="selectedDutyId" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px;">
                         <option value="">-- เลือกภาระงานที่กระทบ --</option>
                         ${dept.duties.map(duty => `<option value="${duty.id}">${duty.name}</option>`).join('')}
                     </select>
                 </div>
                 
-                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                    <input type="checkbox" id="hasReplacementCheckbox" style="width: auto;">
-                    <label for="hasReplacementCheckbox" style="margin: 0; cursor: pointer;">มีคนมาแทน</label>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; margin: 0;">
+                        <input type="checkbox" id="hasReplacementCheckbox" style="width: auto; margin: 0;">
+                        <span style="font-size: 14px;">มีคนมาแทน</span>
+                    </label>
                 </div>
                 
-                <div id="replacementSection" style="display: none; margin-top: 15px; padding: 15px; background: #f0f4f8; border-radius: 8px;">
-                    <div style="margin-bottom: 10px;">
-                        <label style="font-weight: 600; font-size: 14px; margin-bottom: 8px; display: block;">กรองตามแผนก</label>
+                <div id="replacementSection" style="display: none; margin-top: 10px; padding: 15px; background: #f0f4f8; border-radius: 8px;">
+                    <div style="margin-bottom: 12px;">
+                        <label style="font-weight: 600; font-size: 14px; margin-bottom: 6px; display: block;">กรองตามแผนก</label>
                         <select id="replacementDeptFilter" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px;">
                             <option value="">ทั้งหมด</option>
                             ${departments.map(d => `<option value="${d.id}" ${d.id === doctor.departmentId ? 'selected' : ''}>${d.name}</option>`).join('')}
                         </select>
                     </div>
                     <div>
-                        <label style="font-weight: 600; font-size: 14px; margin-bottom: 8px; display: block;">เลือกแพทย์ที่มาแทน</label>
+                        <label style="font-weight: 600; font-size: 14px; margin-bottom: 6px; display: block;">เลือกแพทย์ที่มาแทน</label>
                         <select id="replacementDoctorId" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px;">
                             <option value="">-- เลือกแพทย์ --</option>
                         </select>
