@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบจัดการแพทย์โรงพยาบาล v7</title>
+    <title>ระบบจัดการแพทย์โรงพยาบาล v8</title>
     <style>
         * {
             margin: 0;
@@ -559,7 +559,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>🏥 ระบบจัดการแพทย์โรงพยาบาล v7</h1>
+        <h1>🏥 ระบบจัดการแพทย์โรงพยาบาล v8</h1>
         <p class="subtitle">Hospital Doctor Management System</p>
 
 ```
@@ -1280,15 +1280,69 @@
             document.getElementById('affectedDutiesSection').style.display = 'block';
             const container = document.getElementById('affectedDutiesList');
             container.innerHTML = `
-                <select id="selectedDutyId" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; margin-bottom: 10px;">
-                    <option value="">-- เลือกภาระงานที่กระทบ --</option>
-                    ${dept.duties.map(duty => `<option value="${duty.id}">${duty.name}</option>`).join('')}
-                </select>
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin-top: 8px;">
-                    <input type="checkbox" id="hasReplacementCheckbox">
-                    มีคนมาแทน
-                </label>
+                <div style="margin-bottom: 15px;">
+                    <label style="font-weight: 600; font-size: 14px; margin-bottom: 8px; display: block;">ภาระงานที่กระทบ</label>
+                    <select id="selectedDutyId" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px;">
+                        <option value="">-- เลือกภาระงานที่กระทบ --</option>
+                        ${dept.duties.map(duty => `<option value="${duty.id}">${duty.name}</option>`).join('')}
+                    </select>
+                </div>
+                
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                    <input type="checkbox" id="hasReplacementCheckbox" style="width: auto;">
+                    <label for="hasReplacementCheckbox" style="margin: 0; cursor: pointer;">มีคนมาแทน</label>
+                </div>
+                
+                <div id="replacementSection" style="display: none; margin-top: 15px; padding: 15px; background: #f0f4f8; border-radius: 8px;">
+                    <div style="margin-bottom: 10px;">
+                        <label style="font-weight: 600; font-size: 14px; margin-bottom: 8px; display: block;">กรองตามแผนก</label>
+                        <select id="replacementDeptFilter" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px;">
+                            <option value="">ทั้งหมด</option>
+                            ${departments.map(d => `<option value="${d.id}" ${d.id === doctor.departmentId ? 'selected' : ''}>${d.name}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-weight: 600; font-size: 14px; margin-bottom: 8px; display: block;">เลือกแพทย์ที่มาแทน</label>
+                        <select id="replacementDoctorId" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px;">
+                            <option value="">-- เลือกแพทย์ --</option>
+                        </select>
+                    </div>
+                </div>
             `;
+            
+            // Bind events สำหรับ checkbox และ filter
+            const checkbox = document.getElementById('hasReplacementCheckbox');
+            const replacementSection = document.getElementById('replacementSection');
+            const deptFilter = document.getElementById('replacementDeptFilter');
+            const docSelect = document.getElementById('replacementDoctorId');
+            
+            checkbox.addEventListener('change', function() {
+                replacementSection.style.display = this.checked ? 'block' : 'none';
+                if (this.checked) updateReplacementDoctorList();
+            });
+            
+            deptFilter.addEventListener('change', updateReplacementDoctorList);
+            
+            function updateReplacementDoctorList() {
+                const filterDeptId = deptFilter.value;
+                let filteredDocs = doctors.filter(d => d.id !== doctorId); // ไม่ให้เลือกคนที่ลาเอง
+                
+                if (filterDeptId) {
+                    filteredDocs = filteredDocs.filter(d => d.departmentId == filterDeptId);
+                }
+                
+                // เรียงตาม alphabetical
+                filteredDocs.sort((a, b) => a.name.localeCompare(b.name, 'th'));
+                
+                docSelect.innerHTML = '<option value="">-- เลือกแพทย์ --</option>' +
+                    filteredDocs.map(d => {
+                        const deptName = departments.find(dep => dep.id === d.departmentId)?.name || '';
+                        return `<option value="${d.id}">${d.name} (${deptName})</option>`;
+                    }).join('');
+            }
+            
+            // เรียกครั้งแรก
+            updateReplacementDoctorList();
         });
     }
     
@@ -1309,10 +1363,17 @@
         }
         
         const hasReplacement = document.getElementById('hasReplacementCheckbox')?.checked || false;
+        const replacementDoctorId = hasReplacement ? (parseInt(document.getElementById('replacementDoctorId')?.value) || null) : null;
+        
+        if (hasReplacement && !replacementDoctorId) {
+            showAlert('กรุณาเลือกแพทย์ที่มาแทน', 'info');
+            return;
+        }
         
         const affectedDuties = [{
             dutyId: selectedDutyId,
-            hasReplacement: hasReplacement
+            hasReplacement: hasReplacement,
+            replacementDoctorId: replacementDoctorId
         }];
         
         leaves.push({
@@ -1468,11 +1529,12 @@
                                 if (worstRemaining === Infinity) worstRemaining = 0;
                                 
                                 let icon = '';
-                                const replacementText = ad.hasReplacement ? ' (มีคนมาแทน)' : '';
                                 
                                 if (ad.hasReplacement) {
                                     // ถ้ามีคนมาแทน จะไม่กระทบ
-                                    icon = '<span style="color:#48bb78;">✓ มีคนมาแทน</span>';
+                                    const replacementDoc = ad.replacementDoctorId ? doctors.find(d => d.id === ad.replacementDoctorId) : null;
+                                    const replacementName = replacementDoc ? replacementDoc.name : 'ไม่ระบุ';
+                                    icon = '<span style="color:#48bb78;">✓ มีคนมาแทน: ' + replacementName + '</span>';
                                 } else if (worstRemaining < worstMin && worstRemaining < 2) {
                                     icon = '<span style="color:#e53e3e;">🚨 วิกฤต (เหลือ ' + worstRemaining + '/' + worstMin + ')</span>';
                                 } else if (worstRemaining < worstMin) {
@@ -1500,74 +1562,76 @@
         const totalLeaves = leaves.length;
         
         // วิเคราะห์ภาระงาน แบบใหม่ที่คำนวณจากจำนวนที่มา - คนลา
+        // จัดกลุ่มตามวัน (date+duty) เพื่อไม่ให้ duplicate
+        const issueMap = {}; // key = 'date-deptId-dutyId'
+        
+        // วนทุกแผนก และ duty
+        departments.forEach(dept => {
+            dept.duties.forEach(duty => {
+                // หา date range ทั้งหมดที่มีคนลา
+                const allDates = new Set();
+                leaves.forEach(leave => {
+                    const affectedDuty = leave.affectedDuties.find(ad => ad.dutyId === duty.id);
+                    if (!affectedDuty) return;
+                    
+                    const start = new Date(leave.startDate + 'T00:00:00');
+                    const end = new Date(leave.endDate + 'T00:00:00');
+                    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                        allDates.add(d.toISOString().split('T')[0]);
+                    }
+                });
+                
+                // วนทุกวันที่มีคนลา
+                allDates.forEach(dateStr => {
+                    const d = new Date(dateStr + 'T00:00:00');
+                    const dayKey = ['sun','mon','tue','wed','thu','fri','sat'][d.getDay()];
+                    const total = duty.weeklyTotal[dayKey] || 0;
+                    const min = duty.weeklyMin[dayKey] || 0;
+                    if (total === 0 && min === 0) return; // วันหยุด
+                    
+                    // นับคนที่ลาในวันนี้ (ไม่นับคนที่มีคนมาแทน)
+                    const leavesOnDay = leaves.filter(l => {
+                        const lS = new Date(l.startDate + 'T00:00:00');
+                        const lE = new Date(l.endDate + 'T00:00:00');
+                        if (!(d >= lS && d <= lE)) return false;
+                        
+                        const ad = l.affectedDuties.find(ld => ld.dutyId === duty.id);
+                        return ad && !ad.hasReplacement;
+                    }).length;
+                    
+                    const remaining = total - leavesOnDay;
+                    
+                    if (remaining < min) {
+                        const key = `${dateStr}-${dept.id}-${duty.id}`;
+                        const issue = {
+                            deptName: dept.name,
+                            dutyName: duty.name,
+                            date: dateStr,
+                            total: total,
+                            remaining: remaining,
+                            min: min,
+                            message: `${dateStr}: ${duty.name} เหลือ ${remaining}/${min} คน`
+                        };
+                        
+                        if (!issueMap[key]) {
+                            issueMap[key] = issue;
+                        }
+                    }
+                });
+            });
+        });
+        
+        // แยก critical และ warning
         let criticalIssues = [];
         let warnings = [];
         
-        // ตรวจสอบจากการลางาน
-        leaves.forEach(leave => {
-            const doctor = doctors.find(d => d.id === leave.doctorId);
-            const dept = doctor ? departments.find(d => d.id === doctor.departmentId) : null;
-            
-            leave.affectedDuties.forEach(ad => {
-                const duty = dept ? dept.duties.find(d => d.id === ad.dutyId) : null;
-                if (!duty) return;
-                
-                // คำนวณช่วงวันที่ลา
-                const startDate = new Date(leave.startDate);
-                const endDate = new Date(leave.endDate);
-                
-                for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-                    const dayOfWeek = d.getDay(); // 0 = อาทิตย์, 1 = จันทร์, ...
-                    const dayKeys = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
-                    const dayKey = dayKeys[dayOfWeek];
-                    
-                    const totalDoctors = duty.weeklyTotal[dayKey] || 0;
-                    const minDoctors = duty.weeklyMin[dayKey] || 0;
-                    
-                    // จำนวนคนที่ลาในวันนี้ (นับแค่ภาระงานนี้) แต่ไม่นับคนที่มีคนมาแทน
-                    const leavesOnThisDay = leaves.filter(l => {
-                        const lStart = new Date(l.startDate);
-                        const lEnd = new Date(l.endDate);
-                        if (!(d >= lStart && d <= lEnd)) return false;
-                        
-                        // เช็คว่า duty นี้ถูก affect และไม่มีคนมาแทน
-                        const affectedDuty = l.affectedDuties.find(ld => ld.dutyId === duty.id);
-                        return affectedDuty && !affectedDuty.hasReplacement;
-                    }).length;
-                    
-                    const remaining = totalDoctors - leavesOnThisDay;
-                    
-                    const dateStr = d.toISOString().split('T')[0];
-                    
-                    if (remaining < minDoctors) {
-                        if (remaining < 2) {
-                            // Alert - เหลือน้อยกว่า 2 คน
-                            criticalIssues.push({
-                                doctorName: doctor.name,
-                                deptName: dept.name,
-                                dutyName: duty.name,
-                                date: dateStr,
-                                total: totalDoctors,
-                                remaining: remaining,
-                                min: minDoctors,
-                                message: `${dateStr}: ${duty.name} เหลือ ${remaining}/${minDoctors} คน (วิกฤต!)`
-                            });
-                        } else {
-                            // Warning - เหลือน้อยกว่าขั้นต่ำ แต่ยังมีมากกว่า 2
-                            warnings.push({
-                                doctorName: doctor.name,
-                                deptName: dept.name,
-                                dutyName: duty.name,
-                                date: dateStr,
-                                total: totalDoctors,
-                                remaining: remaining,
-                                min: minDoctors,
-                                message: `${dateStr}: ${duty.name} เหลือ ${remaining}/${minDoctors} คน`
-                            });
-                        }
-                    }
-                }
-            });
+        Object.values(issueMap).forEach(issue => {
+            if (issue.remaining < 2) {
+                issue.message += ' (วิกฤต!)';
+                criticalIssues.push(issue);
+            } else {
+                warnings.push(issue);
+            }
         });
         
         container.innerHTML = `
