@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบจัดการแพทย์โรงพยาบาล v11</title>
+    <title>ระบบจัดการแพทย์โรงพยาบาล v12</title>
     <style>
         * {
             margin: 0;
@@ -559,7 +559,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>🏥 ระบบจัดการแพทย์โรงพยาบาล v11</h1>
+        <h1>🏥 ระบบจัดการแพทย์โรงพยาบาล v12</h1>
         <p class="subtitle">Hospital Doctor Management System</p>
 
 ```
@@ -783,6 +783,30 @@
         if (savedDepartments) departments = JSON.parse(savedDepartments);
         if (savedDoctors) doctors = JSON.parse(savedDoctors);
         if (savedLeaves) leaves = JSON.parse(savedLeaves);
+        
+        // Migration: เพิ่ม assignments ให้แพทย์ที่ยังไม่มี
+        let needsSave = false;
+        doctors.forEach(doc => {
+            if (!doc.assignments) {
+                doc.assignments = [];
+                needsSave = true;
+            }
+        });
+        
+        // Migration: ลบ weeklyTotal ออกจาก duties
+        departments.forEach(dept => {
+            dept.duties.forEach(duty => {
+                if (duty.weeklyTotal) {
+                    delete duty.weeklyTotal;
+                    needsSave = true;
+                }
+            });
+        });
+        
+        if (needsSave) {
+            saveData();
+            showAlert('อัพเกรดข้อมูลเป็น v12 สำเร็จ! กรุณาไปที่ "จัดการแพทย์" เพื่อเพิ่มภาระงานให้แพทย์', 'info');
+        }
         
         renderAll();
     }
