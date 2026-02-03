@@ -701,55 +701,41 @@
         <div class="form-group">
             <label>กำหนดจำนวนแพทย์แต่ละวัน</label>
             <p style="font-size: 13px; color: #666; margin-bottom: 10px;">
-                แต่ละวันระบุ 2 ตัวเลข: จำนวนที่มาทำงาน และจำนวนขั้นต่ำ
+                ระบุจำนวนแพทย์ขั้นต่ำที่ต้องการในแต่ละวัน (จำนวนที่มาจริงคำนวณอัตโนมัติ)
             </p>
             <div class="weekly-schedule">
                 <div class="day-input">
                     <label>จันทร์</label>
-                    <input type="number" id="mon-total" min="0" value="0" placeholder="ที่มา">
-                    <span class="label-text">ที่มา</span>
                     <input type="number" id="mon-min" min="0" value="0" placeholder="ขั้นต่ำ">
                     <span class="label-text">ขั้นต่ำ</span>
                 </div>
                 <div class="day-input">
                     <label>อังคาร</label>
-                    <input type="number" id="tue-total" min="0" value="0" placeholder="ที่มา">
-                    <span class="label-text">ที่มา</span>
                     <input type="number" id="tue-min" min="0" value="0" placeholder="ขั้นต่ำ">
                     <span class="label-text">ขั้นต่ำ</span>
                 </div>
                 <div class="day-input">
                     <label>พุธ</label>
-                    <input type="number" id="wed-total" min="0" value="0" placeholder="ที่มา">
-                    <span class="label-text">ที่มา</span>
                     <input type="number" id="wed-min" min="0" value="0" placeholder="ขั้นต่ำ">
                     <span class="label-text">ขั้นต่ำ</span>
                 </div>
                 <div class="day-input">
                     <label>พฤหัสบดี</label>
-                    <input type="number" id="thu-total" min="0" value="0" placeholder="ที่มา">
-                    <span class="label-text">ที่มา</span>
                     <input type="number" id="thu-min" min="0" value="0" placeholder="ขั้นต่ำ">
                     <span class="label-text">ขั้นต่ำ</span>
                 </div>
                 <div class="day-input">
                     <label>ศุกร์</label>
-                    <input type="number" id="fri-total" min="0" value="0" placeholder="ที่มา">
-                    <span class="label-text">ที่มา</span>
                     <input type="number" id="fri-min" min="0" value="0" placeholder="ขั้นต่ำ">
                     <span class="label-text">ขั้นต่ำ</span>
                 </div>
                 <div class="day-input">
                     <label>เสาร์</label>
-                    <input type="number" id="sat-total" min="0" value="0" placeholder="ที่มา">
-                    <span class="label-text">ที่มา</span>
                     <input type="number" id="sat-min" min="0" value="0" placeholder="ขั้นต่ำ">
                     <span class="label-text">ขั้นต่ำ</span>
                 </div>
                 <div class="day-input">
                     <label>อาทิตย์</label>
-                    <input type="number" id="sun-total" min="0" value="0" placeholder="ที่มา">
-                    <span class="label-text">ที่มา</span>
                     <input type="number" id="sun-min" min="0" value="0" placeholder="ขั้นต่ำ">
                     <span class="label-text">ขั้นต่ำ</span>
                 </div>
@@ -760,6 +746,17 @@
             <button class="btn-primary" onclick="saveDuty()">บันทึก</button>
             <button class="btn-danger" onclick="closeDutyModal()">ยกเลิก</button>
         </div>
+    </div>
+</div>
+
+<!-- Assignment Modal -->
+<div id="assignmentModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <span class="modal-title">จัดการภาระงาน</span>
+            <button class="close-btn" onclick="closeAssignmentModal()">×</button>
+        </div>
+        <div id="assignmentContent"></div>
     </div>
 </div>
 
@@ -779,69 +776,23 @@
     
     // โหลดข้อมูล
     function loadData() {
-        const savedDepartments = localStorage.getItem('hosp_dept_v11');
-        const savedDoctors = localStorage.getItem('hosp_doc_v11');
-        const savedLeaves = localStorage.getItem('hosp_leave_v11');
+        const savedDepartments = localStorage.getItem('hospital_departments');
+        const savedDoctors = localStorage.getItem('hospital_doctors');
+        const savedLeaves = localStorage.getItem('hospital_leaves');
         
         if (savedDepartments) departments = JSON.parse(savedDepartments);
         if (savedDoctors) doctors = JSON.parse(savedDoctors);
         if (savedLeaves) leaves = JSON.parse(savedLeaves);
         
         renderAll();
-
-// Migration from v10
-if (departments.length === 0) {
-    try {
-        const oldDepts = JSON.parse(localStorage.getItem('hospital_departments')) || [];
-        const oldDocs = JSON.parse(localStorage.getItem('hospital_doctors')) || [];
-        const oldLeaves = JSON.parse(localStorage.getItem('hospital_leaves')) || [];
-        
-        if (oldDepts.length > 0) {
-            departments = oldDepts.map(d => ({
-                id: d.id,
-                name: d.name,
-                duties: (d.duties || []).map(duty => ({
-                    id: duty.id,
-                    name: duty.name,
-                    weeklyMin: duty.weeklyMin || {}
-                }))
-            }));
-            
-            doctors = oldDocs.map(d => ({
-                id: d.id,
-                name: d.name,
-                departmentId: d.departmentId,
-                assignments: []
-            }));
-            
-            leaves = oldLeaves;
-            
-            saveData();
-            showAlert('อัพเกรดข้อมูลจาก v10 สำเร็จ! กรุณาไปที่ "จัดการแพทย์" เพื่อเพิ่มภาระงานให้แพทย์', 'info');
-        }
-    } catch(e) {
-        console.error('Migration error:', e);
-    }
-}
     }
     
     function saveData() {
-        localStorage.setItem('hosp_dept_v11', JSON.stringify(departments));
-        localStorage.setItem('hosp_doc_v11', JSON.stringify(doctors));
-        localStorage.setItem('hosp_leave_v11', JSON.stringify(leaves));
+        localStorage.setItem('hospital_departments', JSON.stringify(departments));
+        localStorage.setItem('hospital_doctors', JSON.stringify(doctors));
+        localStorage.setItem('hospital_leaves', JSON.stringify(leaves));
     }
-```
-
-// ==================== HELPER: คำนวณจำนวนที่มาจริง ====================
-function calculateActualDoctors(dutyId, dayKey) {
-return doctors.filter(doc => {
-return doc.assignments && doc.assignments.some(a =>
-a.dutyId === dutyId && a.workDays && a.workDays.includes(dayKey)
-);
-}).length;
-}
-
-```
+    
     function renderAll() {
         renderDepartments();
         renderDoctors();
@@ -881,6 +832,15 @@ a.dutyId === dutyId && a.workDays && a.workDays.includes(dayKey)
             bindLeaveDoctorEvent(); // bind event หลัง
         }
     });
+    
+    // ===== HELPER: คำนวณจำนวนแพทย์ที่มาจริง =====
+    function calculateActualDoctors(dutyId, dayKey) {
+        return doctors.filter(doc => {
+            return doc.assignments && doc.assignments.some(a =>
+                a.dutyId === dutyId && a.workDays && a.workDays.includes(dayKey)
+            );
+        }).length;
+    }
     
     // ===== จัดการแผนก =====
     
@@ -924,7 +884,6 @@ a.dutyId === dutyId && a.workDays && a.workDays.includes(dayKey)
         
         const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
         days.forEach(day => {
-            document.getElementById(`${day}-total`).value = '0';
             document.getElementById(`${day}-min`).value = '0';
         });
     }
@@ -945,18 +904,15 @@ a.dutyId === dutyId && a.workDays && a.workDays.includes(dayKey)
         if (!dept) return;
         
         const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
-        const weeklyTotal = {};
         const weeklyMin = {};
         
         days.forEach(day => {
-            weeklyTotal[day] = parseInt(document.getElementById(`${day}-total`).value) || 0;
             weeklyMin[day] = parseInt(document.getElementById(`${day}-min`).value) || 0;
         });
         
         dept.duties.push({
             id: Date.now(),
             name: name,
-            weeklyTotal: weeklyTotal,
             weeklyMin: weeklyMin
         });
         
@@ -982,12 +938,11 @@ a.dutyId === dutyId && a.workDays && a.workDays.includes(dayKey)
         const duty = dept.duties.find(d => d.id === dutyId);
         if (!duty) return;
         
-        if (type === 'total') {
-            duty.weeklyTotal[day] = parseInt(value) || 0;
-        } else {
+        if (type === 'min') {
             duty.weeklyMin[day] = parseInt(value) || 0;
         }
         saveData();
+        renderAll(); // อัพเดตการแสดงผล
     }
     
     function renderDepartments() {
@@ -1036,20 +991,19 @@ a.dutyId === dutyId && a.workDays && a.workDays.includes(dayKey)
                                     ${Object.keys(dayNames).map(day => `
                                         <div class="day-input">
                                             <label>${dayNames[day]}</label>
-                                            <input 
-                                                type="number" 
-                                                value="${duty.weeklyTotal[day] || 0}" 
-                                                min="0"
-                                                onchange="updateDutyValue(${dept.id}, ${duty.id}, '${day}', 'total', this.value)"
-                                                title="จำนวนที่มา"
-                                            >
+                                            <div style="padding: 8px; background: #f0f4f8; border-radius: 4px; margin-bottom: 4px;">
+                                                <div style="font-size: 11px; color: #666;">จริง:</div>
+                                                <div style="font-weight: 700; color: ${calculateActualDoctors(duty.id, day) >= (duty.weeklyMin[day] || 0) ? '#48bb78' : '#f56565'};">
+                                                    ${calculateActualDoctors(duty.id, day)}
+                                                </div>
+                                            </div>
                                             <input 
                                                 type="number" 
                                                 value="${duty.weeklyMin[day] || 0}" 
                                                 min="0"
                                                 onchange="updateDutyValue(${dept.id}, ${duty.id}, '${day}', 'min', this.value)"
                                                 title="ขั้นต่ำ"
-                                                style="margin-top: 4px;"
+                                                placeholder="ขั้นต่ำ"
                                             >
                                         </div>
                                     `).join('')}
@@ -1097,7 +1051,8 @@ a.dutyId === dutyId && a.workDays && a.workDays.includes(dayKey)
         doctors.push({
             id: Date.now(),
             name: name,
-            departmentId: departmentId
+            departmentId: departmentId,
+            assignments: []
         });
         
         saveData();
@@ -1114,6 +1069,124 @@ a.dutyId === dutyId && a.workDays && a.workDays.includes(dayKey)
         saveData();
         renderAll();
         showAlert('ลบแพทย์สำเร็จ');
+    }
+    
+    // ===== จัดการ Assignment =====
+    function openAssignmentModal(docId) {
+        currentDoctorId = docId;
+        const doc = doctors.find(d => d.id === docId);
+        if (!doc) return;
+        
+        const dept = departments.find(d => d.id === doc.departmentId);
+        if (!dept || dept.duties.length === 0) {
+            showAlert('แผนกนี้ยังไม่มีภาระงาน กรุณาเพิ่มภาระงานก่อน', 'info');
+            return;
+        }
+        
+        const container = document.getElementById('assignmentContent');
+        
+        // แสดงรายการ assignments ปัจจุบัน
+        let currentHtml = '';
+        if (doc.assignments && doc.assignments.length > 0) {
+            currentHtml = `
+                <div style="margin-bottom:20px;">
+                    <h3 style="font-size:16px;margin-bottom:10px;">ภาระงานปัจจุบัน:</h3>
+                    ${doc.assignments.map((a, idx) => {
+                        const duty = dept.duties.find(d => d.id === a.dutyId);
+                        const dayLabels = ['จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส', 'อา'];
+                        const dayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+                        const days = a.workDays.map(d => dayLabels[dayKeys.indexOf(d)]).join(', ');
+                        return `
+                            <div style="padding:10px;background:#f0f4f8;border-radius:6px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
+                                <div>
+                                    <strong>${duty ? duty.name : 'ไม่พบ'}</strong><br>
+                                    <span style="font-size:13px;color:#666;">${days}</span>
+                                </div>
+                                <button class="btn-danger btn-small" onclick="deleteAssignment(${idx})">ลบ</button>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+        
+        // ฟอร์มเพิ่ม assignment ใหม่
+        const dayFull = ['จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์', 'อาทิตย์'];
+        const dayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+        
+        container.innerHTML = `
+            ${currentHtml}
+            <h3 style="font-size:16px;margin-bottom:10px;">เพิ่มภาระงานใหม่:</h3>
+            <div class="form-group">
+                <label>เลือกภาระงาน</label>
+                <select id="assignDutyId">
+                    <option value="">-- เลือกภาระงาน --</option>
+                    ${dept.duties.map(d => `<option value="${d.id}">${d.name}</option>`).join('')}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>เลือกวันที่ทำงาน</label>
+                <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                    ${dayKeys.map((d, i) => `
+                        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:6px 12px;background:#f0f4f8;border-radius:6px;">
+                            <input type="checkbox" class="work-day-cb" value="${d}" style="width:auto;margin:0;">
+                            ${dayFull[i]}
+                        </label>
+                    `).join('')}
+                </div>
+            </div>
+            <div style="display:flex;gap:10px;margin-top:20px;">
+                <button class="btn-primary" onclick="addAssignment()">เพิ่มภาระงาน</button>
+                <button class="btn-danger" onclick="closeAssignmentModal()">ปิด</button>
+            </div>
+        `;
+        
+        document.getElementById('assignmentModal').classList.add('active');
+    }
+    
+    function closeAssignmentModal() {
+        document.getElementById('assignmentModal').classList.remove('active');
+        currentDoctorId = null;
+    }
+    
+    function addAssignment() {
+        const doc = doctors.find(d => d.id === currentDoctorId);
+        if (!doc) return;
+        
+        const dutyId = Number(document.getElementById('assignDutyId').value);
+        if (!dutyId) {
+            showAlert('กรุณาเลือกภาระงาน', 'info');
+            return;
+        }
+        
+        const workDays = [];
+        document.querySelectorAll('.work-day-cb:checked').forEach(cb => {
+            workDays.push(cb.value);
+        });
+        
+        if (workDays.length === 0) {
+            showAlert('กรุณาเลือกวันทำงาน', 'info');
+            return;
+        }
+        
+        if (!doc.assignments) doc.assignments = [];
+        doc.assignments.push({ dutyId, workDays });
+        
+        saveData();
+        showAlert('เพิ่มภาระงานสำเร็จ');
+        openAssignmentModal(currentDoctorId); // refresh
+        renderAll(); // อัพเดตตัวเลข "จริง"
+    }
+    
+    function deleteAssignment(idx) {
+        const doc = doctors.find(d => d.id === currentDoctorId);
+        if (!doc || !doc.assignments) return;
+        
+        doc.assignments.splice(idx, 1);
+        saveData();
+        showAlert('ลบภาระงานสำเร็จ');
+        openAssignmentModal(currentDoctorId); // refresh
+        renderAll(); // อัพเดตตัวเลข "จริง"
     }
     
     function renderDoctors() {
@@ -1138,6 +1211,7 @@ a.dutyId === dutyId && a.workDays && a.workDays.includes(dayKey)
         container.innerHTML = filteredDoctors.map(doctor => {
             const dept = departments.find(d => d.id === doctor.departmentId);
             const deptName = dept ? dept.name : 'ไม่ระบุแผนก';
+            const assignmentCount = doctor.assignments ? doctor.assignments.length : 0;
             
             return `
                 <div class="list-item">
@@ -1145,9 +1219,13 @@ a.dutyId === dutyId && a.workDays && a.workDays.includes(dayKey)
                         <div class="list-item-name">👤 ${doctor.name}</div>
                         <div class="list-item-info">
                             <span class="badge badge-primary">${deptName}</span>
+                            <span class="badge badge-success">${assignmentCount} ภาระงาน</span>
                         </div>
                     </div>
                     <div class="list-item-actions">
+                        <button class="btn-success btn-small" onclick="openAssignmentModal(${doctor.id})">
+                            จัดการภาระงาน
+                        </button>
                         <button class="btn-danger btn-small" onclick="deleteDoctor(${doctor.id})">
                             ลบ
                         </button>
@@ -1483,7 +1561,7 @@ a.dutyId === dutyId && a.workDays && a.workDays.includes(dayKey)
                     
                     for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
                         const dayKey = dayKeys[d.getDay()];
-                        const total = duty.weeklyTotal[dayKey] || 0;
+                        const total = calculateActualDoctors(duty.id, dayKey);
                         const min = duty.weeklyMin[dayKey] || 0;
                         if (total === 0 && min === 0) continue; // วันหยุด skip
                         
@@ -1554,7 +1632,7 @@ a.dutyId === dutyId && a.workDays && a.workDays.includes(dayKey)
                                 
                                 for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate()+1)) {
                                     const dayKey = dayKeys[d.getDay()];
-                                    const total = duty.weeklyTotal[dayKey] || 0;
+                                    const total = calculateActualDoctors(duty.id, dayKey);
                                     const min = duty.weeklyMin[dayKey] || 0;
                                     if (total === 0 && min === 0) continue;
                                     
@@ -1635,7 +1713,7 @@ a.dutyId === dutyId && a.workDays && a.workDays.includes(dayKey)
                 allDates.forEach(dateStr => {
                     const d = new Date(dateStr + 'T00:00:00');
                     const dayKey = ['sun','mon','tue','wed','thu','fri','sat'][d.getDay()];
-                    const total = duty.weeklyTotal[dayKey] || 0;
+                    const total = calculateActualDoctors(duty.id, dayKey);
                     const min = duty.weeklyMin[dayKey] || 0;
                     if (total === 0 && min === 0) return; // วันหยุด
                     
