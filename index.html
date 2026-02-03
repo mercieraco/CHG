@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบจัดการแพทย์โรงพยาบาล v10</title>
+    <title>ระบบจัดการแพทย์โรงพยาบาล v11</title>
     <style>
         * {
             margin: 0;
@@ -559,7 +559,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>🏥 ระบบจัดการแพทย์โรงพยาบาล v10</h1>
+        <h1>🏥 ระบบจัดการแพทย์โรงพยาบาล v11</h1>
         <p class="subtitle">Hospital Doctor Management System</p>
 
 ```
@@ -769,6 +769,7 @@
     let doctors = [];
     let leaves = [];
     let currentDepartmentId = null;
+    let currentDoctorId = null;
     let currentCalendarMonth = new Date().getMonth();
     let currentCalendarYear = new Date().getFullYear();
     
@@ -778,23 +779,69 @@
     
     // โหลดข้อมูล
     function loadData() {
-        const savedDepartments = localStorage.getItem('hospital_departments');
-        const savedDoctors = localStorage.getItem('hospital_doctors');
-        const savedLeaves = localStorage.getItem('hospital_leaves');
+        const savedDepartments = localStorage.getItem('hosp_dept_v11');
+        const savedDoctors = localStorage.getItem('hosp_doc_v11');
+        const savedLeaves = localStorage.getItem('hosp_leave_v11');
         
         if (savedDepartments) departments = JSON.parse(savedDepartments);
         if (savedDoctors) doctors = JSON.parse(savedDoctors);
         if (savedLeaves) leaves = JSON.parse(savedLeaves);
         
         renderAll();
+
+// Migration from v10
+if (departments.length === 0) {
+    try {
+        const oldDepts = JSON.parse(localStorage.getItem('hospital_departments')) || [];
+        const oldDocs = JSON.parse(localStorage.getItem('hospital_doctors')) || [];
+        const oldLeaves = JSON.parse(localStorage.getItem('hospital_leaves')) || [];
+        
+        if (oldDepts.length > 0) {
+            departments = oldDepts.map(d => ({
+                id: d.id,
+                name: d.name,
+                duties: (d.duties || []).map(duty => ({
+                    id: duty.id,
+                    name: duty.name,
+                    weeklyMin: duty.weeklyMin || {}
+                }))
+            }));
+            
+            doctors = oldDocs.map(d => ({
+                id: d.id,
+                name: d.name,
+                departmentId: d.departmentId,
+                assignments: []
+            }));
+            
+            leaves = oldLeaves;
+            
+            saveData();
+            showAlert('อัพเกรดข้อมูลจาก v10 สำเร็จ! กรุณาไปที่ "จัดการแพทย์" เพื่อเพิ่มภาระงานให้แพทย์', 'info');
+        }
+    } catch(e) {
+        console.error('Migration error:', e);
+    }
+}
     }
     
     function saveData() {
-        localStorage.setItem('hospital_departments', JSON.stringify(departments));
-        localStorage.setItem('hospital_doctors', JSON.stringify(doctors));
-        localStorage.setItem('hospital_leaves', JSON.stringify(leaves));
+        localStorage.setItem('hosp_dept_v11', JSON.stringify(departments));
+        localStorage.setItem('hosp_doc_v11', JSON.stringify(doctors));
+        localStorage.setItem('hosp_leave_v11', JSON.stringify(leaves));
     }
-    
+```
+
+// ==================== HELPER: คำนวณจำนวนที่มาจริง ====================
+function calculateActualDoctors(dutyId, dayKey) {
+return doctors.filter(doc => {
+return doc.assignments && doc.assignments.some(a =>
+a.dutyId === dutyId && a.workDays && a.workDays.includes(dayKey)
+);
+}).length;
+}
+
+```
     function renderAll() {
         renderDepartments();
         renderDoctors();
