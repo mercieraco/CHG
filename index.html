@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบจัดการแพทย์โรงพยาบาล v13</title>
+    <title>ระบบจัดการแพทย์โรงพยาบาล v14</title>
     <style>
         * {
             margin: 0;
@@ -559,7 +559,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>🏥 ระบบจัดการแพทย์โรงพยาบาล v13</h1>
+        <h1>🏥 ระบบจัดการแพทย์โรงพยาบาล v14</h1>
         <p class="subtitle">Hospital Doctor Management System</p>
 
 ```
@@ -776,9 +776,9 @@
     
     // โหลดข้อมูล
     function loadData() {
-        const savedDepartments = localStorage.getItem('hospital_departments');
-        const savedDoctors = localStorage.getItem('hospital_doctors');
-        const savedLeaves = localStorage.getItem('hospital_leaves');
+        const savedDepartments = localStorage.getItem('hospital_departments_v14');
+        const savedDoctors = localStorage.getItem('hospital_doctors_v14');
+        const savedLeaves = localStorage.getItem('hospital_leaves_v14');
         
         if (savedDepartments) departments = JSON.parse(savedDepartments);
         if (savedDoctors) doctors = JSON.parse(savedDoctors);
@@ -805,16 +805,16 @@
         
         if (needsSave) {
             saveData();
-            showAlert('อัพเกรดข้อมูลเป็น v13 สำเร็จ! กรุณาไปที่ "จัดการแพทย์" เพื่อเพิ่มภาระงานให้แพทย์', 'info');
+            showAlert('อัพเกรดข้อมูลเป็น v14 สำเร็จ! กรุณาไปที่ "จัดการแพทย์" เพื่อเพิ่มภาระงานให้แพทย์', 'info');
         }
         
         renderAll();
     }
     
     function saveData() {
-        localStorage.setItem('hospital_departments', JSON.stringify(departments));
-        localStorage.setItem('hospital_doctors', JSON.stringify(doctors));
-        localStorage.setItem('hospital_leaves', JSON.stringify(leaves));
+        localStorage.setItem('hospital_departments_v14', JSON.stringify(departments));
+        localStorage.setItem('hospital_doctors_v14', JSON.stringify(doctors));
+        localStorage.setItem('hospital_leaves_v14', JSON.stringify(leaves));
     }
     
     function renderAll() {
@@ -1904,9 +1904,8 @@
                                 <div style="margin-top: 10px; font-size: 14px;">
                                     <div style="font-weight: 600; margin-bottom: 5px;">ภาระงาน:</div>
                                     ${dept.duties.map(duty => {
-                                        const totalWeek = Object.values(duty.weeklyTotal).reduce((a, b) => a + b, 0);
-                                        const minWeek = Object.values(duty.weeklyMin).reduce((a, b) => a + b, 0);
-                                        return `<div style="padding: 5px 0;">• ${duty.name} (ที่มารวม ${totalWeek} เที่ยว/สัปดาห์, ต้องการขั้นต่ำ ${minWeek} เที่ยว/สัปดาห์)</div>`;
+                                        const minWeek = duty.weeklyMin ? Object.values(duty.weeklyMin).reduce((a, b) => a + b, 0) : 0;
+                                        return `<div style="padding: 5px 0;">• ${duty.name} (ต้องการขั้นต่ำ ${minWeek} เที่ยว/สัปดาห์)</div>`;
                                     }).join('')}
                                 </div>
                             ` : '<div style="margin-top: 10px; font-size: 14px; color: #999;">ยังไม่มีภาระงาน</div>'}
