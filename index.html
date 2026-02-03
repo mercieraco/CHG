@@ -963,6 +963,7 @@
         if (!duty) return;
         
         if (type === 'min') {
+            if (!duty.weeklyMin) duty.weeklyMin = {};
             duty.weeklyMin[day] = parseInt(value) || 0;
         }
         saveData();
@@ -1012,25 +1013,29 @@
                                     บนสุด = จำนวนที่มา | ล่างสุด = ขั้นต่ำ
                                 </div>
                                 <div class="weekly-schedule">
-                                    ${Object.keys(dayNames).map(day => `
+                                    ${Object.keys(dayNames).map(day => {
+                                        const min = duty.weeklyMin ? (duty.weeklyMin[day] || 0) : 0;
+                                        const actual = calculateActualDoctors(duty.id, day);
+                                        return `
                                         <div class="day-input">
                                             <label>${dayNames[day]}</label>
                                             <div style="padding: 8px; background: #f0f4f8; border-radius: 4px; margin-bottom: 4px;">
                                                 <div style="font-size: 11px; color: #666;">จริง:</div>
-                                                <div style="font-weight: 700; color: ${calculateActualDoctors(duty.id, day) >= (duty.weeklyMin[day] || 0) ? '#48bb78' : '#f56565'};">
-                                                    ${calculateActualDoctors(duty.id, day)}
+                                                <div style="font-weight: 700; color: ${actual >= min ? '#48bb78' : '#f56565'};">
+                                                    ${actual}
                                                 </div>
                                             </div>
                                             <input 
                                                 type="number" 
-                                                value="${duty.weeklyMin[day] || 0}" 
+                                                value="${min}" 
                                                 min="0"
                                                 onchange="updateDutyValue(${dept.id}, ${duty.id}, '${day}', 'min', this.value)"
                                                 title="ขั้นต่ำ"
                                                 placeholder="ขั้นต่ำ"
                                             >
                                         </div>
-                                    `).join('')}
+                                        `;
+                                    }).join('')}
                                 </div>
                             </div>
                         `).join('')}
@@ -1198,7 +1203,7 @@
         
         saveData();
         showAlert('เพิ่มภาระงานสำเร็จ');
-        openAssignmentModal(currentDoctorId); // refresh
+        closeAssignmentModal(); // ปิด modal
         renderAll(); // อัพเดตตัวเลข "จริง"
     }
     
