@@ -818,14 +818,37 @@
     }
     
     function renderAll() {
-        renderDepartments();
-        renderDoctors();
-        renderOverview();
-        updateDoctorDepartmentSelect();
-        updateFilterDepartmentSelect();
-        updateLeaveDoctorSelect();
-        renderCalendar();
-        renderLeaveList();
+        try {
+            renderDepartments();
+        } catch(e) { console.error('renderDepartments error:', e); }
+        
+        try {
+            renderDoctors();
+        } catch(e) { console.error('renderDoctors error:', e); }
+        
+        try {
+            renderOverview();
+        } catch(e) { console.error('renderOverview error:', e); }
+        
+        try {
+            updateDoctorDepartmentSelect();
+        } catch(e) { console.error('updateDoctorDepartmentSelect error:', e); }
+        
+        try {
+            updateFilterDepartmentSelect();
+        } catch(e) { console.error('updateFilterDepartmentSelect error:', e); }
+        
+        try {
+            updateLeaveDoctorSelect();
+        } catch(e) { console.error('updateLeaveDoctorSelect error:', e); }
+        
+        try {
+            renderCalendar();
+        } catch(e) { console.error('renderCalendar error:', e); }
+        
+        try {
+            renderLeaveList();
+        } catch(e) { console.error('renderLeaveList error:', e); }
     }
     
     function showAlert(message, type = 'success') {
@@ -1717,6 +1740,14 @@
         const totalDepartments = departments.length;
         const totalDoctors = doctors.length;
         const totalLeaves = leaves.length;
+        
+        console.log('DEBUG renderOverview:', {
+            totalDepartments,
+            totalDoctors,
+            totalLeaves,
+            doctorsArray: doctors,
+            leavesArray: leaves
+        });
         
         // วิเคราะห์ภาระงาน แบบใหม่ที่คำนวณจากจำนวนที่มา - คนลา
         // จัดกลุ่มตามวัน (date+duty) เพื่อไม่ให้ duplicate
