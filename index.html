@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบจัดการแพทย์โรงพยาบาล v23</title>
+    <title>ระบบจัดการแพทย์โรงพยาบาล v25</title>
     <style>
         * {
             margin: 0;
@@ -432,15 +432,16 @@
     }
     
     .calendar-day.selected-start, .calendar-day.selected-end {
-        background: #667eea;
+        background: #90cdf4;
         color: white;
-        border-color: #667eea;
+        border-color: #90cdf4;
         font-weight: bold;
     }
     
     .calendar-day.in-range {
-        background: #e6f0ff;
+        background: #90cdf4;
         border-color: #90cdf4;
+        color: white;
     }
     
     .calendar-day.other-month {
@@ -567,7 +568,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>🏥 ระบบจัดการแพทย์โรงพยาบาล v23</h1>
+        <h1>🏥 ระบบจัดการแพทย์โรงพยาบาล v25</h1>
         <p class="subtitle">Hospital Doctor Management System</p>
 
 ```
@@ -609,7 +610,22 @@
                     
                     <div class="form-group">
                         <label>เหตุผลการลา</label>
-                        <textarea id="leaveReason" rows="3" placeholder="เช่น ลาป่วย, ลาพักผ่อน"></textarea>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="radio" name="leaveReasonType" value="ลาป่วย" onchange="updateLeaveReasonInput()" style="width: auto; margin: 0;">
+                                <span>ลาป่วย</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="radio" name="leaveReasonType" value="ลาพักผ่อน" onchange="updateLeaveReasonInput()" style="width: auto; margin: 0;">
+                                <span>ลาพักผ่อน</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="radio" name="leaveReasonType" value="อื่นๆ" onchange="updateLeaveReasonInput()" style="width: auto; margin: 0;">
+                                <span>อื่นๆ</span>
+                            </label>
+                            <input type="text" id="leaveReasonOther" placeholder="ระบุเหตุผลอื่นๆ" style="display: none; margin-left: 28px;">
+                        </div>
+                        <input type="hidden" id="leaveReason">
                     </div>
                     
                     <div id="affectedDutiesSection" style="display: none;">
@@ -784,9 +800,9 @@
     
     // โหลดข้อมูล
     function loadData() {
-        const savedDepartments = localStorage.getItem('hospital_departments_v23');
-        const savedDoctors = localStorage.getItem('hospital_doctors_v23');
-        const savedLeaves = localStorage.getItem('hospital_leaves_v23');
+        const savedDepartments = localStorage.getItem('hospital_departments_v25');
+        const savedDoctors = localStorage.getItem('hospital_doctors_v25');
+        const savedLeaves = localStorage.getItem('hospital_leaves_v25');
         
         if (savedDepartments) departments = JSON.parse(savedDepartments);
         if (savedDoctors) doctors = JSON.parse(savedDoctors);
@@ -813,16 +829,16 @@
         
         if (needsSave) {
             saveData();
-            showAlert('อัพเกรดข้อมูลเป็น v23 สำเร็จ! กรุณาไปที่ "จัดการแพทย์" เพื่อเพิ่มภาระงานให้แพทย์', 'info');
+            showAlert('อัพเกรดข้อมูลเป็น v25 สำเร็จ! กรุณาไปที่ "จัดการแพทย์" เพื่อเพิ่มภาระงานให้แพทย์', 'info');
         }
         
         renderAll();
     }
     
     function saveData() {
-        localStorage.setItem('hospital_departments_v23', JSON.stringify(departments));
-        localStorage.setItem('hospital_doctors_v23', JSON.stringify(doctors));
-        localStorage.setItem('hospital_leaves_v23', JSON.stringify(leaves));
+        localStorage.setItem('hospital_departments_v25', JSON.stringify(departments));
+        localStorage.setItem('hospital_doctors_v25', JSON.stringify(doctors));
+        localStorage.setItem('hospital_leaves_v25', JSON.stringify(leaves));
     }
     
     function renderAll() {
@@ -1311,6 +1327,19 @@
         selectedEndDate = null;
         document.getElementById('leaveDoctorId').value = '';
         document.getElementById('leaveReason').value = '';
+        
+        // Reset radio buttons
+        document.querySelectorAll('input[name="leaveReasonType"]').forEach(radio => {
+            radio.checked = false;
+        });
+        
+        // Hide and clear other input
+        const otherInput = document.getElementById('leaveReasonOther');
+        if (otherInput) {
+            otherInput.style.display = 'none';
+            otherInput.value = '';
+        }
+        
         document.getElementById('affectedDutiesSection').style.display = 'none';
         document.getElementById('affectedDutiesList').innerHTML = ''; // clear content
         document.getElementById('dateSelectionInfo').style.display = 'none';
@@ -1442,6 +1471,33 @@
             currentCalendarYear--;
         }
         renderCalendar();
+    }
+    
+    function updateLeaveReasonInput() {
+        const selectedRadio = document.querySelector('input[name="leaveReasonType"]:checked');
+        const otherInput = document.getElementById('leaveReasonOther');
+        const hiddenInput = document.getElementById('leaveReason');
+        
+        if (!selectedRadio) {
+            otherInput.style.display = 'none';
+            hiddenInput.value = '';
+            return;
+        }
+        
+        if (selectedRadio.value === 'อื่นๆ') {
+            otherInput.style.display = 'block';
+            otherInput.focus();
+            hiddenInput.value = otherInput.value || 'อื่นๆ';
+            
+            // Update hidden input เมื่อพิมพ์
+            otherInput.oninput = function() {
+                hiddenInput.value = this.value || 'อื่นๆ';
+            };
+        } else {
+            otherInput.style.display = 'none';
+            otherInput.value = '';
+            hiddenInput.value = selectedRadio.value;
+        }
     }
     
     function bindLeaveDoctorEvent() {
