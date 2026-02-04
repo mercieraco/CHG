@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบจัดการแพทย์โรงพยาบาล v19</title>
+    <title>ระบบจัดการแพทย์โรงพยาบาล v20</title>
     <style>
         * {
             margin: 0;
@@ -557,7 +557,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>🏥 ระบบจัดการแพทย์โรงพยาบาล v19</h1>
+        <h1>🏥 ระบบจัดการแพทย์โรงพยาบาล v20</h1>
         <p class="subtitle">Hospital Doctor Management System</p>
 
 ```
@@ -774,9 +774,9 @@
     
     // โหลดข้อมูล
     function loadData() {
-        const savedDepartments = localStorage.getItem('hospital_departments_v19');
-        const savedDoctors = localStorage.getItem('hospital_doctors_v19');
-        const savedLeaves = localStorage.getItem('hospital_leaves_v19');
+        const savedDepartments = localStorage.getItem('hospital_departments_v20');
+        const savedDoctors = localStorage.getItem('hospital_doctors_v20');
+        const savedLeaves = localStorage.getItem('hospital_leaves_v20');
         
         if (savedDepartments) departments = JSON.parse(savedDepartments);
         if (savedDoctors) doctors = JSON.parse(savedDoctors);
@@ -803,16 +803,16 @@
         
         if (needsSave) {
             saveData();
-            showAlert('อัพเกรดข้อมูลเป็น v19 สำเร็จ! กรุณาไปที่ "จัดการแพทย์" เพื่อเพิ่มภาระงานให้แพทย์', 'info');
+            showAlert('อัพเกรดข้อมูลเป็น v20 สำเร็จ! กรุณาไปที่ "จัดการแพทย์" เพื่อเพิ่มภาระงานให้แพทย์', 'info');
         }
         
         renderAll();
     }
     
     function saveData() {
-        localStorage.setItem('hospital_departments_v19', JSON.stringify(departments));
-        localStorage.setItem('hospital_doctors_v19', JSON.stringify(doctors));
-        localStorage.setItem('hospital_leaves_v19', JSON.stringify(leaves));
+        localStorage.setItem('hospital_departments_v20', JSON.stringify(departments));
+        localStorage.setItem('hospital_doctors_v20', JSON.stringify(doctors));
+        localStorage.setItem('hospital_leaves_v20', JSON.stringify(leaves));
     }
     
     function renderAll() {
@@ -1356,7 +1356,10 @@
         const lastDay = new Date(currentCalendarYear, currentCalendarMonth + 1, 0);
         const prevLastDay = new Date(currentCalendarYear, currentCalendarMonth, 0);
         
-        const firstDayOfWeek = firstDay.getDay();
+        // ปรับให้ 0=จันทร์, 1=อังคาร, ..., 6=อาทิตย์
+        let firstDayOfWeek = firstDay.getDay() - 1;
+        if (firstDayOfWeek === -1) firstDayOfWeek = 6; // ถ้าอาทิตย์ให้เป็น 6
+        
         const daysInMonth = lastDay.getDate();
         const daysInPrevMonth = prevLastDay.getDate();
         
@@ -1370,13 +1373,13 @@
                 <button class="btn-small" onclick="changeMonth(1)">▶</button>
             </div>
             <div class="calendar-grid">
-                <div class="calendar-day-header">อา</div>
                 <div class="calendar-day-header">จ</div>
                 <div class="calendar-day-header">อ</div>
                 <div class="calendar-day-header">พ</div>
                 <div class="calendar-day-header">พฤ</div>
                 <div class="calendar-day-header">ศ</div>
                 <div class="calendar-day-header">ส</div>
+                <div class="calendar-day-header">อา</div>
         `;
         
         // วันว่างก่อนวันที่ 1
