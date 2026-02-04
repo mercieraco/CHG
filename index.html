@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบจัดการแพทย์โรงพยาบาล v17</title>
+    <title>ระบบจัดการแพทย์โรงพยาบาล v18</title>
     <style>
         * {
             margin: 0;
@@ -173,7 +173,7 @@
         background: white;
         border: 2px solid #e0e0e0;
         border-radius: 8px;
-        padding: 12px;
+        padding: 15px;
         margin-bottom: 15px;
         transition: all 0.3s;
     }
@@ -266,13 +266,13 @@
     
     /* Nested List */
     .nested-list {
-        margin-left: 10px;
+        margin-left: 20px;
         margin-top: 10px;
     }
     
     .duty-item {
         background: #f0f4f8;
-        padding: 8px;
+        padding: 10px;
         border-radius: 6px;
         margin-bottom: 8px;
         border-left: 3px solid #667eea;
@@ -293,37 +293,33 @@
     /* Weekly Schedule */
     .weekly-schedule {
         display: grid;
-        grid-template-columns: repeat(7, minmax(0, 1fr));
-        gap: 3px;
-        margin-top: 8px;
-        max-width: 100%;
-        overflow-x: auto;
+        grid-template-columns: repeat(7, auto);
+        gap: 4px;
+        margin-top: 10px;
+        justify-content: start;
     }
     
     .day-input {
         text-align: center;
-        min-width: 0;
     }
     
     .day-input label {
-        font-size: 10px;
-        margin-bottom: 2px;
+        font-size: 11px;
+        margin-bottom: 4px;
         font-weight: 600;
         display: block;
     }
     
     .day-input input {
-        padding: 3px 1px;
-        font-size: 12px;
+        padding: 4px 2px;
+        font-size: 13px;
         text-align: center;
-        width: 100%;
+        width: 40px;
         box-sizing: border-box;
-        border: 1px solid #ccc;
-        border-radius: 3px;
     }
     
     .day-input .label-text {
-        font-size: 9px;
+        font-size: 10px;
         color: #666;
         margin-top: 2px;
         display: block;
@@ -566,7 +562,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>🏥 ระบบจัดการแพทย์โรงพยาบาล v17</h1>
+        <h1>🏥 ระบบจัดการแพทย์โรงพยาบาล v18</h1>
         <p class="subtitle">Hospital Doctor Management System</p>
 
 ```
@@ -783,9 +779,9 @@
     
     // โหลดข้อมูล
     function loadData() {
-        const savedDepartments = localStorage.getItem('hospital_departments_v17');
-        const savedDoctors = localStorage.getItem('hospital_doctors_v17');
-        const savedLeaves = localStorage.getItem('hospital_leaves_v17');
+        const savedDepartments = localStorage.getItem('hospital_departments_v18');
+        const savedDoctors = localStorage.getItem('hospital_doctors_v18');
+        const savedLeaves = localStorage.getItem('hospital_leaves_v18');
         
         if (savedDepartments) departments = JSON.parse(savedDepartments);
         if (savedDoctors) doctors = JSON.parse(savedDoctors);
@@ -812,16 +808,16 @@
         
         if (needsSave) {
             saveData();
-            showAlert('อัพเกรดข้อมูลเป็น v17 สำเร็จ! กรุณาไปที่ "จัดการแพทย์" เพื่อเพิ่มภาระงานให้แพทย์', 'info');
+            showAlert('อัพเกรดข้อมูลเป็น v18 สำเร็จ! กรุณาไปที่ "จัดการแพทย์" เพื่อเพิ่มภาระงานให้แพทย์', 'info');
         }
         
         renderAll();
     }
     
     function saveData() {
-        localStorage.setItem('hospital_departments_v17', JSON.stringify(departments));
-        localStorage.setItem('hospital_doctors_v17', JSON.stringify(doctors));
-        localStorage.setItem('hospital_leaves_v17', JSON.stringify(leaves));
+        localStorage.setItem('hospital_departments_v18', JSON.stringify(departments));
+        localStorage.setItem('hospital_doctors_v18', JSON.stringify(doctors));
+        localStorage.setItem('hospital_leaves_v18', JSON.stringify(leaves));
     }
     
     function renderAll() {
@@ -1047,11 +1043,11 @@
                                         const min = duty.weeklyMin ? (duty.weeklyMin[day] || 0) : 0;
                                         const actual = calculateActualDoctors(duty.id, day);
                                         return `
-                                        <div class="day-input">
+                                        <div class="day-input" style="width: 40px;">
                                             <label>${dayNames[day]}</label>
-                                            <div style="padding: 2px; background: #f0f4f8; border-radius: 3px; margin-bottom: 2px;">
-                                                <div style="font-size: 8px; color: #666; line-height: 1;">จริง</div>
-                                                <div style="font-weight: 700; font-size: 13px; line-height: 1.1; color: ${actual >= min ? '#48bb78' : '#f56565'};">
+                                            <div style="padding: 4px 2px; background: #f0f4f8; border-radius: 3px; margin-bottom: 2px;">
+                                                <div style="font-size: 9px; color: #666; line-height: 1;">จริง</div>
+                                                <div style="font-weight: 700; font-size: 14px; line-height: 1.1; color: ${actual >= min ? '#48bb78' : '#f56565'};">
                                                     ${actual}
                                                 </div>
                                             </div>
