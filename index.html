@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบจัดการแพทย์โรงพยาบาล v20</title>
+    <title>ระบบจัดการแพทย์โรงพยาบาล v23</title>
     <style>
         * {
             margin: 0;
@@ -457,6 +457,16 @@
         background: #fbd38d;
     }
     
+    /* วันเสาร์ - column 6 (ข้าม header 7 แล้ว +6) */
+    .calendar-grid > .calendar-day:nth-child(7n+13):not(.other-month) {
+        border: 2px solid #f5c5c5;
+    }
+    
+    /* วันอาทิตย์ - column 7 (ข้าม header 7 แล้ว +7) */
+    .calendar-grid > .calendar-day:nth-child(7n+14):not(.other-month) {
+        border: 2px solid #f5c5c5;
+    }
+    
     /* Modal */
     .modal {
         display: none;
@@ -557,7 +567,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>🏥 ระบบจัดการแพทย์โรงพยาบาล v20</h1>
+        <h1>🏥 ระบบจัดการแพทย์โรงพยาบาล v23</h1>
         <p class="subtitle">Hospital Doctor Management System</p>
 
 ```
@@ -774,9 +784,9 @@
     
     // โหลดข้อมูล
     function loadData() {
-        const savedDepartments = localStorage.getItem('hospital_departments_v20');
-        const savedDoctors = localStorage.getItem('hospital_doctors_v20');
-        const savedLeaves = localStorage.getItem('hospital_leaves_v20');
+        const savedDepartments = localStorage.getItem('hospital_departments_v23');
+        const savedDoctors = localStorage.getItem('hospital_doctors_v23');
+        const savedLeaves = localStorage.getItem('hospital_leaves_v23');
         
         if (savedDepartments) departments = JSON.parse(savedDepartments);
         if (savedDoctors) doctors = JSON.parse(savedDoctors);
@@ -803,16 +813,16 @@
         
         if (needsSave) {
             saveData();
-            showAlert('อัพเกรดข้อมูลเป็น v20 สำเร็จ! กรุณาไปที่ "จัดการแพทย์" เพื่อเพิ่มภาระงานให้แพทย์', 'info');
+            showAlert('อัพเกรดข้อมูลเป็น v23 สำเร็จ! กรุณาไปที่ "จัดการแพทย์" เพื่อเพิ่มภาระงานให้แพทย์', 'info');
         }
         
         renderAll();
     }
     
     function saveData() {
-        localStorage.setItem('hospital_departments_v20', JSON.stringify(departments));
-        localStorage.setItem('hospital_doctors_v20', JSON.stringify(doctors));
-        localStorage.setItem('hospital_leaves_v20', JSON.stringify(leaves));
+        localStorage.setItem('hospital_departments_v23', JSON.stringify(departments));
+        localStorage.setItem('hospital_doctors_v23', JSON.stringify(doctors));
+        localStorage.setItem('hospital_leaves_v23', JSON.stringify(leaves));
     }
     
     function renderAll() {
