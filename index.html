@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบจัดการแพทย์โรงพยาบาล v25</title>
+    <title>ระบบจัดการแพทย์โรงพยาบาล v26</title>
     <style>
         * {
             margin: 0;
@@ -568,7 +568,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>🏥 ระบบจัดการแพทย์โรงพยาบาล v25</h1>
+        <h1>🏥 ระบบจัดการแพทย์โรงพยาบาล v26</h1>
         <p class="subtitle">Hospital Doctor Management System</p>
 
 ```
@@ -719,7 +719,22 @@
         
         <div class="form-group">
             <label>ชื่อภาระงาน</label>
-            <input type="text" id="modalDutyName" placeholder="เช่น ออกตรวจผู้ป่วยนอก, รับ Consult">
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="radio" name="dutyNameType" value="OPD" onchange="updateDutyNameInput()" style="width: auto; margin: 0;">
+                    <span>OPD</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="radio" name="dutyNameType" value="Consult" onchange="updateDutyNameInput()" style="width: auto; margin: 0;">
+                    <span>Consult</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="radio" name="dutyNameType" value="อื่นๆ" onchange="updateDutyNameInput()" style="width: auto; margin: 0;">
+                    <span>อื่นๆ</span>
+                </label>
+                <input type="text" id="dutyNameOther" placeholder="ระบุชื่อภาระงานอื่นๆ" style="display: none; margin-left: 28px;">
+            </div>
+            <input type="hidden" id="modalDutyName">
         </div>
         
         <div class="form-group">
@@ -800,9 +815,9 @@
     
     // โหลดข้อมูล
     function loadData() {
-        const savedDepartments = localStorage.getItem('hospital_departments_v25');
-        const savedDoctors = localStorage.getItem('hospital_doctors_v25');
-        const savedLeaves = localStorage.getItem('hospital_leaves_v25');
+        const savedDepartments = localStorage.getItem('hospital_departments_v26');
+        const savedDoctors = localStorage.getItem('hospital_doctors_v26');
+        const savedLeaves = localStorage.getItem('hospital_leaves_v26');
         
         if (savedDepartments) departments = JSON.parse(savedDepartments);
         if (savedDoctors) doctors = JSON.parse(savedDoctors);
@@ -829,16 +844,16 @@
         
         if (needsSave) {
             saveData();
-            showAlert('อัพเกรดข้อมูลเป็น v25 สำเร็จ! กรุณาไปที่ "จัดการแพทย์" เพื่อเพิ่มภาระงานให้แพทย์', 'info');
+            showAlert('อัพเกรดข้อมูลเป็น v26 สำเร็จ! กรุณาไปที่ "จัดการแพทย์" เพื่อเพิ่มภาระงานให้แพทย์', 'info');
         }
         
         renderAll();
     }
     
     function saveData() {
-        localStorage.setItem('hospital_departments_v25', JSON.stringify(departments));
-        localStorage.setItem('hospital_doctors_v25', JSON.stringify(doctors));
-        localStorage.setItem('hospital_leaves_v25', JSON.stringify(leaves));
+        localStorage.setItem('hospital_departments_v26', JSON.stringify(departments));
+        localStorage.setItem('hospital_doctors_v26', JSON.stringify(doctors));
+        localStorage.setItem('hospital_leaves_v26', JSON.stringify(leaves));
     }
     
     function renderAll() {
@@ -948,10 +963,49 @@
         showAlert('ลบแผนกสำเร็จ');
     }
     
+    function updateDutyNameInput() {
+        const selectedRadio = document.querySelector('input[name="dutyNameType"]:checked');
+        const otherInput = document.getElementById('dutyNameOther');
+        const hiddenInput = document.getElementById('modalDutyName');
+        
+        if (!selectedRadio) {
+            otherInput.style.display = 'none';
+            hiddenInput.value = '';
+            return;
+        }
+        
+        if (selectedRadio.value === 'อื่นๆ') {
+            otherInput.style.display = 'block';
+            otherInput.focus();
+            hiddenInput.value = otherInput.value || 'อื่นๆ';
+            
+            // Update hidden input เมื่อพิมพ์
+            otherInput.oninput = function() {
+                hiddenInput.value = this.value || 'อื่นๆ';
+            };
+        } else {
+            otherInput.style.display = 'none';
+            otherInput.value = '';
+            hiddenInput.value = selectedRadio.value;
+        }
+    }
+    
     function openDutyModal(departmentId) {
         currentDepartmentId = departmentId;
         document.getElementById('dutyModal').classList.add('active');
         document.getElementById('modalDutyName').value = '';
+        
+        // Reset radio buttons
+        document.querySelectorAll('input[name="dutyNameType"]').forEach(radio => {
+            radio.checked = false;
+        });
+        
+        // Hide and clear other input
+        const otherInput = document.getElementById('dutyNameOther');
+        if (otherInput) {
+            otherInput.style.display = 'none';
+            otherInput.value = '';
+        }
         
         const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
         days.forEach(day => {
