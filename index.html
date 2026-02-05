@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบจัดการแพทย์โรงพยาบาล v31</title>
+    <title>ระบบจัดการแพทย์โรงพยาบาล v32</title>
     <style>
         * {
             margin: 0;
@@ -568,7 +568,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>🏥 ระบบจัดการแพทย์โรงพยาบาล v31</h1>
+        <h1>🏥 ระบบจัดการแพทย์โรงพยาบาล v32</h1>
         <p class="subtitle">Hospital Doctor Management System</p>
 
 ```
@@ -626,6 +626,20 @@
                             <input type="text" id="leaveReasonOther" placeholder="ระบุเหตุผลอื่นๆ" style="display: none; margin-left: 28px;">
                         </div>
                         <input type="hidden" id="leaveReason">
+                    </div>
+                    
+                    <div id="leaveDurationSection" class="form-group" style="display: none;">
+                        <label>ระยะเวลาการลา</label>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="radio" name="leaveDurationType" value="long" onchange="updateLeaveDurationType()" style="width: auto; margin: 0;" checked>
+                                <span>ลา > 24 ชั่วโมง</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="radio" name="leaveDurationType" value="short" onchange="updateLeaveDurationType()" style="width: auto; margin: 0;">
+                                <span>ลา ≤ 24 ชั่วโมง</span>
+                            </label>
+                        </div>
                     </div>
                     
                     <div id="affectedDutiesSection" style="display: none;">
@@ -771,9 +785,9 @@
     
     // โหลดข้อมูล
     function loadData() {
-        const savedDepartments = localStorage.getItem('hospital_departments_v31');
-        const savedDoctors = localStorage.getItem('hospital_doctors_v31');
-        const savedLeaves = localStorage.getItem('hospital_leaves_v31');
+        const savedDepartments = localStorage.getItem('hospital_departments_v32');
+        const savedDoctors = localStorage.getItem('hospital_doctors_v32');
+        const savedLeaves = localStorage.getItem('hospital_leaves_v32');
         
         if (savedDepartments) departments = JSON.parse(savedDepartments);
         if (savedDoctors) doctors = JSON.parse(savedDoctors);
@@ -800,16 +814,16 @@
         
         if (needsSave) {
             saveData();
-            showAlert('อัพเกรดข้อมูลเป็น v31 สำเร็จ! กรุณาไปที่ "จัดการแพทย์" เพื่อเพิ่มภาระงานให้แพทย์', 'info');
+            showAlert('อัพเกรดข้อมูลเป็น v32 สำเร็จ! กรุณาไปที่ "จัดการแพทย์" เพื่อเพิ่มภาระงานให้แพทย์', 'info');
         }
         
         renderAll();
     }
     
     function saveData() {
-        localStorage.setItem('hospital_departments_v31', JSON.stringify(departments));
-        localStorage.setItem('hospital_doctors_v31', JSON.stringify(doctors));
-        localStorage.setItem('hospital_leaves_v31', JSON.stringify(leaves));
+        localStorage.setItem('hospital_departments_v32', JSON.stringify(departments));
+        localStorage.setItem('hospital_doctors_v32', JSON.stringify(doctors));
+        localStorage.setItem('hospital_leaves_v32', JSON.stringify(leaves));
     }
     
     function renderAll() {
@@ -1320,10 +1334,18 @@
         document.getElementById('leaveDoctorId').value = '';
         document.getElementById('leaveReason').value = '';
         
-        // Reset radio buttons
+        // Reset radio buttons (เหตุผล)
         document.querySelectorAll('input[name="leaveReasonType"]').forEach(radio => {
             radio.checked = false;
         });
+        
+        // Reset radio buttons (ระยะเวลา)
+        document.querySelectorAll('input[name="leaveDurationType"]').forEach(radio => {
+            radio.checked = false;
+        });
+        // Set default = long
+        const longLeave = document.querySelector('input[name="leaveDurationType"][value="long"]');
+        if (longLeave) longLeave.checked = true;
         
         // Hide and clear other input
         const otherInput = document.getElementById('leaveReasonOther');
@@ -1332,8 +1354,9 @@
             otherInput.value = '';
         }
         
-        // ซ่อนเหตุผลการลา และ ปฏิทิน
+        // ซ่อนทุก section
         document.getElementById('leaveReasonSection').style.display = 'none';
+        document.getElementById('leaveDurationSection').style.display = 'none';
         document.getElementById('calendarSection').style.display = 'none';
         
         document.getElementById('affectedDutiesSection').style.display = 'none';
@@ -1343,6 +1366,20 @@
     }
     
     function onCalendarDayClick(dateStr) {
+        const durationType = document.querySelector('input[name="leaveDurationType"]:checked');
+        const isShortLeave = durationType && durationType.value === 'short';
+        
+        if (isShortLeave) {
+            // ลา ≤ 24 ชม: เลือกได้แค่วันเดียว
+            selectedStartDate = dateStr;
+            selectedEndDate = dateStr; // วันเดียวกัน
+            document.getElementById('dateSelectionInfo').style.display = 'block';
+            updateSelectedDatesDisplay();
+            renderCalendar();
+            return;
+        }
+        
+        // ลา > 24 ชม: เลือกได้หลายวัน (เดิม)
         if (!selectedStartDate) {
             // เลือกวันเริ่มต้น
             selectedStartDate = dateStr;
@@ -1374,7 +1411,15 @@
     
     function updateSelectedDatesDisplay() {
         const display = document.getElementById('selectedDates');
-        if (selectedStartDate && selectedEndDate) {
+        const durationType = document.querySelector('input[name="leaveDurationType"]:checked');
+        const isShortLeave = durationType && durationType.value === 'short';
+        
+        if (isShortLeave && selectedStartDate) {
+            // ลา ≤ 24 ชม: แสดงแค่วันเดียว
+            display.innerHTML = `✓ เลือกแล้ว: ${selectedStartDate}`;
+            display.style.color = '#22543d';
+        } else if (selectedStartDate && selectedEndDate) {
+            // ลา > 24 ชม: แสดงช่วงวัน
             display.innerHTML = `✓ เลือกแล้ว: ${selectedStartDate} ถึง ${selectedEndDate}`;
             display.style.color = '#22543d';
         } else if (selectedStartDate) {
@@ -1477,7 +1522,8 @@
         if (!selectedRadio) {
             otherInput.style.display = 'none';
             hiddenInput.value = '';
-            // ซ่อนปฏิทินถ้ายังไม่เลือกเหตุผล
+            // ซ่อน Step 3 และปฏิทิน
+            document.getElementById('leaveDurationSection').style.display = 'none';
             document.getElementById('calendarSection').style.display = 'none';
             return;
         }
@@ -1497,9 +1543,37 @@
             hiddenInput.value = selectedRadio.value;
         }
         
-        // เลือกเหตุผลแล้ว → แสดงปฏิทิน
+        // เลือกเหตุผลแล้ว → แสดง Step 3 (ระยะเวลา)
+        document.getElementById('leaveDurationSection').style.display = 'block';
+        
+        // Auto-trigger: เลือก "ลา > 24 ชม" โดยอัตโนมัติ
+        const longLeave = document.querySelector('input[name="leaveDurationType"][value="long"]');
+        if (longLeave && !document.querySelector('input[name="leaveDurationType"]:checked')) {
+            longLeave.checked = true;
+        }
+        
+        // แสดงปฏิทินทันที (เพราะมี default checked)
+        updateLeaveDurationType();
+    }
+    
+    function updateLeaveDurationType() {
+        const durationType = document.querySelector('input[name="leaveDurationType"]:checked');
+        
+        if (!durationType) {
+            document.getElementById('calendarSection').style.display = 'none';
+            return;
+        }
+        
+        // แสดงปฏิทิน
         document.getElementById('calendarSection').style.display = 'block';
-        renderCalendar(); // Render ปฏิทินใหม่
+        
+        // Reset การเลือกวัน
+        selectedStartDate = null;
+        selectedEndDate = null;
+        document.getElementById('dateSelectionInfo').style.display = 'none';
+        
+        // Render ปฏิทิน
+        renderCalendar();
     }
     
     function bindLeaveDoctorEvent() {
