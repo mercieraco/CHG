@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบจัดการแพทย์โรงพยาบาล v30</title>
+    <title>ระบบจัดการแพทย์โรงพยาบาล v28</title>
     <style>
         * {
             margin: 0;
@@ -426,7 +426,7 @@
         position: relative;
     }
     
-    .calendar-day:hover:not(.other-month):not(.in-range):not(.selected-start):not(.selected-end) {
+    .calendar-day:hover:not(.other-month) {
         background: #f0f4f8;
         border-color: #667eea;
     }
@@ -568,7 +568,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>🏥 ระบบจัดการแพทย์โรงพยาบาล v30</h1>
+        <h1>🏥 ระบบจัดการแพทย์โรงพยาบาล v28</h1>
         <p class="subtitle">Hospital Doctor Management System</p>
 
 ```
@@ -771,9 +771,9 @@
     
     // โหลดข้อมูล
     function loadData() {
-        const savedDepartments = localStorage.getItem('hospital_departments_v30');
-        const savedDoctors = localStorage.getItem('hospital_doctors_v30');
-        const savedLeaves = localStorage.getItem('hospital_leaves_v30');
+        const savedDepartments = localStorage.getItem('hospital_departments_v28');
+        const savedDoctors = localStorage.getItem('hospital_doctors_v28');
+        const savedLeaves = localStorage.getItem('hospital_leaves_v28');
         
         if (savedDepartments) departments = JSON.parse(savedDepartments);
         if (savedDoctors) doctors = JSON.parse(savedDoctors);
@@ -800,16 +800,16 @@
         
         if (needsSave) {
             saveData();
-            showAlert('อัพเกรดข้อมูลเป็น v30 สำเร็จ! กรุณาไปที่ "จัดการแพทย์" เพื่อเพิ่มภาระงานให้แพทย์', 'info');
+            showAlert('อัพเกรดข้อมูลเป็น v28 สำเร็จ! กรุณาไปที่ "จัดการแพทย์" เพื่อเพิ่มภาระงานให้แพทย์', 'info');
         }
         
         renderAll();
     }
     
     function saveData() {
-        localStorage.setItem('hospital_departments_v30', JSON.stringify(departments));
-        localStorage.setItem('hospital_doctors_v30', JSON.stringify(doctors));
-        localStorage.setItem('hospital_leaves_v30', JSON.stringify(leaves));
+        localStorage.setItem('hospital_departments_v28', JSON.stringify(departments));
+        localStorage.setItem('hospital_doctors_v28', JSON.stringify(doctors));
+        localStorage.setItem('hospital_leaves_v28', JSON.stringify(leaves));
     }
     
     function renderAll() {
@@ -1423,7 +1423,6 @@
         }
         renderCalendar();
     }
-    
     
     function updateLeaveReasonInput() {
         const selectedRadio = document.querySelector('input[name="leaveReasonType"]:checked');
