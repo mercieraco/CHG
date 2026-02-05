@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบจัดการแพทย์โรงพยาบาล v30</title>
+    <title>ระบบจัดการแพทย์โรงพยาบาล v31</title>
     <style>
         * {
             margin: 0;
@@ -568,7 +568,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>🏥 ระบบจัดการแพทย์โรงพยาบาล v30</h1>
+        <h1>🏥 ระบบจัดการแพทย์โรงพยาบาล v31</h1>
         <p class="subtitle">Hospital Doctor Management System</p>
 
 ```
@@ -737,50 +737,6 @@
             <input type="hidden" id="modalDutyName">
         </div>
         
-        <div class="form-group">
-            <label>กำหนดจำนวนแพทย์แต่ละวัน</label>
-            <p style="font-size: 13px; color: #666; margin-bottom: 10px;">
-                ระบุจำนวนแพทย์ขั้นต่ำที่ต้องการในแต่ละวัน (จำนวนที่มาจริงคำนวณอัตโนมัติ)
-            </p>
-            <div class="weekly-schedule">
-                <div class="day-input">
-                    <label>จันทร์</label>
-                    <input type="number" id="mon-min" min="0" value="0" placeholder="ขั้นต่ำ">
-                    <span class="label-text">ขั้นต่ำ</span>
-                </div>
-                <div class="day-input">
-                    <label>อังคาร</label>
-                    <input type="number" id="tue-min" min="0" value="0" placeholder="ขั้นต่ำ">
-                    <span class="label-text">ขั้นต่ำ</span>
-                </div>
-                <div class="day-input">
-                    <label>พุธ</label>
-                    <input type="number" id="wed-min" min="0" value="0" placeholder="ขั้นต่ำ">
-                    <span class="label-text">ขั้นต่ำ</span>
-                </div>
-                <div class="day-input">
-                    <label>พฤหัสบดี</label>
-                    <input type="number" id="thu-min" min="0" value="0" placeholder="ขั้นต่ำ">
-                    <span class="label-text">ขั้นต่ำ</span>
-                </div>
-                <div class="day-input">
-                    <label>ศุกร์</label>
-                    <input type="number" id="fri-min" min="0" value="0" placeholder="ขั้นต่ำ">
-                    <span class="label-text">ขั้นต่ำ</span>
-                </div>
-                <div class="day-input">
-                    <label>เสาร์</label>
-                    <input type="number" id="sat-min" min="0" value="0" placeholder="ขั้นต่ำ">
-                    <span class="label-text">ขั้นต่ำ</span>
-                </div>
-                <div class="day-input">
-                    <label>อาทิตย์</label>
-                    <input type="number" id="sun-min" min="0" value="0" placeholder="ขั้นต่ำ">
-                    <span class="label-text">ขั้นต่ำ</span>
-                </div>
-            </div>
-        </div>
-        
         <div style="display: flex; gap: 10px; margin-top: 20px;">
             <button class="btn-primary" onclick="saveDuty()">บันทึก</button>
             <button class="btn-danger" onclick="closeDutyModal()">ยกเลิก</button>
@@ -815,9 +771,9 @@
     
     // โหลดข้อมูล
     function loadData() {
-        const savedDepartments = localStorage.getItem('hospital_departments_v30');
-        const savedDoctors = localStorage.getItem('hospital_doctors_v30');
-        const savedLeaves = localStorage.getItem('hospital_leaves_v30');
+        const savedDepartments = localStorage.getItem('hospital_departments_v31');
+        const savedDoctors = localStorage.getItem('hospital_doctors_v31');
+        const savedLeaves = localStorage.getItem('hospital_leaves_v31');
         
         if (savedDepartments) departments = JSON.parse(savedDepartments);
         if (savedDoctors) doctors = JSON.parse(savedDoctors);
@@ -844,16 +800,16 @@
         
         if (needsSave) {
             saveData();
-            showAlert('อัพเกรดข้อมูลเป็น v30 สำเร็จ! กรุณาไปที่ "จัดการแพทย์" เพื่อเพิ่มภาระงานให้แพทย์', 'info');
+            showAlert('อัพเกรดข้อมูลเป็น v31 สำเร็จ! กรุณาไปที่ "จัดการแพทย์" เพื่อเพิ่มภาระงานให้แพทย์', 'info');
         }
         
         renderAll();
     }
     
     function saveData() {
-        localStorage.setItem('hospital_departments_v30', JSON.stringify(departments));
-        localStorage.setItem('hospital_doctors_v30', JSON.stringify(doctors));
-        localStorage.setItem('hospital_leaves_v30', JSON.stringify(leaves));
+        localStorage.setItem('hospital_departments_v31', JSON.stringify(departments));
+        localStorage.setItem('hospital_doctors_v31', JSON.stringify(doctors));
+        localStorage.setItem('hospital_leaves_v31', JSON.stringify(leaves));
     }
     
     function renderAll() {
@@ -1006,11 +962,6 @@
             otherInput.style.display = 'none';
             otherInput.value = '';
         }
-        
-        const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
-        days.forEach(day => {
-            document.getElementById(`${day}-min`).value = '0';
-        });
     }
     
     function closeDutyModal() {
@@ -1028,11 +979,11 @@
         const dept = departments.find(d => d.id === currentDepartmentId);
         if (!dept) return;
         
+        // ขั้นต่ำทุกวัน = 0 (ไม่มีขั้นต่ำ)
         const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
         const weeklyMin = {};
-        
         days.forEach(day => {
-            weeklyMin[day] = parseInt(document.getElementById(`${day}-min`).value) || 0;
+            weeklyMin[day] = 0;
         });
         
         dept.duties.push({
@@ -1110,29 +1061,17 @@
                                         ลบ
                                     </button>
                                 </div>
-                                <div style="font-size: 12px; margin-bottom: 8px; color: #666;">
-                                    บนสุด = จำนวนที่มา | ล่างสุด = ขั้นต่ำ
-                                </div>
                                 <div class="weekly-schedule">
                                     ${Object.keys(dayNames).map(day => {
-                                        const min = duty.weeklyMin ? (duty.weeklyMin[day] || 0) : 0;
                                         const actual = calculateActualDoctors(duty.id, day);
                                         return `
                                         <div class="day-input">
                                             <label>${dayNames[day]}</label>
-                                            <div style="padding: 8px; background: #f0f4f8; border-radius: 4px; margin-bottom: 4px;">
-                                                <div style="font-weight: 700; font-size: 16px; color: ${actual >= min ? '#48bb78' : '#f56565'};">
+                                            <div style="padding: 12px; background: #e6f0ff; border-radius: 4px;">
+                                                <div style="font-weight: 700; font-size: 18px; color: #48bb78; text-align: center;">
                                                     ${actual}
                                                 </div>
                                             </div>
-                                            <input 
-                                                type="number" 
-                                                value="${min}" 
-                                                min="0"
-                                                onchange="updateDutyValue(${dept.id}, ${duty.id}, '${day}', 'min', this.value)"
-                                                title="ขั้นต่ำ"
-                                                placeholder="ขั้นต่ำ"
-                                            >
                                         </div>
                                         `;
                                     }).join('')}
