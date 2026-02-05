@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบจัดการแพทย์โรงพยาบาล v27</title>
+    <title>ระบบจัดการแพทย์โรงพยาบาล v30</title>
     <style>
         * {
             margin: 0;
@@ -426,7 +426,7 @@
         position: relative;
     }
     
-    .calendar-day:hover:not(.other-month) {
+    .calendar-day:hover:not(.other-month):not(.in-range):not(.selected-start):not(.selected-end) {
         background: #f0f4f8;
         border-color: #667eea;
     }
@@ -568,7 +568,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>🏥 ระบบจัดการแพทย์โรงพยาบาล v27</h1>
+        <h1>🏥 ระบบจัดการแพทย์โรงพยาบาล v30</h1>
         <p class="subtitle">Hospital Doctor Management System</p>
 
 ```
@@ -815,9 +815,9 @@
     
     // โหลดข้อมูล
     function loadData() {
-        const savedDepartments = localStorage.getItem('hospital_departments_v27');
-        const savedDoctors = localStorage.getItem('hospital_doctors_v27');
-        const savedLeaves = localStorage.getItem('hospital_leaves_v27');
+        const savedDepartments = localStorage.getItem('hospital_departments_v30');
+        const savedDoctors = localStorage.getItem('hospital_doctors_v30');
+        const savedLeaves = localStorage.getItem('hospital_leaves_v30');
         
         if (savedDepartments) departments = JSON.parse(savedDepartments);
         if (savedDoctors) doctors = JSON.parse(savedDoctors);
@@ -844,16 +844,16 @@
         
         if (needsSave) {
             saveData();
-            showAlert('อัพเกรดข้อมูลเป็น v27 สำเร็จ! กรุณาไปที่ "จัดการแพทย์" เพื่อเพิ่มภาระงานให้แพทย์', 'info');
+            showAlert('อัพเกรดข้อมูลเป็น v30 สำเร็จ! กรุณาไปที่ "จัดการแพทย์" เพื่อเพิ่มภาระงานให้แพทย์', 'info');
         }
         
         renderAll();
     }
     
     function saveData() {
-        localStorage.setItem('hospital_departments_v27', JSON.stringify(departments));
-        localStorage.setItem('hospital_doctors_v27', JSON.stringify(doctors));
-        localStorage.setItem('hospital_leaves_v27', JSON.stringify(leaves));
+        localStorage.setItem('hospital_departments_v30', JSON.stringify(departments));
+        localStorage.setItem('hospital_doctors_v30', JSON.stringify(doctors));
+        localStorage.setItem('hospital_leaves_v30', JSON.stringify(leaves));
     }
     
     function renderAll() {
@@ -1121,8 +1121,7 @@
                                         <div class="day-input">
                                             <label>${dayNames[day]}</label>
                                             <div style="padding: 8px; background: #f0f4f8; border-radius: 4px; margin-bottom: 4px;">
-                                                <div style="font-size: 11px; color: #666;">จริง:</div>
-                                                <div style="font-weight: 700; color: ${actual >= min ? '#48bb78' : '#f56565'};">
+                                                <div style="font-weight: 700; font-size: 16px; color: ${actual >= min ? '#48bb78' : '#f56565'};">
                                                     ${actual}
                                                 </div>
                                             </div>
