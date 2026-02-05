@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบจัดการแพทย์โรงพยาบาล v32</title>
+    <title>ระบบจัดการแพทย์โรงพยาบาล v33</title>
     <style>
         * {
             margin: 0;
@@ -568,7 +568,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>🏥 ระบบจัดการแพทย์โรงพยาบาล v32</h1>
+        <h1>🏥 ระบบจัดการแพทย์โรงพยาบาล v33</h1>
         <p class="subtitle">Hospital Doctor Management System</p>
 
 ```
@@ -785,9 +785,9 @@
     
     // โหลดข้อมูล
     function loadData() {
-        const savedDepartments = localStorage.getItem('hospital_departments_v32');
-        const savedDoctors = localStorage.getItem('hospital_doctors_v32');
-        const savedLeaves = localStorage.getItem('hospital_leaves_v32');
+        const savedDepartments = localStorage.getItem('hospital_departments_v33');
+        const savedDoctors = localStorage.getItem('hospital_doctors_v33');
+        const savedLeaves = localStorage.getItem('hospital_leaves_v33');
         
         if (savedDepartments) departments = JSON.parse(savedDepartments);
         if (savedDoctors) doctors = JSON.parse(savedDoctors);
@@ -814,16 +814,16 @@
         
         if (needsSave) {
             saveData();
-            showAlert('อัพเกรดข้อมูลเป็น v32 สำเร็จ! กรุณาไปที่ "จัดการแพทย์" เพื่อเพิ่มภาระงานให้แพทย์', 'info');
+            showAlert('อัพเกรดข้อมูลเป็น v33 สำเร็จ! กรุณาไปที่ "จัดการแพทย์" เพื่อเพิ่มภาระงานให้แพทย์', 'info');
         }
         
         renderAll();
     }
     
     function saveData() {
-        localStorage.setItem('hospital_departments_v32', JSON.stringify(departments));
-        localStorage.setItem('hospital_doctors_v32', JSON.stringify(doctors));
-        localStorage.setItem('hospital_leaves_v32', JSON.stringify(leaves));
+        localStorage.setItem('hospital_departments_v33', JSON.stringify(departments));
+        localStorage.setItem('hospital_doctors_v33', JSON.stringify(doctors));
+        localStorage.setItem('hospital_leaves_v33', JSON.stringify(leaves));
     }
     
     function renderAll() {
@@ -1418,17 +1418,130 @@
             // ลา ≤ 24 ชม: แสดงแค่วันเดียว
             display.innerHTML = `✓ เลือกแล้ว: ${selectedStartDate}`;
             display.style.color = '#22543d';
+            // Detect ภาระงานที่กระทบ
+            detectAffectedDuties();
         } else if (selectedStartDate && selectedEndDate) {
             // ลา > 24 ชม: แสดงช่วงวัน
             display.innerHTML = `✓ เลือกแล้ว: ${selectedStartDate} ถึง ${selectedEndDate}`;
             display.style.color = '#22543d';
+            // Detect ภาระงานที่กระทบ
+            detectAffectedDuties();
         } else if (selectedStartDate) {
             display.innerHTML = `เลือกวันเริ่มต้น: ${selectedStartDate}<br>👆 คลิกเลือกวันสิ้นสุด`;
             display.style.color = '#2c5282';
+            // ยังเลือกไม่เสร็จ ไม่ detect
+            document.getElementById('affectedDutiesSection').style.display = 'none';
         } else {
             display.innerHTML = '';
+            document.getElementById('affectedDutiesSection').style.display = 'none';
         }
     }
+    
+    function detectAffectedDuties() {
+        const doctorId = parseInt(document.getElementById('leaveDoctorId').value);
+        if (!doctorId || !selectedStartDate || !selectedEndDate) {
+            document.getElementById('affectedDutiesSection').style.display = 'none';
+            return;
+        }
+        
+        const doctor = doctors.find(d => d.id === doctorId);
+        if (!doctor || !doctor.assignments || doctor.assignments.length === 0) {
+            document.getElementById('affectedDutiesSection').style.display = 'none';
+            return;
+        }
+        
+        const dept = departments.find(d => d.id === doctor.departmentId);
+        if (!dept) return;
+        
+        // สร้างรายการวันที่ลา
+        const start = new Date(selectedStartDate);
+        const end = new Date(selectedEndDate);
+        const dates = [];
+        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+            dates.push(new Date(d));
+        }
+        
+        const dayKeys = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+        const dayNamesThai = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
+        
+        // หาภาระงานที่กระทบ
+        const affected = [];
+        dates.forEach(date => {
+            const dayIndex = date.getDay();
+            const dayKey = dayKeys[dayIndex];
+            const dayName = dayNamesThai[dayIndex];
+            const dateStr = date.toLocaleDateString('th-TH', { year: 'numeric', month: 'numeric', day: 'numeric' });
+            
+            doctor.assignments.forEach(assignment => {
+                if (assignment.workDays && assignment.workDays.includes(dayKey)) {
+                    const duty = dept.duties.find(d => d.id === assignment.dutyId);
+                    if (duty) {
+                        affected.push({
+                            date: dateStr,
+                            dayName: dayName,
+                            dutyName: duty.name,
+                            dutyId: duty.id
+                        });
+                    }
+                }
+            });
+        });
+        
+        if (affected.length === 0) {
+            document.getElementById('affectedDutiesSection').style.display = 'none';
+            return;
+        }
+        
+        // นับจำนวนแต่ละภาระงาน
+        const dutyCounts = {};
+        affected.forEach(item => {
+            dutyCounts[item.dutyName] = (dutyCounts[item.dutyName] || 0) + 1;
+        });
+        
+        const summary = Object.entries(dutyCounts).map(([name, count]) => `${name} ${count} วัน`).join(' | ');
+        
+        // แสดงผล
+        const container = document.getElementById('affectedDutiesList');
+        container.innerHTML = `
+            <div style="padding: 12px; background: #fff3cd; border-radius: 6px; margin-bottom: 15px;">
+                <strong>กระทบภาระงาน ${affected.length} วัน</strong><br>
+                <span style="font-size: 13px; color: #856404;">${summary}</span>
+            </div>
+            
+            ${affected.map((item, idx) => `
+                <div style="padding: 12px; background: #f0f4f8; border-radius: 6px; margin-bottom: 8px;">
+                    <div style="margin-bottom: 8px;">
+                        <strong>${idx + 1}. ${item.dayName} ${item.date} - ${item.dutyName}</strong>
+                    </div>
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" class="affected-duty-checkbox" data-index="${idx}" style="width: auto; margin: 0;">
+                        <span>มีคนมาแทน</span>
+                    </label>
+                    <div class="replacement-section-${idx}" style="display: none; margin-top: 10px; padding: 10px; background: white; border-radius: 4px;">
+                        <label style="font-size: 13px; margin-bottom: 4px; display: block;">เลือกแพทย์ที่มาแทน</label>
+                        <select class="replacement-doctor-select" data-index="${idx}" style="width: 100%; padding: 8px;">
+                            <option value="">-- เลือกแพทย์ --</option>
+                            ${doctors.filter(d => d.id !== doctorId).map(d => `<option value="${d.id}">${d.name}</option>`).join('')}
+                        </select>
+                    </div>
+                </div>
+            `).join('')}
+        `;
+        
+        // Bind checkbox events
+        document.querySelectorAll('.affected-duty-checkbox').forEach(cb => {
+            cb.addEventListener('change', function() {
+                const idx = this.dataset.index;
+                const replacementSection = document.querySelector(`.replacement-section-${idx}`);
+                if (replacementSection) {
+                    replacementSection.style.display = this.checked ? 'block' : 'none';
+                }
+            });
+        });
+        
+        document.getElementById('affectedDutiesSection').style.display = 'block';
+    }
+
     
     function renderCalendar() {
         const container = document.getElementById('calendar');
@@ -1588,6 +1701,7 @@
             if (!doctorId) {
                 // ไม่ได้เลือกแพทย์ → ซ่อนทุกอย่าง
                 document.getElementById('leaveReasonSection').style.display = 'none';
+                document.getElementById('leaveDurationSection').style.display = 'none';
                 document.getElementById('calendarSection').style.display = 'none';
                 document.getElementById('affectedDutiesSection').style.display = 'none';
                 return;
@@ -1598,61 +1712,8 @@
             
             // ซ่อนปฏิทินจนกว่าจะเลือกเหตุผล
             document.getElementById('calendarSection').style.display = 'none';
-            
-            const doctor = doctors.find(d => d.id === doctorId);
-            if (!doctor) return;
-            
-            const dept = departments.find(d => d.id === doctor.departmentId);
-            if (!dept || !dept.duties.length) {
-                document.getElementById('affectedDutiesSection').style.display = 'none';
-                return;
-            }
-            
-            document.getElementById('affectedDutiesSection').style.display = 'block';
-            const container = document.getElementById('affectedDutiesList');
-            container.innerHTML = `
-                <div style="margin-bottom: 15px;">
-                    <select id="selectedDutyId" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px;">
-                        <option value="">-- เลือกภาระงานที่กระทบ --</option>
-                        ${dept.duties.map(duty => `<option value="${duty.id}">${duty.name}</option>`).join('')}
-                    </select>
-                </div>
-                
-                <div style="margin-bottom: 15px;">
-                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; margin: 0;">
-                        <input type="checkbox" id="hasReplacementCheckbox" style="width: auto; margin: 0;">
-                        <span style="font-size: 14px;">มีคนมาแทน</span>
-                    </label>
-                </div>
-                
-                <div id="replacementSection" style="display: none; margin-top: 10px; padding: 15px; background: #f0f4f8; border-radius: 8px;">
-                    <div style="margin-bottom: 12px;">
-                        <label style="font-weight: 600; font-size: 14px; margin-bottom: 6px; display: block;">กรองตามแผนก</label>
-                        <select id="replacementDeptFilter" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px;">
-                            <option value="">ทั้งหมด</option>
-                            ${departments.map(d => `<option value="${d.id}" ${d.id === doctor.departmentId ? 'selected' : ''}>${d.name}</option>`).join('')}
-                        </select>
-                    </div>
-                    <div>
-                        <label style="font-weight: 600; font-size: 14px; margin-bottom: 6px; display: block;">เลือกแพทย์ที่มาแทน</label>
-                        <select id="replacementDoctorId" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px;">
-                            <option value="">-- เลือกแพทย์ --</option>
-                        </select>
-                    </div>
-                </div>
-            `;
-            
-            // Bind events สำหรับ checkbox และ filter
-            const checkbox = document.getElementById('hasReplacementCheckbox');
-            const replacementSection = document.getElementById('replacementSection');
-            const deptFilter = document.getElementById('replacementDeptFilter');
-            const docSelect = document.getElementById('replacementDoctorId');
-            
-            checkbox.addEventListener('change', function() {
-                replacementSection.style.display = this.checked ? 'block' : 'none';
-                if (this.checked) updateReplacementDoctorList();
-            });
-            
+            document.getElementById('affectedDutiesSection').style.display = 'none';
+        });
             deptFilter.addEventListener('change', updateReplacementDoctorList);
             
             function updateReplacementDoctorList() {
