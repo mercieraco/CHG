@@ -226,10 +226,8 @@
         }
 
         try {
-            // TODO: เชื่อมต่อกับ Cloudflare Workers API
-            // ในอนาคตจะส่งข้อมูลไปยัง backend
-            /*
-            const response = await fetch('https://your-worker.workers.dev/api/register', {
+            // เรียก Cloudflare Workers API
+            const response = await fetch('https://doc-email.9vk92zm5z2.workers.dev/api/register', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -243,12 +241,14 @@
 
             const data = await response.json();
             
-            if (data.success) {
+            if (response.ok && data.success) {
                 // ส่ง email สำเร็จ
                 successMessage.innerHTML = `
                     ✅ <strong>ลงทะเบียนสำเร็จ!</strong><br>
                     เราได้ส่งอีเมลยืนยันไปที่ <strong>${email}</strong><br>
-                    กรุณาตรวจสอบอีเมลและคลิกลิงก์เพื่อยืนยันการลงทะเบียน
+                    กรุณาตรวจสอบอีเมลและคลิกลิงก์เพื่อยืนยันการลงทะเบียน<br>
+                    <br>
+                    <small>📧 อีเมลจะมีลิงก์กลับมาหน้า Login เพื่อเริ่มใช้งานระบบ</small>
                 `;
                 successMessage.classList.add('show');
                 
@@ -257,27 +257,6 @@
             } else {
                 throw new Error(data.message || 'เกิดข้อผิดพลาด');
             }
-            */
-
-            // แสดงข้อความสำเร็จ (ชั่วคราว - สำหรับทดสอบ)
-            successMessage.innerHTML = `
-                ✅ <strong>ลงทะเบียนสำเร็จ!</strong><br>
-                เราได้ส่งอีเมลยืนยันไปที่ <strong>${email}</strong><br>
-                กรุณาตรวจสอบอีเมลและคลิกลิงก์เพื่อยืนยันการลงทะเบียน<br>
-                <br>
-                <small>📧 อีเมลจะมีลิงก์กลับมาหน้า Login เพื่อเริ่มใช้งานระบบ</small>
-            `;
-            successMessage.classList.add('show');
-            
-            // เคลียร์ฟอร์ม
-            document.getElementById('registerForm').reset();
-            
-            // แสดงข้อมูลที่กรอกใน console (สำหรับ debug)
-            console.log('ข้อมูลการลงทะเบียน:', {
-                licenseNumber: licenseNumber,
-                email: email,
-                password: '****' // ไม่แสดงรหัสผ่านจริง
-            });
 
         } catch (error) {
             errorMessage.textContent = '❌ เกิดข้อผิดพลาด: ' + error.message;
