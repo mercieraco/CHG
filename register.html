@@ -167,13 +167,6 @@
         </div>
 
         <div class="form-group">
-            <label for="email">อีเมล</label>
-            <input type="email" id="email" name="email" required 
-                   placeholder="example@hospital.com">
-            <small>ใช้สำหรับยืนยันตัวตนและรับการแจ้งเตือน</small>
-        </div>
-
-        <div class="form-group">
             <label for="password">รหัสผ่าน</label>
             <input type="password" id="password" name="password" required 
                    placeholder="กรอกรหัสผ่าน" minlength="4">
@@ -200,7 +193,6 @@
         e.preventDefault();
         
         const licenseNumber = document.getElementById('licenseNumber').value.trim();
-        const email = document.getElementById('email').value.trim();
         const password = document.getElementById('password').value;
         const confirmPassword = document.getElementById('confirmPassword').value;
         
@@ -226,7 +218,7 @@
         }
 
         try {
-            // เรียก Cloudflare Workers API
+            // เรียก Cloudflare Workers API เพื่อบันทึกข้อมูล
             const response = await fetch('https://doc-email.9vk92zm5z2.workers.dev/api/register', {
                 method: 'POST',
                 headers: {
@@ -234,7 +226,6 @@
                 },
                 body: JSON.stringify({
                     licenseNumber: licenseNumber,
-                    email: email,
                     password: password
                 })
             });
@@ -242,13 +233,13 @@
             const data = await response.json();
             
             if (response.ok && data.success) {
-                // ส่ง email สำเร็จ
+                // ลงทะเบียนสำเร็จ - รอการอนุมัติ
                 successMessage.innerHTML = `
-                    ✅ <strong>ลงทะเบียนสำเร็จ!</strong><br>
-                    เราได้ส่งอีเมลยืนยันไปที่ <strong>${email}</strong><br>
-                    กรุณาตรวจสอบอีเมลและคลิกลิงก์เพื่อยืนยันการลงทะเบียน<br>
-                    <br>
-                    <small>📧 อีเมลจะมีลิงก์กลับมาหน้า Login เพื่อเริ่มใช้งานระบบ</small>
+                    ✅ <strong>ลงทะเบียนสำเร็จ!</strong><br><br>
+                    <strong>ข้อมูลของคุณ:</strong><br>
+                    เลขใบประกอบวิชาชีพ: <strong>${licenseNumber}</strong><br><br>
+                    📌 <strong>สถานะ:</strong> รอการอนุมัติจาก Admin<br>
+                    <small>เมื่อ Admin อนุมัติแล้ว คุณจะสามารถ Login เข้าใช้งานได้</small>
                 `;
                 successMessage.classList.add('show');
                 
@@ -259,6 +250,7 @@
             }
 
         } catch (error) {
+            console.error('Registration error:', error);
             errorMessage.textContent = '❌ เกิดข้อผิดพลาด: ' + error.message;
             errorMessage.classList.add('show');
         }
