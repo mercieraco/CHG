@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบลางานแพทย์ - หน้าแพทย์</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+```
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+    }
+
+    .container {
+        background: white;
+        padding: 40px;
+        border-radius: 15px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        width: 100%;
+        max-width: 600px;
+        text-align: center;
+    }
+
+    .header {
+        margin-bottom: 30px;
+    }
+
+    .header h1 {
+        color: #333;
+        font-size: 32px;
+        margin-bottom: 10px;
+    }
+
+    .header p {
+        color: #666;
+        font-size: 16px;
+    }
+
+    .user-info {
+        background: #f5f5f5;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 30px;
+    }
+
+    .user-info h2 {
+        color: #667eea;
+        font-size: 24px;
+        margin-bottom: 10px;
+    }
+
+    .user-info p {
+        color: #666;
+        font-size: 14px;
+    }
+
+    .btn {
+        padding: 15px 30px;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .btn-logout {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+    }
+
+    .btn-logout:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(245, 87, 108, 0.4);
+    }
+
+    .coming-soon {
+        color: #999;
+        font-style: italic;
+        margin-top: 20px;
+        font-size: 14px;
+    }
+</style>
+```
+
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>👨‍⚕️ หน้าแพทย์</h1>
+            <p>ระบบลางานสำหรับแพทย์</p>
+        </div>
+
+```
+    <div class="user-info">
+        <h2>ยินดีต้อนรับ</h2>
+        <p id="userDisplay">กำลังโหลดข้อมูล...</p>
+    </div>
+
+    <button onclick="logout()" class="btn btn-logout">← ออกจากระบบ</button>
+
+    <p class="coming-soon">ฟีเจอร์การลางานจะพัฒนาในขั้นตอนถัดไป</p>
+</div>
+
+<script>
+    // ตรวจสอบการ login
+    window.onload = function() {
+        const loggedIn = sessionStorage.getItem('loggedIn');
+        const username = sessionStorage.getItem('username');
+        const role = sessionStorage.getItem('role');
+
+        if (!loggedIn || role !== 'user') {
+            // ถ้ายังไม่ได้ login หรือไม่ใช่ user ให้กลับไปหน้า login
+            window.location.href = 'index.html';
+            return;
+        }
+
+        // แสดงข้อมูลผู้ใช้
+        document.getElementById('userDisplay').textContent = `คุณ ${username}`;
+    };
+
+    function logout() {
+        // ลบข้อมูล session
+        sessionStorage.clear();
+        
+        // กลับไปหน้า login
+        window.location.href = 'index.html';
+    }
+</script>
+```
+
+</body>
+</html>
