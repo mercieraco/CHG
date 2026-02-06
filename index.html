@@ -1,270 +1,199 @@
 <!DOCTYPE html>
+
 <html lang="th">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Hospital Doctor Management v33</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบลางานแพทย์ - เข้าสู่ระบบ</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-<style>
-body {
-    font-family: system-ui, sans-serif;
-    background: #f0f2f5;
-    padding: 20px;
-}
-.container {
-    max-width: 1100px;
-    margin: auto;
-    background: #fff;
-    padding: 25px;
-    border-radius: 12px;
-}
-h1 { text-align: center; margin-bottom: 20px; }
+```
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+    }
 
-.section {
-    background: #f8f9fa;
-    padding: 16px;
-    border-radius: 10px;
-    margin-bottom: 20px;
-}
-label { font-weight: 600; margin-bottom: 6px; display: block; }
-input, select {
-    width: 100%;
-    padding: 10px;
-    border-radius: 8px;
-    border: 1px solid #ccc;
-}
-button {
-    padding: 10px 16px;
-    border: none;
-    border-radius: 8px;
-    background: #667eea;
-    color: #fff;
-    cursor: pointer;
-}
-button.danger { background:#e53e3e; }
-button.secondary { background:#38a169; }
+    .login-container {
+        background: white;
+        padding: 40px;
+        border-radius: 15px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        width: 100%;
+        max-width: 400px;
+    }
 
-.calendar {
-    display:grid;
-    grid-template-columns: repeat(7,1fr);
-    gap:5px;
-}
-.calendar div {
-    background:#fff;
-    border:1px solid #ddd;
-    padding:10px;
-    text-align:center;
-    cursor:pointer;
-    border-radius:6px;
-}
-.calendar div.selected { background:#90cdf4; color:#fff; }
-.calendar div.range { background:#bee3f8; }
-.calendar div.other { background:#eee; cursor:default; }
+    .login-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
 
-.duty-item {
-    background:#f0f4f8;
-    padding:12px;
-    border-radius:8px;
-    margin-bottom:8px;
-}
+    .login-header h1 {
+        color: #333;
+        font-size: 28px;
+        margin-bottom: 10px;
+    }
+
+    .login-header p {
+        color: #666;
+        font-size: 14px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        color: #333;
+        font-weight: 500;
+        font-size: 14px;
+    }
+
+    .form-group input {
+        width: 100%;
+        padding: 12px 15px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: border-color 0.3s;
+    }
+
+    .form-group input:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+
+    .btn {
+        width: 100%;
+        padding: 12px;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin-bottom: 10px;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-secondary {
+        background: #f5f5f5;
+        color: #666;
+    }
+
+    .btn-secondary:hover {
+        background: #e0e0e0;
+    }
+
+    .error-message {
+        background: #fee;
+        color: #c33;
+        padding: 10px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        font-size: 14px;
+        display: none;
+    }
+
+    .error-message.show {
+        display: block;
+    }
 </style>
+```
+
 </head>
-
 <body>
-<div class="container">
-<h1>🏥 ระบบจัดการแพทย์ – ลางานอัตโนมัติ</h1>
+    <div class="login-container">
+        <div class="login-header">
+            <h1>🏥 ระบบลางานแพทย์</h1>
+            <p>กรุณาเข้าสู่ระบบเพื่อดำเนินการต่อ</p>
+        </div>
 
-<!-- เลือกแพทย์ -->
-<div class="section">
-<label>แพทย์</label>
-<select id="leaveDoctorId"></select>
-</div>
+```
+    <div id="errorMessage" class="error-message"></div>
 
-<!-- เหตุผล -->
-<div class="section" id="reasonSection" style="display:none;">
-<label>เหตุผลการลา</label>
-<label><input type="radio" name="reason" value="ลาป่วย"> ลาป่วย</label>
-<label><input type="radio" name="reason" value="ลาพักผ่อน"> ลาพักผ่อน</label>
-</div>
+    <form id="loginForm">
+        <div class="form-group">
+            <label for="username">ชื่อผู้ใช้</label>
+            <input type="text" id="username" name="username" required autocomplete="username">
+        </div>
 
-<!-- ระยะเวลา -->
-<div class="section" id="durationSection" style="display:none;">
-<label>ระยะเวลา</label>
-<label><input type="radio" name="duration" value="long" checked> ลา &gt; 24 ชม</label>
-</div>
+        <div class="form-group">
+            <label for="password">รหัสผ่าน</label>
+            <input type="password" id="password" name="password" required autocomplete="current-password">
+        </div>
 
-<!-- ปฏิทิน -->
-<div class="section" id="calendarSection" style="display:none;">
-<label>เลือกวันที่ลา</label>
-<div id="calendar" class="calendar"></div>
-<div id="dateInfo" style="margin-top:10px;font-weight:600;"></div>
-</div>
-
-<!-- ภาระงานอัตโนมัติ -->
-<div class="section" id="affectedDutiesSection" style="display:none;">
-<label>ภาระงานที่กระทบ (อัตโนมัติ)</label>
-<div id="affectedDutiesList"></div>
-</div>
-
-<button onclick="saveLeave()">บันทึกการลา</button>
-
+        <button type="submit" class="btn btn-primary">เข้าสู่ระบบ</button>
+        <button type="button" class="btn btn-secondary">ลืมรหัสผ่าน</button>
+        <button type="button" class="btn btn-secondary">เปลี่ยนรหัสผ่าน</button>
+    </form>
 </div>
 
 <script>
-/* ================= DATA ================= */
-let departments = [
-    {
-        id:1,
-        name:"อายุรกรรม",
-        duties:[
-            {id:101,name:"OPD"},
-            {id:102,name:"Consult"}
-        ]
-    }
-];
-
-let doctors = [
-    {
-        id:1,
-        name:"นพ.สมชาย",
-        departmentId:1,
-        assignments:[
-            {dutyId:101, workDays:["mon","tue","wed"]},
-            {dutyId:102, workDays:["sat"]}
-        ]
-    }
-];
-
-let leaves = [];
-let autoAffectedDuties = [];
-
-/* ================= HELPERS ================= */
-const DAY_KEYS = ['sun','mon','tue','wed','thu','fri','sat'];
-const DAY_TH = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัส','ศุกร์','เสาร์'];
-
-function formatThaiDate(d){
-    return `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()+543}`;
-}
-
-/* ================= INIT ================= */
-const doctorSelect = document.getElementById("leaveDoctorId");
-doctorSelect.innerHTML =
-    `<option value="">-- เลือกแพทย์ --</option>` +
-    doctors.map(d=>`<option value="${d.id}">${d.name}</option>`).join("");
-
-doctorSelect.onchange = ()=>{
-    document.getElementById("reasonSection").style.display = doctorSelect.value ? "block":"none";
-};
-
-document.querySelectorAll("input[name=reason]").forEach(r=>{
-    r.onchange = ()=>{
-        document.getElementById("durationSection").style.display="block";
-        document.getElementById("calendarSection").style.display="block";
-        renderCalendar();
+    // ข้อมูลผู้ใช้ (ชั่วคราว - อนาคตจะย้ายไป Cloudflare)
+    const users = {
+        'dev': {
+            password: '1234',
+            role: 'developer',
+            redirect: 'dev.html'
+        },
+        'user': {
+            password: '1234',
+            role: 'user',
+            redirect: 'user.html'
+        }
     };
-});
 
-/* ================= CALENDAR ================= */
-let startDate=null,endDate=null;
-const calendarEl=document.getElementById("calendar");
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value;
+        const errorMessage = document.getElementById('errorMessage');
 
-function renderCalendar(){
-    calendarEl.innerHTML="";
-    const year=2026,month=0;
-    const first=new Date(year,month,1);
-    const last=new Date(year,month+1,0);
-
-    let offset=(first.getDay()+6)%7;
-    for(let i=0;i<offset;i++){
-        calendarEl.innerHTML+=`<div class="other"></div>`;
-    }
-    for(let d=1;d<=last.getDate();d++){
-        const date=new Date(year,month,d);
-        const div=document.createElement("div");
-        div.textContent=d;
-        div.onclick=()=>selectDate(date);
-        calendarEl.appendChild(div);
-    }
-}
-
-function selectDate(d){
-    if(!startDate){
-        startDate=d;
-    }else if(!endDate){
-        endDate=d<startDate?startDate:d;
-        if(d<startDate) startDate=d;
-    }else{
-        startDate=d;
-        endDate=null;
-    }
-    updateDateInfo();
-}
-
-function updateDateInfo(){
-    const info=document.getElementById("dateInfo");
-    if(startDate && endDate){
-        info.textContent=`เลือก ${formatThaiDate(startDate)} ถึง ${formatThaiDate(endDate)}`;
-        detectAndRender();
-    }else if(startDate){
-        info.textContent=`เลือกวันเริ่ม ${formatThaiDate(startDate)}`;
-    }
-}
-
-/* ================= DETECT ================= */
-function detectAndRender(){
-    const doctor=doctors.find(d=>d.id==doctorSelect.value);
-    autoAffectedDuties=[];
-    const dept=departments.find(d=>d.id===doctor.departmentId);
-
-    for(let d=new Date(startDate);d<=endDate;d.setDate(d.getDate()+1)){
-        const dayKey=DAY_KEYS[d.getDay()];
-        doctor.assignments.forEach(a=>{
-            if(a.workDays.includes(dayKey)){
-                const duty=dept.duties.find(x=>x.id===a.dutyId);
-                autoAffectedDuties.push({
-                    date:new Date(d),
-                    dutyId:duty.id,
-                    dutyName:duty.name,
-                    hasReplacement:false,
-                    replacementDoctorId:null
-                });
-            }
-        });
-    }
-    renderAffected();
-}
-
-function renderAffected(){
-    const box=document.getElementById("affectedDutiesSection");
-    const list=document.getElementById("affectedDutiesList");
-    box.style.display="block";
-    list.innerHTML=autoAffectedDuties.map((a,i)=>`
-        <div class="duty-item">
-            <strong>${DAY_TH[a.date.getDay()]} ${formatThaiDate(a.date)} – ${a.dutyName}</strong>
-            <div>
-                <label>
-                    <input type="checkbox" onchange="toggleRep(${i},this.checked)">
-                    มีคนมาแทน
-                </label>
-            </div>
-        </div>
-    `).join("");
-}
-
-function toggleRep(i,val){
-    autoAffectedDuties[i].hasReplacement=val;
-}
-
-/* ================= SAVE ================= */
-function saveLeave(){
-    leaves.push({
-        doctorId:doctorSelect.value,
-        startDate:startDate,
-        endDate:endDate,
-        affectedDuties:autoAffectedDuties
+        // ตรวจสอบผู้ใช้
+        if (users[username] && users[username].password === password) {
+            // Login สำเร็จ
+            errorMessage.classList.remove('show');
+            
+            // เก็บข้อมูล session (ชั่วคราว)
+            sessionStorage.setItem('loggedIn', 'true');
+            sessionStorage.setItem('username', username);
+            sessionStorage.setItem('role', users[username].role);
+            
+            // Redirect ไปหน้าที่เหมาะสม
+            window.location.href = users[username].redirect;
+        } else {
+            // Login ไม่สำเร็จ
+            errorMessage.textContent = '❌ ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
+            errorMessage.classList.add('show');
+            
+            // Clear password field
+            document.getElementById('password').value = '';
+        }
     });
-    alert("บันทึกการลาสำเร็จ");
-}
 </script>
+```
+
 </body>
 </html>
