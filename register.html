@@ -203,22 +203,6 @@
                    placeholder="กรอกเลข 4 หลักอีกครั้ง" pattern="[0-9]{4}" maxlength="4" inputmode="numeric">
         </div>
 
-        <div class="form-group" style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #e0e0e0;">
-            <label for="resetPin" style="color: #667eea; font-weight: 600;">🔐 รหัส PIN สำหรับ Reset Password (4 หลัก)</label>
-            <input type="text" id="resetPin" name="resetPin" required 
-                   placeholder="กรอกเลข 4 หลัก" pattern="[0-9]{4}" maxlength="4">
-            <small style="color: #666; line-height: 1.5;">
-                ⚠️ เลขนี้ใช้สำหรับการ reset password กรุณาใส่เลขสี่หลักที่จำได้ง่าย<br>
-                เช่น วันเดือนที่เกิด (2512), ปี พศ หรือ คศ ที่เกิด (1969)
-            </small>
-        </div>
-
-        <div class="form-group">
-            <label for="confirmResetPin">ยืนยันรหัส PIN (4 หลัก)</label>
-            <input type="text" id="confirmResetPin" name="confirmResetPin" required 
-                   placeholder="กรอกเลข 4 หลักอีกครั้ง" pattern="[0-9]{4}" maxlength="4">
-        </div>
-
         <button type="submit" class="btn btn-primary">ลงทะเบียน</button>
         <button type="button" class="btn btn-secondary" onclick="goBack()">← กลับไปหน้าเข้าสู่ระบบ</button>
     </form>
