@@ -135,14 +135,14 @@
         const username = sessionStorage.getItem('username');
         const role = sessionStorage.getItem('role');
 
-        if (!loggedIn || role !== 'developer') {
-            // ถ้ายังไม่ได้ login หรือไม่ใช่ developer ให้กลับไปหน้า login
+        if (!loggedIn || role !== 'admin') {
+            // ถ้ายังไม่ได้ login หรือไม่ใช่ admin ให้กลับไปหน้า login
             window.location.href = 'index.html';
             return;
         }
 
         // แสดงข้อมูลผู้ใช้
-        document.getElementById('userDisplay').textContent = `คุณ ${username} (Developer)`;
+        document.getElementById('userDisplay').textContent = `คุณ ${username} (Admin)`;
     };
 
     function logout() {
