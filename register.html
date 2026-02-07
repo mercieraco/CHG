@@ -233,13 +233,13 @@
             const data = await response.json();
             
             if (response.ok && data.success) {
-                // ลงทะเบียนสำเร็จ - รอการอนุมัติ
+                // ลงทะเบียนสำเร็จ - Login ได้ทันที
                 successMessage.innerHTML = `
                     ✅ <strong>ลงทะเบียนสำเร็จ!</strong><br><br>
                     <strong>ข้อมูลของคุณ:</strong><br>
                     เลขใบประกอบวิชาชีพ: <strong>${licenseNumber}</strong><br><br>
-                    📌 <strong>สถานะ:</strong> รอการอนุมัติจาก Admin<br>
-                    <small>เมื่อ Admin อนุมัติแล้ว คุณจะสามารถ Login เข้าใช้งานได้</small>
+                    🎉 <strong>สามารถ Login ได้ทันที!</strong><br>
+                    <small>กดปุ่มด้านล่างเพื่อไปหน้า Login</small>
                 `;
                 successMessage.classList.add('show');
                 
