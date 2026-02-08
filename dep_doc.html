@@ -116,6 +116,29 @@
         background: #e0e0e0;
     }
 
+    .btn-back-top {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: rgba(245, 87, 108, 0.9);
+        color: white;
+        padding: 12px 20px;
+        border-radius: 25px;
+        font-size: 14px;
+        font-weight: 600;
+        box-shadow: 0 4px 15px rgba(245, 87, 108, 0.3);
+        z-index: 1000;
+        cursor: pointer;
+        border: none;
+        transition: all 0.3s;
+    }
+
+    .btn-back-top:hover {
+        background: rgba(245, 87, 108, 1);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(245, 87, 108, 0.4);
+    }
+
     @media (max-width: 600px) {
         .menu-grid {
             grid-template-columns: 1fr;
@@ -126,13 +149,16 @@
 
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>📋 จัดการแผนกและแพทย์</h1>
-            <p>เพิ่ม/ลบ แผนกและแพทย์ในระบบ</p>
-        </div>
+    <!-- ปุ่มกลับมุมขวาบน -->
+    <button onclick="window.location.href='dev.html'" class="btn-back-top">← Admin</button>
 
 ```
+<div class="container">
+    <div class="header">
+        <h1>📋 จัดการแผนกและแพทย์</h1>
+        <p>เพิ่ม/ลบ แผนกและแพทย์ในระบบ</p>
+    </div>
+
     <div class="user-info">
         <h2>ยินดีต้อนรับ</h2>
         <p id="userDisplay">กำลังโหลดข้อมูล...</p>
