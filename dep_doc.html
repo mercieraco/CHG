@@ -90,34 +90,30 @@
     }
 
     .menu-card {
-        background: white;
-        padding: 30px;
-        border-radius: 15px;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 22px 15px;
+        border-radius: 10px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
         cursor: pointer;
         transition: all 0.3s;
         text-align: center;
     }
 
     .menu-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
     }
 
     .menu-card .icon {
-        font-size: 48px;
-        margin-bottom: 15px;
-    }
-
-    .menu-card h3 {
-        color: #333;
-        font-size: 20px;
+        font-size: 28px;
         margin-bottom: 10px;
     }
 
-    .menu-card p {
-        color: #666;
-        font-size: 14px;
+    .menu-card h3 {
+        color: white;
+        font-size: 15px;
+        font-weight: 600;
     }
 
     .section {
@@ -126,11 +122,6 @@
         border-radius: 15px;
         box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
         margin-bottom: 30px;
-        display: none;
-    }
-
-    .section.active {
-        display: block;
     }
 
     .section h2 {
@@ -369,22 +360,20 @@
         <p id="userDisplay">กำลังโหลดข้อมูล...</p>
     </div>
 
-    <!-- เมนูหลัก -->
-    <div id="mainMenu" class="menu-grid">
-        <div class="menu-card" onclick="showSection('departmentSection')">
+    <!-- ปุ่มเมนู 2 ปุ่ม (ซ้าย-ขวา) -->
+    <div class="menu-grid">
+        <div class="menu-card" onclick="showDepartmentForm()">
             <div class="icon">🏥</div>
-            <h3>จัดการแผนก</h3>
-            <p>เพิ่ม/ลบ/แก้ไข แผนก</p>
+            <h3>เพิ่มแผนก</h3>
         </div>
         <div class="menu-card" onclick="alert('ฟีเจอร์เพิ่มแพทย์ - กำลังพัฒนา')">
             <div class="icon">👤</div>
-            <h3>จัดการแพทย์</h3>
-            <p>เพิ่ม/ลบ/แก้ไข แพทย์</p>
+            <h3>เพิ่มแพทย์</h3>
         </div>
     </div>
 
-    <!-- ส่วนจัดการแผนก -->
-    <div id="departmentSection" class="section">
+    <!-- ส่วนจัดการแผนก (แสดงด้านล่างปุ่ม) -->
+    <div id="departmentSection" class="section" style="display: none;">
         <h2>🏥 จัดการแผนก</h2>
         
         <!-- ฟอร์มเพิ่มแผนก -->
@@ -398,7 +387,6 @@
                            placeholder="เช่น แผนกอายุรกรรม, Cardiology">
                 </div>
                 <button type="submit" class="btn btn-primary">เพิ่มแผนก</button>
-                <button type="button" onclick="showMainMenu()" class="btn btn-secondary">← กลับ</button>
             </form>
         </div>
 
@@ -468,20 +456,12 @@
         document.getElementById('userDisplay').textContent = `คุณ ${username} (Admin)`;
     };
 
-    // แสดงส่วนต่างๆ
-    function showSection(sectionId) {
-        document.getElementById('mainMenu').style.display = 'none';
-        document.getElementById('departmentSection').classList.remove('active');
-        
-        if (sectionId === 'departmentSection') {
-            document.getElementById('departmentSection').classList.add('active');
-            loadDepartments();
-        }
-    }
-
-    function showMainMenu() {
-        document.getElementById('mainMenu').style.display = 'grid';
-        document.getElementById('departmentSection').classList.remove('active');
+    // แสดงฟอร์มจัดการแผนก
+    function showDepartmentForm() {
+        document.getElementById('departmentSection').style.display = 'block';
+        loadDepartments();
+        // scroll ลงไปยังส่วนนี้
+        document.getElementById('departmentSection').scrollIntoView({ behavior: 'smooth' });
     }
 
     // เพิ่มแผนก
@@ -507,6 +487,10 @@
                 addMessage.textContent = '✅ เพิ่มแผนกสำเร็จ';
                 document.getElementById('addDepartmentForm').reset();
                 loadDepartments();
+                
+                setTimeout(() => {
+                    addMessage.classList.remove('show');
+                }, 3000);
             } else {
                 throw new Error(data.message || 'เกิดข้อผิดพลาด');
             }
@@ -542,13 +526,14 @@
 
                 let html = '';
                 departments.forEach(dept => {
+                    const safeName = dept.name.replace(/'/g, "\\'");
                     html += `
                         <div class="department-item">
                             <div class="department-name">${dept.name}</div>
                             <div class="department-actions">
-                                <button onclick="showDeleteModal(${dept.id}, '${dept.name}')" class="btn-small btn-delete">🗑️ ลบ</button>
-                                <button onclick="showEditModal(${dept.id}, '${dept.name}')" class="btn-small btn-edit">🔧 แก้ไข</button>
-                                <button onclick="showDutyModal('${dept.name}')" class="btn-small btn-duty">➕ Duty</button>
+                                <button onclick="showDeleteModal(${dept.id}, '${safeName}')" class="btn-small btn-delete">🗑️ ลบ</button>
+                                <button onclick="showEditModal(${dept.id}, '${safeName}')" class="btn-small btn-edit">🔧 แก้ไข</button>
+                                <button onclick="showDutyModal('${safeName}')" class="btn-small btn-duty">➕ Duty</button>
                             </div>
                         </div>
                     `;
@@ -598,7 +583,7 @@
         }
     }
 
-    // Modal แก้ไข
+    // Modal แก้ไข - ทำงานได้จริง!
     function showEditModal(id, name) {
         editDepartmentId = id;
         document.getElementById('editDepartmentName').value = name;
@@ -612,12 +597,36 @@
 
     async function confirmEdit() {
         const newName = document.getElementById('editDepartmentName').value.trim();
+        
         if (!newName) {
             alert('กรุณากรอกชื่อแผนก');
             return;
         }
-        alert('ฟีเจอร์แก้ไขชื่อแผนก - กำลังพัฒนา');
-        closeEditModal();
+
+        if (!editDepartmentId) return;
+
+        try {
+            const response = await fetch(`${API_URL}/api/departments/${editDepartmentId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ departmentName: newName })
+            });
+
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                const listMessage = document.getElementById('listMessage');
+                listMessage.className = 'message success show';
+                listMessage.textContent = '✅ แก้ไขชื่อแผนกสำเร็จ';
+                setTimeout(() => listMessage.classList.remove('show'), 3000);
+                closeEditModal();
+                loadDepartments();
+            } else {
+                throw new Error(data.message || 'ไม่สามารถแก้ไขชื่อแผนกได้');
+            }
+        } catch (error) {
+            alert('❌ ' + error.message);
+        }
     }
 
     // Modal Duty
