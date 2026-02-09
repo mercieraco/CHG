@@ -215,50 +215,54 @@
         padding: 20px;
         border-radius: 10px;
         margin-bottom: 15px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
         transition: all 0.3s;
     }
 
     .department-item:hover {
         background: #f0f0f0;
-        transform: translateX(5px);
+    }
+
+    .department-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
     }
 
     .department-name {
-        font-size: 18px;
+        font-size: 20px;
         font-weight: 600;
         color: #333;
     }
 
     .duty-list {
-        margin-top: 10px;
-        padding-left: 20px;
+        margin-top: 0;
     }
 
     .duty-item {
-        background: #f0f0f0;
-        padding: 10px 15px;
+        background: white;
+        padding: 12px 15px;
         border-radius: 6px;
-        margin-bottom: 8px;
+        margin-bottom: 10px;
         display: flex;
         justify-content: space-between;
         align-items: center;
         font-size: 14px;
+        border: 1px solid #e0e0e0;
     }
 
     .duty-name {
         font-weight: 600;
         color: #667eea;
-        margin-right: 10px;
+        margin-right: 15px;
+        min-width: 80px;
     }
 
     .duty-schedule {
         display: flex;
-        gap: 8px;
+        gap: 12px;
         flex: 1;
-        font-size: 13px;
+        font-size: 14px;
     }
 
     .duty-day {
@@ -612,40 +616,40 @@
                     
                     html += `
                         <div class="department-item">
-                            <div style="flex: 1;">
+                            <div class="department-header">
                                 <div class="department-name">${dept.name}</div>
-                                ${duties.length > 0 ? '<div class="duty-list">' : ''}
+                                <div class="department-actions">
+                                    <button onclick="showDeleteModal(${dept.id}, '${safeName}')" class="btn-small btn-delete">🗑️ ลบ</button>
+                                    <button onclick="showEditModal(${dept.id}, '${safeName}')" class="btn-small btn-edit">🔧 แก้ไข</button>
+                                    <button onclick="showDutyModal(${dept.id}, '${safeName}')" class="btn-small btn-duty">➕ Duty</button>
+                                </div>
+                            </div>
                     `;
                     
                     // แสดงรายการ Duty
-                    duties.forEach(duty => {
-                        html += `
-                            <div class="duty-item">
-                                <span class="duty-name">${duty.duty_name}</span>
-                                <div class="duty-schedule">
-                                    <span class="duty-day">จ ${duty.mon_count}</span>
-                                    <span class="duty-day">อ ${duty.tue_count}</span>
-                                    <span class="duty-day">พ ${duty.wed_count}</span>
-                                    <span class="duty-day">พฤ ${duty.thu_count}</span>
-                                    <span class="duty-day">ศ ${duty.fri_count}</span>
-                                    <span class="duty-day">ส ${duty.sat_count}</span>
-                                    <span class="duty-day">อา ${duty.sun_count}</span>
+                    if (duties.length > 0) {
+                        html += '<div class="duty-list">';
+                        duties.forEach(duty => {
+                            html += `
+                                <div class="duty-item">
+                                    <span class="duty-name">${duty.duty_name}</span>
+                                    <div class="duty-schedule">
+                                        <span class="duty-day">จ ${duty.mon_count}</span>
+                                        <span class="duty-day">อ ${duty.tue_count}</span>
+                                        <span class="duty-day">พ ${duty.wed_count}</span>
+                                        <span class="duty-day">พฤ ${duty.thu_count}</span>
+                                        <span class="duty-day">ศ ${duty.fri_count}</span>
+                                        <span class="duty-day">ส ${duty.sat_count}</span>
+                                        <span class="duty-day">อา ${duty.sun_count}</span>
+                                    </div>
+                                    <button onclick="showDeleteDutyModal(${duty.id}, '${duty.duty_name.replace(/'/g, "\\'")}')" class="btn-delete-duty">ลบ</button>
                                 </div>
-                                <button onclick="showDeleteDutyModal(${duty.id}, '${duty.duty_name.replace(/'/g, "\\'")}')" class="btn-delete-duty">ลบ</button>
-                            </div>
-                        `;
-                    });
+                            `;
+                        });
+                        html += '</div>';
+                    }
                     
-                    html += `
-                                ${duties.length > 0 ? '</div>' : ''}
-                            </div>
-                            <div class="department-actions">
-                                <button onclick="showDeleteModal(${dept.id}, '${safeName}')" class="btn-small btn-delete">🗑️ ลบ</button>
-                                <button onclick="showEditModal(${dept.id}, '${safeName}')" class="btn-small btn-edit">🔧 แก้ไข</button>
-                                <button onclick="showDutyModal(${dept.id}, '${safeName}')" class="btn-small btn-duty">➕ Duty</button>
-                            </div>
-                        </div>
-                    `;
+                    html += '</div>';
                 }
                 
                 departmentsList.innerHTML = html;
