@@ -286,6 +286,54 @@
         background: #ff3838;
     }
 
+    .doctor-item {
+        background: #f9f9f9;
+        padding: 15px 20px;
+        border-radius: 10px;
+        margin-bottom: 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: all 0.3s;
+    }
+
+    .doctor-item:hover {
+        background: #f0f0f0;
+    }
+
+    .doctor-info {
+        flex: 1;
+    }
+
+    .doctor-name {
+        font-size: 18px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 5px;
+    }
+
+    .doctor-details {
+        font-size: 14px;
+        color: #666;
+    }
+
+    .btn-delete-doctor {
+        background: #ff4757;
+        color: white;
+        padding: 8px 16px;
+        font-size: 13px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-weight: 600;
+    }
+
+    .btn-delete-doctor:hover {
+        background: #ff3838;
+        transform: translateY(-2px);
+    }
+
     .department-actions {
         display: flex;
         gap: 10px;
@@ -416,7 +464,7 @@
         }
 
         .duty-schedule {
-            font-size: 10px;
+            font-size: 12px;
             gap: 6px;
         }
 
@@ -454,7 +502,7 @@
             <div class="icon">🏥</div>
             <h3>เพิ่มแผนก</h3>
         </div>
-        <div class="menu-card" onclick="alert('ฟีเจอร์เพิ่มแพทย์ - กำลังพัฒนา')">
+        <div class="menu-card" onclick="showDoctorForm()">
             <div class="icon">👤</div>
             <h3>เพิ่มแพทย์</h3>
         </div>
@@ -483,6 +531,49 @@
             <h3 style="color: #333; margin-bottom: 15px;">📋 รายการแผนก</h3>
             <div id="listMessage" class="message"></div>
             <div id="departmentsList" class="loading">กำลังโหลดข้อมูล...</div>
+        </div>
+    </div>
+
+    <!-- ส่วนจัดการแพทย์ (แสดงด้านล่างปุ่ม) -->
+    <div id="doctorSection" class="section" style="display: none;">
+        <h2>👤 จัดการแพทย์</h2>
+        
+        <!-- ฟอร์มเพิ่มแพทย์ -->
+        <div style="background: #f9f9f9; padding: 20px; border-radius: 10px; margin-bottom: 30px;">
+            <h3 style="color: #333; margin-bottom: 15px;">➕ เพิ่มแพทย์ใหม่</h3>
+            <div id="addDoctorMessage" class="message"></div>
+            <form id="addDoctorForm">
+                <div class="form-group">
+                    <label for="doctorDepartment">แผนก</label>
+                    <select id="doctorDepartment" required style="width: 100%; padding: 12px 15px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 16px;">
+                        <option value="">-- เลือกแผนก --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="doctorFirstName">ชื่อ</label>
+                    <input type="text" id="doctorFirstName" required 
+                           placeholder="เช่น สมชาย">
+                </div>
+                <div class="form-group">
+                    <label for="doctorLastName">นามสกุล</label>
+                    <input type="text" id="doctorLastName" required 
+                           placeholder="เช่น ใจดี">
+                </div>
+                <div class="form-group">
+                    <label for="doctorLicenseNumber">เลขใบประกอบวิชาชีพแพทย์ (เลข ว)</label>
+                    <input type="text" id="doctorLicenseNumber" required 
+                           placeholder="กรอกเฉพาะตัวเลข" pattern="[0-9]+">
+                    <small>กรอกเฉพาะตัวเลขเท่านั้น</small>
+                </div>
+                <button type="submit" class="btn btn-primary">เพิ่มแพทย์</button>
+            </form>
+        </div>
+
+        <!-- รายการแพทย์ -->
+        <div>
+            <h3 style="color: #333; margin-bottom: 15px;">📋 รายการแพทย์</h3>
+            <div id="doctorListMessage" class="message"></div>
+            <div id="doctorsList" class="loading">กำลังโหลดข้อมูล...</div>
         </div>
     </div>
 </div>
@@ -556,6 +647,19 @@
     </div>
 </div>
 
+<!-- Modal ยืนยันการลบแพทย์ -->
+<div id="deleteDoctorModal" class="modal">
+    <div class="modal-content">
+        <h3>⚠️ ยืนยันการลบแพทย์</h3>
+        <p>คุณแน่ใจหรือไม่ว่าต้องการลบแพทย์<br><strong id="deleteDoctorName"></strong>?</p>
+        <p style="color: #ff4757; font-size: 13px;">การลบจะไม่สามารถย้อนกลับได้</p>
+        <div class="modal-actions">
+            <button onclick="closeDeleteDoctorModal()" class="btn btn-secondary">ยกเลิก</button>
+            <button onclick="confirmDeleteDoctor()" class="btn btn-primary" style="background: #ff4757;">ลบแพทย์</button>
+        </div>
+    </div>
+</div>
+
 <script>
     const API_URL = 'https://dep-doc-worker.9vk92zm5z2.workers.dev';
     let deleteDepartmentId = null;
@@ -563,6 +667,7 @@
     let currentDepartmentId = null;
     let currentDepartmentName = null;
     let deleteDutyId = null;
+    let deleteDoctorId = null;
 
     // ตรวจสอบ Login
     window.onload = function() {
@@ -581,9 +686,177 @@
     // แสดงฟอร์มจัดการแผนก
     function showDepartmentForm() {
         document.getElementById('departmentSection').style.display = 'block';
+        document.getElementById('doctorSection').style.display = 'none';
         loadDepartments();
-        // scroll ลงไปยังส่วนนี้
         document.getElementById('departmentSection').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // แสดงฟอร์มจัดการแพทย์
+    async function showDoctorForm() {
+        document.getElementById('departmentSection').style.display = 'none';
+        document.getElementById('doctorSection').style.display = 'block';
+        
+        // โหลดรายการแผนกเข้า dropdown
+        await loadDepartmentsDropdown();
+        
+        // โหลดรายการแพทย์
+        loadDoctors();
+        
+        document.getElementById('doctorSection').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // โหลดรายการแผนกเข้า dropdown
+    async function loadDepartmentsDropdown() {
+        try {
+            const response = await fetch(`${API_URL}/api/departments`);
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                const departments = data.data;
+                departments.sort((a, b) => a.name.localeCompare(b.name, ['en', 'th']));
+                
+                const select = document.getElementById('doctorDepartment');
+                select.innerHTML = '<option value="">-- เลือกแผนก --</option>';
+                
+                departments.forEach(dept => {
+                    const option = document.createElement('option');
+                    option.value = dept.id;
+                    option.textContent = dept.name;
+                    select.appendChild(option);
+                });
+            }
+        } catch (error) {
+            console.error('Error loading departments:', error);
+        }
+    }
+
+    // เพิ่มแพทย์
+    document.getElementById('addDoctorForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const departmentId = document.getElementById('doctorDepartment').value;
+        const firstName = document.getElementById('doctorFirstName').value.trim();
+        const lastName = document.getElementById('doctorLastName').value.trim();
+        const doctorLicenseNumber = document.getElementById('doctorLicenseNumber').value.trim();
+        
+        const addDoctorMessage = document.getElementById('addDoctorMessage');
+        addDoctorMessage.classList.remove('show');
+
+        try {
+            const response = await fetch(`${API_URL}/api/doctors`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    doctorName: `${firstName} ${lastName}`,
+                    departmentId: parseInt(departmentId),
+                    licenseNumber: doctorLicenseNumber,
+                    specialty: ''
+                })
+            });
+
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                addDoctorMessage.className = 'message success show';
+                addDoctorMessage.textContent = '✅ เพิ่มแพทย์สำเร็จ';
+                document.getElementById('addDoctorForm').reset();
+                loadDoctors();
+                
+                setTimeout(() => {
+                    addDoctorMessage.classList.remove('show');
+                }, 3000);
+            } else {
+                throw new Error(data.message || 'เกิดข้อผิดพลาด');
+            }
+        } catch (error) {
+            addDoctorMessage.className = 'message error show';
+            addDoctorMessage.textContent = '❌ ' + error.message;
+        }
+    });
+
+    // โหลดรายการแพทย์
+    async function loadDoctors() {
+        const doctorsList = document.getElementById('doctorsList');
+        doctorsList.innerHTML = '<div class="loading">กำลังโหลดข้อมูล...</div>';
+
+        try {
+            const response = await fetch(`${API_URL}/api/doctors`);
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                const doctors = data.data;
+                
+                if (doctors.length === 0) {
+                    doctorsList.innerHTML = `
+                        <div class="empty-state">
+                            <div class="icon">👤</div>
+                            <p>ยังไม่มีแพทย์ในระบบ</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                doctors.sort((a, b) => a.name.localeCompare(b.name, ['en', 'th']));
+
+                let html = '';
+                doctors.forEach(doctor => {
+                    const safeName = doctor.name.replace(/'/g, "\\'");
+                    html += `
+                        <div class="doctor-item">
+                            <div class="doctor-info">
+                                <div class="doctor-name">${doctor.name}</div>
+                                <div class="doctor-details">
+                                    แผนก: ${doctor.department_name || 'ไม่ระบุ'} | 
+                                    เลข ว: ${doctor.license_number}
+                                </div>
+                            </div>
+                            <button onclick="showDeleteDoctorModal(${doctor.id}, '${safeName}')" class="btn-delete-doctor">🗑️ ลบ</button>
+                        </div>
+                    `;
+                });
+                
+                doctorsList.innerHTML = html;
+            } else {
+                throw new Error(data.message || 'ไม่สามารถโหลดข้อมูลได้');
+            }
+        } catch (error) {
+            doctorsList.innerHTML = `<div class="empty-state"><div class="icon">⚠️</div><p>${error.message}</p></div>`;
+        }
+    }
+
+    // Modal ลบแพทย์
+    function showDeleteDoctorModal(id, name) {
+        deleteDoctorId = id;
+        document.getElementById('deleteDoctorName').textContent = name;
+        document.getElementById('deleteDoctorModal').classList.add('show');
+    }
+
+    function closeDeleteDoctorModal() {
+        document.getElementById('deleteDoctorModal').classList.remove('show');
+        deleteDoctorId = null;
+    }
+
+    async function confirmDeleteDoctor() {
+        if (!deleteDoctorId) return;
+
+        try {
+            const response = await fetch(`${API_URL}/api/doctors/${deleteDoctorId}`, { method: 'DELETE' });
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                const doctorListMessage = document.getElementById('doctorListMessage');
+                doctorListMessage.className = 'message success show';
+                doctorListMessage.textContent = '✅ ลบแพทย์สำเร็จ';
+                setTimeout(() => doctorListMessage.classList.remove('show'), 3000);
+                closeDeleteDoctorModal();
+                loadDoctors();
+            } else {
+                throw new Error(data.message || 'ไม่สามารถลบแพทย์ได้');
+            }
+        } catch (error) {
+            alert('❌ ' + error.message);
+            closeDeleteDoctorModal();
+        }
     }
 
     // เพิ่มแผนก
