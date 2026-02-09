@@ -354,21 +354,21 @@
         padding: 8px 12px;
         border-radius: 6px;
         margin-bottom: 8px;
-        display: flex;
-        justify-content: space-between;
+        display: grid;
+        grid-template-columns: 100px 1fr auto;
+        gap: 15px;
         align-items: center;
         border: 1px solid #e0e0e0;
         font-size: 14px;
     }
 
     .doctor-duty-info {
-        flex: 1;
+        display: contents;
     }
 
     .doctor-duty-name {
         font-weight: 600;
         color: #667eea;
-        margin-right: 10px;
     }
 
     .doctor-duty-days {
@@ -689,8 +689,7 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>สรรพนาม</label>
-                    <div style="display: flex; gap: 20px; margin-top: 8px;">
+                    <div style="display: flex; gap: 30px; margin-top: 8px;">
                         <label style="cursor: pointer; display: flex; align-items: center; gap: 8px;">
                             <input type="radio" name="doctorTitle" value="นพ." checked>
                             <span>นพ.</span>
@@ -1326,7 +1325,14 @@
             
             if (response.ok && data.success) {
                 allDoctors = data.data;
-                allDoctors.sort((a, b) => a.name.localeCompare(b.name, ['en', 'th']));
+                // เรียง A-Z ก่อน, ก-ฮ หลัง
+                allDoctors.sort((a, b) => {
+                    const aIsEng = /^[a-zA-Z]/.test(a.name);
+                    const bIsEng = /^[a-zA-Z]/.test(b.name);
+                    if (aIsEng && !bIsEng) return -1;
+                    if (!aIsEng && bIsEng) return 1;
+                    return a.name.localeCompare(b.name, ['en', 'th']);
+                });
                 filterDoctors();
             } else {
                 throw new Error(data.message || 'ไม่สามารถโหลดข้อมูลได้');
@@ -1384,6 +1390,15 @@
             
             // แสดง Duties ของแพทย์
             if (duties.length > 0) {
+                // เรียง Duty: A-Z ก่อน, ก-ฮ หลัง
+                duties.sort((a, b) => {
+                    const aIsEng = /^[a-zA-Z]/.test(a.duty_name);
+                    const bIsEng = /^[a-zA-Z]/.test(b.duty_name);
+                    if (aIsEng && !bIsEng) return -1;
+                    if (!aIsEng && bIsEng) return 1;
+                    return a.duty_name.localeCompare(b.duty_name, ['en', 'th']);
+                });
+                
                 html += '<div class="doctor-duties-list">';
                 duties.forEach(duty => {
                     const days = [];
@@ -1397,10 +1412,8 @@
                     
                     html += `
                         <div class="doctor-duty-item">
-                            <div class="doctor-duty-info">
-                                <span class="doctor-duty-name">${duty.duty_name}:</span>
-                                <span class="doctor-duty-days">${days.join(', ')}</span>
-                            </div>
+                            <span class="doctor-duty-name">${duty.duty_name}</span>
+                            <span class="doctor-duty-days">${days.join(', ')}</span>
                             <button onclick="showDeleteDoctorDutyModal(${duty.id}, '${duty.duty_name.replace(/'/g, "\\'")}')" class="btn-delete-doctor-duty">ลบ</button>
                         </div>
                     `;
