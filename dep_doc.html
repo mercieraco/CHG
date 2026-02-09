@@ -232,6 +232,54 @@
         color: #333;
     }
 
+    .duty-list {
+        margin-top: 10px;
+        padding-left: 20px;
+    }
+
+    .duty-item {
+        background: #f0f0f0;
+        padding: 10px 15px;
+        border-radius: 6px;
+        margin-bottom: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 14px;
+    }
+
+    .duty-name {
+        font-weight: 600;
+        color: #667eea;
+        margin-right: 10px;
+    }
+
+    .duty-schedule {
+        display: flex;
+        gap: 8px;
+        flex: 1;
+        font-size: 13px;
+    }
+
+    .duty-day {
+        color: #666;
+    }
+
+    .btn-delete-duty {
+        background: #ff4757;
+        color: white;
+        padding: 5px 12px;
+        font-size: 12px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .btn-delete-duty:hover {
+        background: #ff3838;
+    }
+
     .department-actions {
         display: flex;
         gap: 10px;
@@ -422,13 +470,44 @@
     </div>
 </div>
 
-<!-- Modal แสดง Duty -->
+<!-- Modal เพิ่ม Duty -->
 <div id="dutyModal" class="modal">
     <div class="modal-content">
-        <h3>📅 Duty ประจำสัปดาห์</h3>
+        <h3>➕ เพิ่มภาระงาน (Duty)</h3>
         <p><strong id="dutyDepartmentName"></strong></p>
-        <div id="dutySchedule" style="text-align: left; margin: 20px 0;"></div>
-        <button onclick="closeDutyModal()" class="btn btn-primary">ปิด</button>
+        <div style="text-align: left; margin: 20px 0;">
+            <div class="form-group">
+                <label style="margin-bottom: 10px; display: block;">เลือกภาระงาน:</label>
+                <label style="display: block; margin-bottom: 10px; cursor: pointer;">
+                    <input type="radio" name="dutyType" value="OPD" checked> OPD
+                </label>
+                <label style="display: block; margin-bottom: 10px; cursor: pointer;">
+                    <input type="radio" name="dutyType" value="Consult"> Consult
+                </label>
+                <label style="display: block; margin-bottom: 10px; cursor: pointer;">
+                    <input type="radio" name="dutyType" value="other"> อื่นๆ: 
+                    <input type="text" id="otherDutyName" placeholder="ระบุภาระงาน" 
+                           style="margin-left: 10px; padding: 5px; border: 1px solid #ddd; border-radius: 4px; width: 150px;">
+                </label>
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button onclick="closeDutyModal()" class="btn btn-secondary">ยกเลิก</button>
+            <button onclick="confirmAddDuty()" class="btn btn-primary">เพิ่ม Duty</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal ยืนยันการลบ Duty -->
+<div id="deleteDutyModal" class="modal">
+    <div class="modal-content">
+        <h3>⚠️ ยืนยันการลบ Duty</h3>
+        <p>คุณแน่ใจหรือไม่ว่าต้องการลบ<br><strong id="deleteDutyName"></strong>?</p>
+        <p style="color: #ff4757; font-size: 13px;">การลบจะไม่สามารถย้อนกลับได้</p>
+        <div class="modal-actions">
+            <button onclick="closeDeleteDutyModal()" class="btn btn-secondary">ยกเลิก</button>
+            <button onclick="confirmDeleteDuty()" class="btn btn-primary" style="background: #ff4757;">ลบ Duty</button>
+        </div>
     </div>
 </div>
 
@@ -436,6 +515,9 @@
     const API_URL = 'https://dep-doc-worker.9vk92zm5z2.workers.dev';
     let deleteDepartmentId = null;
     let editDepartmentId = null;
+    let currentDepartmentId = null;
+    let currentDepartmentName = null;
+    let deleteDutyId = null;
 
     // ตรวจสอบ Login
     window.onload = function() {
@@ -520,19 +602,51 @@
                 departments.sort((a, b) => a.name.localeCompare(b.name, ['en', 'th']));
 
                 let html = '';
-                departments.forEach(dept => {
+                for (const dept of departments) {
                     const safeName = dept.name.replace(/'/g, "\\'");
+                    
+                    // โหลด Duties ของแผนกนี้
+                    const dutiesResponse = await fetch(`${API_URL}/api/duties/department/${dept.id}`);
+                    const dutiesData = await dutiesResponse.json();
+                    const duties = dutiesData.success ? dutiesData.data : [];
+                    
                     html += `
                         <div class="department-item">
-                            <div class="department-name">${dept.name}</div>
+                            <div style="flex: 1;">
+                                <div class="department-name">${dept.name}</div>
+                                ${duties.length > 0 ? '<div class="duty-list">' : ''}
+                    `;
+                    
+                    // แสดงรายการ Duty
+                    duties.forEach(duty => {
+                        html += `
+                            <div class="duty-item">
+                                <span class="duty-name">${duty.duty_name}</span>
+                                <div class="duty-schedule">
+                                    <span class="duty-day">จ ${duty.mon_count}</span>
+                                    <span class="duty-day">อ ${duty.tue_count}</span>
+                                    <span class="duty-day">พ ${duty.wed_count}</span>
+                                    <span class="duty-day">พฤ ${duty.thu_count}</span>
+                                    <span class="duty-day">ศ ${duty.fri_count}</span>
+                                    <span class="duty-day">ส ${duty.sat_count}</span>
+                                    <span class="duty-day">อา ${duty.sun_count}</span>
+                                </div>
+                                <button onclick="showDeleteDutyModal(${duty.id}, '${duty.duty_name.replace(/'/g, "\\'")}')" class="btn-delete-duty">ลบ</button>
+                            </div>
+                        `;
+                    });
+                    
+                    html += `
+                                ${duties.length > 0 ? '</div>' : ''}
+                            </div>
                             <div class="department-actions">
                                 <button onclick="showDeleteModal(${dept.id}, '${safeName}')" class="btn-small btn-delete">🗑️ ลบ</button>
                                 <button onclick="showEditModal(${dept.id}, '${safeName}')" class="btn-small btn-edit">🔧 แก้ไข</button>
-                                <button onclick="showDutyModal('${safeName}')" class="btn-small btn-duty">➕ Duty</button>
+                                <button onclick="showDutyModal(${dept.id}, '${safeName}')" class="btn-small btn-duty">➕ Duty</button>
                             </div>
                         </div>
                     `;
-                });
+                }
                 
                 departmentsList.innerHTML = html;
             } else {
@@ -625,19 +739,102 @@
     }
 
     // Modal Duty
-    function showDutyModal(departmentName) {
+    function showDutyModal(departmentId, departmentName) {
+        currentDepartmentId = departmentId;
+        currentDepartmentName = departmentName;
         document.getElementById('dutyDepartmentName').textContent = departmentName;
-        const days = ['จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์', 'อาทิตย์'];
-        let html = '';
-        days.forEach(day => {
-            html += `<div style="display: flex; justify-content: space-between; padding: 10px; background: #f9f9f9; margin-bottom: 8px; border-radius: 6px;"><strong>${day}:</strong><span>0 คน</span></div>`;
-        });
-        document.getElementById('dutySchedule').innerHTML = html;
+        
+        // รีเซ็ตฟอร์ม
+        document.querySelector('input[name="dutyType"][value="OPD"]').checked = true;
+        document.getElementById('otherDutyName').value = '';
+        
         document.getElementById('dutyModal').classList.add('show');
     }
 
     function closeDutyModal() {
         document.getElementById('dutyModal').classList.remove('show');
+        currentDepartmentId = null;
+        currentDepartmentName = null;
+    }
+
+    async function confirmAddDuty() {
+        const selectedType = document.querySelector('input[name="dutyType"]:checked').value;
+        let dutyName = '';
+        
+        if (selectedType === 'other') {
+            dutyName = document.getElementById('otherDutyName').value.trim();
+            if (!dutyName) {
+                alert('กรุณาระบุชื่อภาระงาน');
+                return;
+            }
+        } else {
+            dutyName = selectedType;
+        }
+
+        if (!currentDepartmentId) return;
+
+        try {
+            const response = await fetch(`${API_URL}/api/duties`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    departmentId: currentDepartmentId,
+                    dutyName: dutyName
+                })
+            });
+
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                closeDutyModal();
+                loadDepartments();
+                
+                const listMessage = document.getElementById('listMessage');
+                listMessage.className = 'message success show';
+                listMessage.textContent = '✅ เพิ่ม Duty สำเร็จ';
+                setTimeout(() => listMessage.classList.remove('show'), 3000);
+            } else {
+                throw new Error(data.message || 'ไม่สามารถเพิ่ม Duty ได้');
+            }
+        } catch (error) {
+            alert('❌ ' + error.message);
+        }
+    }
+
+    // Modal ลบ Duty
+    function showDeleteDutyModal(dutyId, dutyName) {
+        deleteDutyId = dutyId;
+        document.getElementById('deleteDutyName').textContent = dutyName;
+        document.getElementById('deleteDutyModal').classList.add('show');
+    }
+
+    function closeDeleteDutyModal() {
+        document.getElementById('deleteDutyModal').classList.remove('show');
+        deleteDutyId = null;
+    }
+
+    async function confirmDeleteDuty() {
+        if (!deleteDutyId) return;
+
+        try {
+            const response = await fetch(`${API_URL}/api/duties/${deleteDutyId}`, { method: 'DELETE' });
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                closeDeleteDutyModal();
+                loadDepartments();
+                
+                const listMessage = document.getElementById('listMessage');
+                listMessage.className = 'message success show';
+                listMessage.textContent = '✅ ลบ Duty สำเร็จ';
+                setTimeout(() => listMessage.classList.remove('show'), 3000);
+            } else {
+                throw new Error(data.message || 'ไม่สามารถลบ Duty ได้');
+            }
+        } catch (error) {
+            alert('❌ ' + error.message);
+            closeDeleteDutyModal();
+        }
     }
 
     // ปิด Modal เมื่อคลิกนอก
