@@ -565,8 +565,18 @@
         margin: 0;
     }
 
+    .name-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+    }
+
     /* Media Query สำหรับมือถือแนวตั้ง (< 640px) */
     @media (max-width: 640px) {
+        .name-row {
+            grid-template-columns: 1fr;
+        }
+
         .department-item {
             margin-left: -10px;
             margin-right: -10px;
@@ -688,34 +698,47 @@
                         <option value="">-- เลือกแผนก --</option>
                     </select>
                 </div>
-                <div class="form-group">
-                    <div style="display: flex; gap: 30px; margin-top: 8px;">
-                        <label style="cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                
+                <!-- บรรทัด: นพ./พญ. + Full time/Part time -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 20px;">
+                    <div style="display: flex; gap: 15px;">
+                        <label style="cursor: pointer; display: flex; align-items: center; gap: 5px; margin: 0;">
                             <input type="radio" name="doctorTitle" value="นพ." checked>
                             <span>นพ.</span>
                         </label>
-                        <label style="cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                        <label style="cursor: pointer; display: flex; align-items: center; gap: 5px; margin: 0;">
                             <input type="radio" name="doctorTitle" value="พญ.">
                             <span>พญ.</span>
                         </label>
                     </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button type="button" id="btnFullTime" onclick="selectWorkType('full')" style="padding: 8px 16px; border: 2px solid #11998e; background: #11998e; color: white; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">Full time</button>
+                        <button type="button" id="btnPartTime" onclick="selectWorkType('part')" style="padding: 8px 16px; border: 2px solid #e0e0e0; background: white; color: #666; border-radius: 6px; cursor: pointer; font-size: 14px;">Part time</button>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label for="doctorFirstName">ชื่อ</label>
-                    <input type="text" id="doctorFirstName" required 
-                           placeholder="เช่น สมชาย">
+                
+                <!-- ชื่อ-นามสกุล (แยกบรรทัดในมือถือ) -->
+                <div class="name-row">
+                    <div class="form-group">
+                        <label for="doctorFirstName">ชื่อ</label>
+                        <input type="text" id="doctorFirstName" required 
+                               placeholder="เช่น สมชาย">
+                    </div>
+                    <div class="form-group">
+                        <label for="doctorLastName">นามสกุล</label>
+                        <input type="text" id="doctorLastName" required 
+                               placeholder="เช่น ใจดี">
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label for="doctorLastName">นามสกุล</label>
-                    <input type="text" id="doctorLastName" required 
-                           placeholder="เช่น ใจดี">
-                </div>
+                
                 <div class="form-group">
                     <label for="doctorLicenseNumber">เลขใบประกอบวิชาชีพแพทย์ (เลข ว)</label>
                     <input type="text" id="doctorLicenseNumber" required 
                            placeholder="กรอกเฉพาะตัวเลข" pattern="[0-9]+">
                     <small>กรอกเฉพาะตัวเลขเท่านั้น</small>
                 </div>
+                
+                <input type="hidden" id="doctorWorkType" value="full">
                 <button type="submit" class="btn btn-primary">เพิ่มแพทย์</button>
             </form>
         </div>
@@ -890,6 +913,31 @@
     let currentDoctorDepartmentId = null;
     let deleteDoctorDutyId = null;
     let allDoctors = [];
+
+    // เลือก Work Type
+    function selectWorkType(type) {
+        const btnFull = document.getElementById('btnFullTime');
+        const btnPart = document.getElementById('btnPartTime');
+        const input = document.getElementById('doctorWorkType');
+        
+        if (type === 'full') {
+            btnFull.style.background = '#11998e';
+            btnFull.style.color = 'white';
+            btnFull.style.borderColor = '#11998e';
+            btnPart.style.background = 'white';
+            btnPart.style.color = '#666';
+            btnPart.style.borderColor = '#e0e0e0';
+            input.value = 'full';
+        } else {
+            btnPart.style.background = '#11998e';
+            btnPart.style.color = 'white';
+            btnPart.style.borderColor = '#11998e';
+            btnFull.style.background = 'white';
+            btnFull.style.color = '#666';
+            btnFull.style.borderColor = '#e0e0e0';
+            input.value = 'part';
+        }
+    }
 
     // ตรวจสอบ Login
     window.onload = function() {
