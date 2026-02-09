@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>รอการอนุมัติ - ระบบลางานแพทย์</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+```
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+    }
+
+    .container {
+        background: white;
+        padding: 50px 40px;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        max-width: 500px;
+        width: 100%;
+        text-align: center;
+    }
+
+    .icon {
+        font-size: 80px;
+        margin-bottom: 20px;
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% {
+            transform: scale(1);
+        }
+        50% {
+            transform: scale(1.1);
+        }
+    }
+
+    h1 {
+        color: #333;
+        font-size: 28px;
+        margin-bottom: 15px;
+    }
+
+    .message {
+        color: #666;
+        font-size: 16px;
+        line-height: 1.6;
+        margin-bottom: 30px;
+    }
+
+    .user-info {
+        background: #f5f5f5;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 30px;
+    }
+
+    .user-info p {
+        color: #333;
+        font-size: 14px;
+        margin-bottom: 5px;
+    }
+
+    .user-info strong {
+        color: #667eea;
+    }
+
+    .btn {
+        padding: 15px 40px;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .btn-logout {
+        background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%);
+        color: white;
+    }
+
+    .btn-logout:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(245, 87, 108, 0.4);
+    }
+
+    .info-box {
+        background: #e3f2fd;
+        border-left: 4px solid #2196f3;
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 30px;
+        text-align: left;
+    }
+
+    .info-box h3 {
+        color: #1976d2;
+        font-size: 16px;
+        margin-bottom: 10px;
+    }
+
+    .info-box ul {
+        color: #333;
+        font-size: 14px;
+        margin-left: 20px;
+    }
+
+    .info-box li {
+        margin-bottom: 5px;
+    }
+
+    @media (max-width: 600px) {
+        .container {
+            padding: 40px 30px;
+        }
+
+        h1 {
+            font-size: 24px;
+        }
+
+        .icon {
+            font-size: 60px;
+        }
+    }
+</style>
+```
+
+</head>
+<body>
+    <div class="container">
+        <div class="icon">⏳</div>
+        <h1>กรุณารอการอนุมัติ</h1>
+        <p class="message">
+            ขณะนี้บัญชีของคุณยังไม่สามารถเข้าใช้งานระบบได้<br>
+            เนื่องจากยังไม่มีข้อมูลพื้นฐานในระบบ
+        </p>
+
+```
+    <div class="user-info">
+        <p><strong>ชื่อผู้ใช้:</strong> <span id="username">-</span></p>
+        <p><strong>เลข ว:</strong> <span id="licenseNumber">-</span></p>
+        <p><strong>สถานะ:</strong> <span style="color: #ff9800;">รอดำเนินการ</span></p>
+    </div>
+
+    <div class="info-box">
+        <h3>📌 ขั้นตอนถัดไป:</h3>
+        <ul>
+            <li>กรุณาติดต่อผู้ดูแลระบบ (Admin)</li>
+            <li>เพื่อให้เพิ่มข้อมูลของคุณเข้าสู่ระบบ</li>
+            <li>หลังจากนั้น กรุณา Login ใหม่อีกครั้ง</li>
+        </ul>
+    </div>
+
+    <button onclick="logout()" class="btn btn-logout">ออกจากระบบ</button>
+</div>
+
+<script>
+    // แสดงข้อมูลผู้ใช้
+    window.onload = function() {
+        const username = sessionStorage.getItem('username');
+        const licenseNumber = sessionStorage.getItem('license_number');
+
+        if (username) {
+            document.getElementById('username').textContent = username;
+        }
+        
+        if (licenseNumber) {
+            document.getElementById('licenseNumber').textContent = licenseNumber;
+        }
+    };
+
+    function logout() {
+        sessionStorage.clear();
+        window.location.href = 'index.html';
+    }
+</script>
+```
+
+</body>
+</html>
