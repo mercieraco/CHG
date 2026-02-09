@@ -31,6 +31,7 @@
         max-width: 500px;
         width: 100%;
         text-align: center;
+        margin: 0 auto;
     }
 
     .icon {
@@ -153,7 +154,6 @@
 
 ```
     <div class="user-info">
-        <p><strong>ชื่อผู้ใช้:</strong> <span id="username">-</span></p>
         <p><strong>เลข ว:</strong> <span id="licenseNumber">-</span></p>
         <p><strong>สถานะ:</strong> <span style="color: #ff9800;">รอดำเนินการ</span></p>
     </div>
@@ -173,13 +173,8 @@
 <script>
     // แสดงข้อมูลผู้ใช้
     window.onload = function() {
-        const username = sessionStorage.getItem('username');
         const licenseNumber = sessionStorage.getItem('license_number');
 
-        if (username) {
-            document.getElementById('username').textContent = username;
-        }
-        
         if (licenseNumber) {
             document.getElementById('licenseNumber').textContent = licenseNumber;
         }
