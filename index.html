@@ -181,13 +181,15 @@
                 // เก็บข้อมูล session
                 sessionStorage.setItem('loggedIn', 'true');
                 sessionStorage.setItem('username', data.data.licenseNumber);
+                sessionStorage.setItem('license_number', data.data.licenseNumber);
                 sessionStorage.setItem('role', data.data.role);
                 
                 // Redirect ตาม role
                 if (data.data.role === 'admin') {
                     window.location.href = 'dev.html';
                 } else {
-                    window.location.href = 'user.html';
+                    // สำหรับ user: เช็คว่ามี เลข ว หลัง หรือไม่
+                    checkDoctorData(data.data.licenseNumber);
                 }
             } else {
                 // Login ไม่สำเร็จ
@@ -202,6 +204,31 @@
             document.getElementById('password').value = '';
         }
     });
+
+    // ฟังก์ชันเช็ค เลข ว หลัง
+    async function checkDoctorData(licenseNumber) {
+        try {
+            const response = await fetch(`https://dep-doc-worker.9vk92zm5z2.workers.dev/api/check-doctor/${licenseNumber}`);
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                if (data.exists) {
+                    // มี เลข ว หลัง → ไป user.html
+                    window.location.href = 'user.html';
+                } else {
+                    // ไม่มี เลข ว หลัง → ไป wait.html
+                    window.location.href = 'wait.html';
+                }
+            } else {
+                // เกิด error → ไป wait.html เพื่อความปลอดภัย
+                window.location.href = 'wait.html';
+            }
+        } catch (error) {
+            console.error('Check doctor error:', error);
+            // เกิด error → ไป wait.html เพื่อความปลอดภัย
+            window.location.href = 'wait.html';
+        }
+    }
 </script>
 ```
 
