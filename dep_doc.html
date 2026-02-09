@@ -216,6 +216,7 @@
         border-radius: 10px;
         margin-bottom: 15px;
         transition: all 0.3s;
+        max-width: 100%;
     }
 
     .department-item:hover {
@@ -255,6 +256,8 @@
         color: #667eea;
         font-size: 20px;
         flex-shrink: 0;
+        width: 120px;
+        min-width: 120px;
     }
 
     .duty-schedule {
@@ -262,12 +265,13 @@
         gap: 15px;
         flex: 1;
         font-size: 20px;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
     }
 
     .duty-day {
         color: #333;
         font-weight: 500;
+        white-space: nowrap;
     }
 
     .btn-delete-duty {
@@ -461,11 +465,17 @@
 
         .duty-name {
             font-size: 14px;
+            width: 80px;
+            min-width: 80px;
         }
 
         .duty-schedule {
             font-size: 12px;
             gap: 6px;
+        }
+
+        .duty-day {
+            white-space: nowrap;
         }
 
         .duty-item {
