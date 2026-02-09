@@ -375,7 +375,7 @@
         color: #666;
     }
 
-    .btn-delete-doctor, .btn-duty-doctor {
+    .btn-delete-doctor, .btn-duty-doctor, .btn-edit-doctor {
         padding: 8px 16px;
         font-size: 13px;
         border: none;
@@ -392,6 +392,16 @@
 
     .btn-delete-doctor:hover {
         background: #ff3838;
+        transform: translateY(-2px);
+    }
+
+    .btn-edit-doctor {
+        background: #ffa502;
+        color: white;
+    }
+
+    .btn-edit-doctor:hover {
+        background: #ff9000;
         transform: translateY(-2px);
     }
 
@@ -901,6 +911,44 @@
     </div>
 </div>
 
+<!-- Modal แก้ไขแพทย์ -->
+<div id="editDoctorModal" class="modal">
+    <div class="modal-content">
+        <h3>✏️ แก้ไขข้อมูลแพทย์</h3>
+        <p><strong id="editDoctorCurrentName"></strong></p>
+        
+        <div class="form-group" style="text-align: left;">
+            <label for="editDoctorFirstName">ชื่อ</label>
+            <input type="text" id="editDoctorFirstName" required>
+        </div>
+
+        <div class="form-group" style="text-align: left;">
+            <label for="editDoctorLastName">นามสกุล</label>
+            <input type="text" id="editDoctorLastName" required>
+        </div>
+
+        <div class="form-group" style="text-align: left;">
+            <label for="editDoctorDepartment">แผนก</label>
+            <select id="editDoctorDepartment" required>
+                <option value="">-- เลือกแผนก --</option>
+            </select>
+        </div>
+
+        <div class="form-group" style="text-align: left;">
+            <label for="editDoctorWorkType">ประเภทการทำงาน</label>
+            <select id="editDoctorWorkType" required>
+                <option value="full">Full time</option>
+                <option value="part">Part time</option>
+            </select>
+        </div>
+
+        <div class="modal-actions">
+            <button onclick="closeEditDoctorModal()" class="btn btn-secondary">ยกเลิก</button>
+            <button onclick="confirmEditDoctor()" class="btn btn-primary">บันทึก</button>
+        </div>
+    </div>
+</div>
+
 <script>
     const API_URL = 'https://dep-doc-worker.9vk92zm5z2.workers.dev';
     let deleteDepartmentId = null;
@@ -909,6 +957,7 @@
     let currentDepartmentName = null;
     let deleteDutyId = null;
     let deleteDoctorId = null;
+    let editDoctorId = null;
     let currentDoctorId = null;
     let currentDoctorDepartmentId = null;
     let deleteDoctorDutyId = null;
@@ -1436,6 +1485,7 @@
                         </div>
                         <div class="doctor-actions">
                             <button onclick="showDeleteDoctorModal(${doctor.id}, '${safeName}')" class="btn-delete-doctor">🗑️ ลบ</button>
+                            <button onclick="showEditDoctorModal(${doctor.id}, '${safeName}', ${doctor.department_id}, '${doctor.work_type || 'full'}')" class="btn-edit-doctor">🔧 แก้ไข</button>
                             <button onclick="showDoctorDutyModal(${doctor.id}, ${doctor.department_id}, '${safeName}')" class="btn-duty-doctor">📅 Duty</button>
                         </div>
                     </div>
@@ -1640,6 +1690,98 @@
         } catch (error) {
             alert('❌ ' + error.message);
             closeDeleteDoctorDutyModal();
+        }
+    }
+
+    // Modal แก้ไขแพทย์
+    async function showEditDoctorModal(doctorId, doctorName, departmentId, workType) {
+        editDoctorId = doctorId;
+        
+        // แยกชื่อและนามสกุล (ตัดสรรพนาม)
+        const nameWithoutTitle = doctorName.replace(/^(นพ\.|พญ\.)/, '');
+        const nameParts = nameWithoutTitle.trim().split(' ');
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.slice(1).join(' ') || '';
+        
+        document.getElementById('editDoctorCurrentName').textContent = doctorName;
+        document.getElementById('editDoctorFirstName').value = firstName;
+        document.getElementById('editDoctorLastName').value = lastName;
+        document.getElementById('editDoctorWorkType').value = workType || 'full';
+        
+        // โหลดแผนก
+        try {
+            const response = await fetch(`${API_URL}/api/departments`);
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                const departments = data.data;
+                departments.sort((a, b) => a.name.localeCompare(b.name, ['en', 'th']));
+                
+                const select = document.getElementById('editDoctorDepartment');
+                select.innerHTML = '<option value="">-- เลือกแผนก --</option>';
+                
+                departments.forEach(dept => {
+                    const option = document.createElement('option');
+                    option.value = dept.id;
+                    option.textContent = dept.name;
+                    if (dept.id === departmentId) {
+                        option.selected = true;
+                    }
+                    select.appendChild(option);
+                });
+            }
+        } catch (error) {
+            console.error('Error loading departments:', error);
+        }
+        
+        document.getElementById('editDoctorModal').classList.add('show');
+    }
+
+    function closeEditDoctorModal() {
+        document.getElementById('editDoctorModal').classList.remove('show');
+        editDoctorId = null;
+    }
+
+    async function confirmEditDoctor() {
+        const firstName = document.getElementById('editDoctorFirstName').value.trim();
+        const lastName = document.getElementById('editDoctorLastName').value.trim();
+        const departmentId = document.getElementById('editDoctorDepartment').value;
+        const workType = document.getElementById('editDoctorWorkType').value;
+        
+        if (!firstName || !lastName || !departmentId) {
+            alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+            return;
+        }
+
+        if (!editDoctorId) return;
+
+        try {
+            const response = await fetch(`${API_URL}/api/doctors/${editDoctorId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    firstName: firstName,
+                    lastName: lastName,
+                    departmentId: parseInt(departmentId),
+                    workType: workType
+                })
+            });
+
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                closeEditDoctorModal();
+                loadDoctors();
+                
+                const doctorListMessage = document.getElementById('doctorListMessage');
+                doctorListMessage.className = 'message success show';
+                doctorListMessage.textContent = '✅ แก้ไขข้อมูลแพทย์สำเร็จ';
+                setTimeout(() => doctorListMessage.classList.remove('show'), 3000);
+            } else {
+                throw new Error(data.message || 'ไม่สามารถแก้ไขข้อมูลแพทย์ได้');
+            }
+        } catch (error) {
+            alert('❌ ' + error.message);
         }
     }
 
