@@ -1326,6 +1326,7 @@
         const firstName = document.getElementById('doctorFirstName').value.trim();
         const lastName = document.getElementById('doctorLastName').value.trim();
         const doctorLicenseNumber = document.getElementById('doctorLicenseNumber').value.trim();
+        const workType = document.getElementById('doctorWorkType').value;
         
         const addDoctorMessage = document.getElementById('addDoctorMessage');
         addDoctorMessage.classList.remove('show');
@@ -1338,7 +1339,8 @@
                     doctorName: `${title}${firstName} ${lastName}`,
                     departmentId: parseInt(departmentId),
                     licenseNumber: doctorLicenseNumber,
-                    specialty: ''
+                    specialty: '',
+                    workType: workType
                 })
             });
 
@@ -1348,6 +1350,8 @@
                 addDoctorMessage.className = 'message success show';
                 addDoctorMessage.textContent = '✅ เพิ่มแพทย์สำเร็จ';
                 document.getElementById('addDoctorForm').reset();
+                document.getElementById('doctorWorkType').value = 'full';
+                selectWorkType('full');
                 loadDoctors();
                 
                 setTimeout(() => {
@@ -1426,7 +1430,8 @@
                             <div class="doctor-name">${doctor.name}</div>
                             <div class="doctor-details">
                                 แผนก: ${doctor.department_name || 'ไม่ระบุ'} | 
-                                เลข ว: ${doctor.license_number}
+                                เลข ว: ${doctor.license_number} | 
+                                ${doctor.work_type === 'part' ? '⏰ Part time' : '🕐 Full time'}
                             </div>
                         </div>
                         <div class="doctor-actions">
