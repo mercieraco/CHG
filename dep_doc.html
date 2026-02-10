@@ -1160,6 +1160,9 @@
     async function confirmAddPendingUser() {
         if (!pendingLicenseNumber) return;
         
+        // เก็บค่าไว้ก่อน (เพราะ close จะลบทิ้ง)
+        const licenseToAdd = pendingLicenseNumber;
+        
         closeConfirmAddPendingModal();
         closePendingUsersModal();
         
@@ -1170,7 +1173,7 @@
         setTimeout(() => {
             const licenseField = document.getElementById('doctorLicenseNumber');
             if (licenseField) {
-                licenseField.value = pendingLicenseNumber;
+                licenseField.value = licenseToAdd;  // ใช้ค่าที่เก็บไว้
                 licenseField.readOnly = true;
                 licenseField.style.background = '#f0f0f0';
                 licenseField.style.cursor = 'not-allowed';
@@ -1179,7 +1182,7 @@
             // Scroll ไปที่ฟอร์ม
             document.getElementById('doctorSection').scrollIntoView({ behavior: 'smooth' });
             
-            alert(`✅ กรุณากรอกข้อมูลสำหรับเลข ว: ${pendingLicenseNumber}`);
+            alert(`✅ กรุณากรอกข้อมูลสำหรับเลข ว: ${licenseToAdd}`);
         }, 100);
     }
 
