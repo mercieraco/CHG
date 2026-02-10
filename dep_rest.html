@@ -598,7 +598,7 @@
                 classes.push('on-leave');
             }
             
-            html += `<div class="${classes.join(' ')}" onclick="selectDate('${dateStr}')" onmousedown="startSelection('${dateStr}')" onmouseenter="continueSelection('${dateStr}')" onmouseup="endSelection()">${day}</div>`;
+            html += `<div class="${classes.join(' ')}" onmousedown="handleMouseDown('${dateStr}', event)" onmouseenter="continueSelection('${dateStr}')" onmouseup="endSelection()">${day}</div>`;
         }
         
         calendar.innerHTML = html;
@@ -612,8 +612,9 @@
     }
 
     // เลือกวัน
-    function selectDate(dateStr) {
-        // ตรวจสอบว่าต้องเลือกแพทย์ที่มาแทนหรือไม่
+    // เลือกวัน
+    function selectDate(dateStr, event) {
+        // ตรวจสอบว่าสามารถเลือกได้หรือไม่
         if (!canSelectDate()) {
             return;
         }
@@ -634,22 +635,34 @@
         renderCalendar();
     }
 
+    // จัดการ mouse down (รวม click + drag)
+    function handleMouseDown(dateStr, event) {
+        event.preventDefault();
+        
+        // ตรวจสอบก่อน
+        if (!canSelectDate()) {
+            return;
+        }
+
+        // เริ่ม drag selection
+        startSelection(dateStr);
+    }
+
     // ตรวจสอบว่าสามารถเลือกวันได้หรือไม่
     function canSelectDate() {
+        // ตรวจสอบว่าเลือกแพทย์ที่จะลาหรือยัง
+        const doctorId = document.getElementById('doctorSelect').value;
+        if (!doctorId) {
+            alert('⚠️ กรุณาเลือกแพทย์ก่อน');
+            return false;
+        }
+
+        // ตรวจสอบว่าเลือกแพทย์ที่มาแทนหรือยัง (ถ้าเลือกมีคนมาแทน)
         const hasReplacement = document.querySelector('input[name="hasReplacement"]:checked').value === 'yes';
         const replacementDoctorId = document.getElementById('replacementDoctorSelect').value;
 
         if (hasReplacement && !replacementDoctorId) {
-            // แสดง alert เฉพาะครั้งแรก
-            if (!hasShownAlert) {
-                alert('⚠️ กรุณาเลือกแพทย์ที่มาแทนก่อน');
-                hasShownAlert = true;
-                
-                // Reset flag หลัง 500ms
-                setTimeout(() => {
-                    hasShownAlert = false;
-                }, 500);
-            }
+            alert('⚠️ กรุณาเลือกแพทย์ที่มาแทนก่อน');
             return false;
         }
 
@@ -658,11 +671,6 @@
 
     // Drag selection
     function startSelection(dateStr) {
-        // ตรวจสอบว่าต้องเลือกแพทย์ที่มาแทนหรือไม่
-        if (!canSelectDate()) {
-            return;
-        }
-
         if (isDateOnLeave(dateStr)) return;
         isSelecting = true;
         selectedDates = [dateStr];
@@ -670,12 +678,6 @@
     }
 
     function continueSelection(dateStr) {
-        // ตรวจสอบก่อนทุกครั้ง
-        if (!canSelectDate()) {
-            isSelecting = false;
-            return;
-        }
-
         if (!isSelecting || isDateOnLeave(dateStr)) return;
         
         if (selectedDates.length > 0) {
