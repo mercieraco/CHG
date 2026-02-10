@@ -1165,13 +1165,22 @@
         
         // ไปหน้าเพิ่มแพทย์และใส่เลข ว อัตโนมัติ
         await showDoctorForm();
-        document.getElementById('doctorLicenseNumber').value = pendingLicenseNumber;
-        document.getElementById('doctorLicenseNumber').readOnly = true;
         
-        // Scroll ไปที่ฟอร์ม
-        document.getElementById('doctorSection').scrollIntoView({ behavior: 'smooth' });
-        
-        alert(`✅ กรุณากรอกข้อมูลสำหรับเลข ว: ${pendingLicenseNumber}`);
+        // รอให้ฟอร์มโหลดเสร็จ
+        setTimeout(() => {
+            const licenseField = document.getElementById('doctorLicenseNumber');
+            if (licenseField) {
+                licenseField.value = pendingLicenseNumber;
+                licenseField.readOnly = true;
+                licenseField.style.background = '#f0f0f0';
+                licenseField.style.cursor = 'not-allowed';
+            }
+            
+            // Scroll ไปที่ฟอร์ม
+            document.getElementById('doctorSection').scrollIntoView({ behavior: 'smooth' });
+            
+            alert(`✅ กรุณากรอกข้อมูลสำหรับเลข ว: ${pendingLicenseNumber}`);
+        }, 100);
     }
 
     // แสดง Modal ยืนยันลบ
