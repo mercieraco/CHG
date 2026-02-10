@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบลางานแพทย์ - หน้า Developer</title>
+    <title>จัดการการลา - Doctor Leave Management</title>
     <style>
         * {
             margin: 0;
@@ -14,127 +14,278 @@
 
 ```
     body {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Sarabun', sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         min-height: 100vh;
-        display: flex;
-        justify-content: center;
-        align-items: center;
         padding: 20px;
     }
 
     .container {
-        background: white;
-        padding: 40px;
-        border-radius: 15px;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-        width: 100%;
-        max-width: 600px;
-        text-align: center;
+        max-width: 1200px;
         margin: 0 auto;
+        background: white;
+        border-radius: 20px;
+        padding: 40px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
     }
 
     .header {
-        margin-bottom: 30px;
-    }
-
-    .header h1 {
-        color: #333;
-        font-size: 32px;
-        margin-bottom: 10px;
-    }
-
-    .header p {
-        color: #666;
-        font-size: 16px;
-    }
-
-    .user-info {
-        background: #f5f5f5;
-        padding: 20px;
-        border-radius: 10px;
-        margin-bottom: 30px;
-    }
-
-    .user-info h2 {
-        color: #11998e;
-        font-size: 24px;
-        margin-bottom: 10px;
-    }
-
-    .user-info p {
-        color: #666;
-        font-size: 14px;
-    }
-
-    .badge {
-        display: inline-block;
-        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-        color: white;
-        padding: 5px 15px;
-        border-radius: 20px;
-        font-size: 12px;
-        font-weight: 600;
-        margin-top: 10px;
-    }
-
-    .menu-buttons {
-        margin: 30px 0;
         display: flex;
-        flex-direction: column;
-        gap: 15px;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
     }
 
-    .btn-menu {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    h1 {
+        color: #333;
+        font-size: 28px;
+    }
+
+    .btn-back {
+        padding: 10px 20px;
+        background: #ff6b6b;
         color: white;
-        font-size: 18px;
-        padding: 20px;
-    }
-
-    .btn-menu:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
-    }
-
-    .btn-menu.btn-disabled {
-        background: #e0e0e0;
-        color: #999;
-        cursor: not-allowed;
-    }
-
-    .btn-menu.btn-disabled:hover {
-        transform: none;
-        box-shadow: none;
-    }
-
-    .btn {
-        padding: 15px 30px;
         border: none;
         border-radius: 8px;
-        font-size: 16px;
-        font-weight: 600;
         cursor: pointer;
-        transition: all 0.3s;
+        font-size: 16px;
         text-decoration: none;
         display: inline-block;
     }
 
-    .btn-logout {
-        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    .btn-back:hover {
+        background: #ee5a52;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 8px;
+        color: #555;
+        font-weight: 600;
+    }
+
+    select, input[type="text"] {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 16px;
+        transition: border-color 0.3s;
+    }
+
+    select:focus, input:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+
+    .radio-group {
+        display: flex;
+        gap: 30px;
+        margin-bottom: 20px;
+    }
+
+    .radio-group label {
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        font-weight: 500;
+    }
+
+    .radio-group input[type="radio"] {
+        margin-right: 8px;
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+    }
+
+    .replacement-section {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+
+    .filter-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        margin-bottom: 15px;
+    }
+
+    /* Calendar Styles */
+    .calendar-container {
+        margin-top: 30px;
+    }
+
+    .calendar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .calendar-header h2 {
+        color: #333;
+    }
+
+    .month-nav {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .month-nav button {
+        padding: 8px 16px;
+        background: #667eea;
         color: white;
-    }
-
-    .btn-logout:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 20px rgba(245, 87, 108, 0.4);
-    }
-
-    .coming-soon {
-        color: #999;
-        font-style: italic;
-        margin-top: 20px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
         font-size: 14px;
+    }
+
+    .month-nav button:hover {
+        background: #5568d3;
+    }
+
+    .month-nav span {
+        font-size: 18px;
+        font-weight: 600;
+        min-width: 180px;
+        text-align: center;
+    }
+
+    .calendar {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 5px;
+    }
+
+    .calendar-day-header {
+        text-align: center;
+        padding: 12px;
+        font-weight: 700;
+        color: #555;
+        background: #f0f0f0;
+        border-radius: 6px;
+    }
+
+    .calendar-day {
+        aspect-ratio: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 500;
+        transition: all 0.2s;
+        position: relative;
+        background: white;
+    }
+
+    .calendar-day:hover:not(.empty):not(.other-month) {
+        transform: scale(1.05);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .calendar-day.empty {
+        cursor: default;
+        background: #fafafa;
+        border-color: #f0f0f0;
+    }
+
+    .calendar-day.other-month {
+        color: #ccc;
+        cursor: default;
+    }
+
+    .calendar-day.weekend {
+        border-color: #ffcdd2;
+        background: #fff5f5;
+    }
+
+    .calendar-day.selected {
+        background: #bbdefb !important;
+        border-color: #2196f3 !important;
+        color: #1565c0;
+        font-weight: 700;
+    }
+
+    .calendar-day.on-leave {
+        background: #ffcdd2 !important;
+        border-color: #ef5350 !important;
+        color: #c62828;
+        font-weight: 700;
+    }
+
+    .calendar-day.today {
+        border-color: #4caf50;
+        border-width: 3px;
+    }
+
+    .btn-submit {
+        width: 100%;
+        padding: 16px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 18px;
+        font-weight: 700;
+        cursor: pointer;
+        margin-top: 20px;
+        transition: transform 0.2s;
+    }
+
+    .btn-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .message {
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        display: none;
+    }
+
+    .message.success {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+
+    .message.error {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+
+    .message.show {
+        display: block;
+    }
+
+    .selected-range {
+        background: #e3f2fd;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        text-align: center;
+        font-weight: 600;
+        color: #1976d2;
     }
 </style>
 ```
@@ -143,57 +294,486 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>💻 หน้า Developer</h1>
-            <p>ระบบจัดการและอนุมัติการลางาน</p>
+            <h1>📅 จัดการการลา</h1>
+            <a href="dep_doc.html" class="btn-back">← กลับ</a>
         </div>
 
 ```
-    <div class="user-info">
-        <h2>ยินดีต้อนรับ</h2>
-        <p id="userDisplay">กำลังโหลดข้อมูล...</p>
-        <span class="badge">🔧 ADMIN ACCESS</span>
+    <div id="message" class="message"></div>
+
+    <!-- แผนกและแพทย์ -->
+    <div class="form-row">
+        <div class="form-group">
+            <label>เลือกแผนก</label>
+            <select id="departmentSelect" onchange="loadDoctors()">
+                <option value="">-- เลือกแผนก --</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>เลือกแพทย์</label>
+            <select id="doctorSelect" onchange="loadDoctorLeaves()">
+                <option value="">-- เลือกแพทย์ --</option>
+            </select>
+        </div>
     </div>
 
-    <div class="menu-buttons">
-        <button onclick="window.location.href='dep_doc.html'" class="btn btn-menu">
-            🏥 จัดการแผนก และแพทย์
-        </button>
-        <button onclick="window.location.href='dep_rest.html'" class="btn btn-menu">
-            📝 จัดการการลา
-        </button>
-        <button class="btn btn-menu btn-disabled" disabled>
-            📊 สรุปภาพรวม
-        </button>
+    <!-- ประเภทการลา -->
+    <div class="form-group">
+        <label>ประเภทการลา</label>
+        <div class="radio-group">
+            <label>
+                <input type="radio" name="leaveType" value="more_24" checked>
+                ลา > 24 ชม
+            </label>
+            <label>
+                <input type="radio" name="leaveType" value="less_24">
+                ลา ≤ 24 ชม
+            </label>
+        </div>
     </div>
 
-    <button onclick="logout()" class="btn btn-logout">← ออกจากระบบ</button>
+    <!-- แพทย์ที่มาแทน -->
+    <div class="form-group">
+        <label>แพทย์ที่มาแทน</label>
+        <div class="radio-group">
+            <label>
+                <input type="radio" name="hasReplacement" value="yes" checked onchange="toggleReplacement()">
+                มีคนมาแทน
+            </label>
+            <label>
+                <input type="radio" name="hasReplacement" value="no" onchange="toggleReplacement()">
+                ไม่มีคนมาแทน
+            </label>
+        </div>
+    </div>
 
-    <p class="coming-soon">ฟีเจอร์การจัดการและอนุมัติจะพัฒนาในขั้นตอนถัดไป</p>
+    <div id="replacementSection" class="replacement-section">
+        <div class="filter-row">
+            <div class="form-group">
+                <label>กรองแผนก</label>
+                <select id="filterDepartment" onchange="loadReplacementDoctors()">
+                    <option value="">-- เลือกแผนก --</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>กรองประเภท</label>
+                <select id="filterWorkType" onchange="loadReplacementDoctors()">
+                    <option value="all">All</option>
+                    <option value="full">Full time</option>
+                    <option value="part">Part time</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>เลือกแพทย์ที่มาแทน</label>
+            <select id="replacementDoctorSelect">
+                <option value="">-- เลือกแพทย์ --</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- แสดงช่วงวันที่เลือก -->
+    <div id="selectedRange" class="selected-range" style="display: none;"></div>
+
+    <!-- ปฏิทิน -->
+    <div class="calendar-container">
+        <div class="calendar-header">
+            <h2>📅 ปฏิทินการลา</h2>
+            <div class="month-nav">
+                <button onclick="previousMonth()">◀ เดือนก่อน</button>
+                <span id="currentMonth"></span>
+                <button onclick="nextMonth()">เดือนถัดไป ▶</button>
+            </div>
+        </div>
+        <div class="calendar" id="calendar"></div>
+    </div>
+
+    <button class="btn-submit" onclick="submitLeave()">💾 บันทึกการลา</button>
 </div>
 
 <script>
-    // ตรวจสอบการ login
+    const API_URL = 'https://dep-doc-worker.9vk92zm5z2.workers.dev';
+    const LEAVE_API_URL = 'https://dep-rest-worker.YOUR_SUBDOMAIN.workers.dev'; // แก้ URL ตรงนี้
+
+    let currentYear = new Date().getFullYear();
+    let currentMonth = new Date().getMonth();
+    let selectedDates = [];
+    let isSelecting = false;
+    let doctorLeaves = [];
+
+    // โหลดเมื่อเปิดหน้า
     window.onload = function() {
         const loggedIn = sessionStorage.getItem('loggedIn');
-        const username = sessionStorage.getItem('username');
         const role = sessionStorage.getItem('role');
 
         if (!loggedIn || role !== 'admin') {
-            // ถ้ายังไม่ได้ login หรือไม่ใช่ admin ให้กลับไปหน้า login
             window.location.href = 'index.html';
             return;
         }
 
-        // แสดงข้อมูลผู้ใช้
-        document.getElementById('userDisplay').textContent = `คุณ ${username} (Admin)`;
+        loadDepartments();
+        renderCalendar();
     };
 
-    function logout() {
-        // ลบข้อมูล session
-        sessionStorage.clear();
+    // โหลดแผนก
+    async function loadDepartments() {
+        try {
+            const response = await fetch(`${API_URL}/api/departments`);
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                const departments = data.data.sort((a, b) => a.name.localeCompare(b.name));
+                
+                const departmentSelect = document.getElementById('departmentSelect');
+                const filterDepartment = document.getElementById('filterDepartment');
+                
+                departments.forEach(dept => {
+                    departmentSelect.innerHTML += `<option value="${dept.id}">${dept.name}</option>`;
+                    filterDepartment.innerHTML += `<option value="${dept.id}">${dept.name}</option>`;
+                });
+            }
+        } catch (error) {
+            console.error('Load departments error:', error);
+        }
+    }
+
+    // โหลดแพทย์ตามแผนก
+    async function loadDoctors() {
+        const departmentId = document.getElementById('departmentSelect').value;
+        const doctorSelect = document.getElementById('doctorSelect');
+        doctorSelect.innerHTML = '<option value="">-- เลือกแพทย์ --</option>';
+
+        if (!departmentId) return;
+
+        // ตั้งค่า default filter แผนก
+        document.getElementById('filterDepartment').value = departmentId;
+
+        try {
+            const response = await fetch(`${API_URL}/api/doctors`);
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                const doctors = data.data
+                    .filter(d => d.department_id == departmentId)
+                    .sort((a, b) => a.name.localeCompare(b.name, ['en', 'th']));
+                
+                doctors.forEach(doc => {
+                    doctorSelect.innerHTML += `<option value="${doc.id}">${doc.name}</option>`;
+                });
+            }
+        } catch (error) {
+            console.error('Load doctors error:', error);
+        }
+
+        loadReplacementDoctors();
+    }
+
+    // โหลดแพทย์ที่มาแทน
+    async function loadReplacementDoctors() {
+        const filterDept = document.getElementById('filterDepartment').value;
+        const filterType = document.getElementById('filterWorkType').value;
+        const replacementSelect = document.getElementById('replacementDoctorSelect');
+        replacementSelect.innerHTML = '<option value="">-- เลือกแพทย์ --</option>';
+
+        if (!filterDept) return;
+
+        try {
+            const response = await fetch(`${API_URL}/api/doctors`);
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                let doctors = data.data.filter(d => d.department_id == filterDept);
+                
+                if (filterType === 'full') {
+                    doctors = doctors.filter(d => d.work_type === 'full');
+                } else if (filterType === 'part') {
+                    doctors = doctors.filter(d => d.work_type === 'part');
+                }
+                
+                doctors.sort((a, b) => a.name.localeCompare(b.name, ['en', 'th']));
+                
+                doctors.forEach(doc => {
+                    replacementSelect.innerHTML += `<option value="${doc.id}">${doc.name} (${doc.work_type === 'full' ? 'Full time' : 'Part time'})</option>`;
+                });
+            }
+        } catch (error) {
+            console.error('Load replacement doctors error:', error);
+        }
+    }
+
+    // Toggle replacement section
+    function toggleReplacement() {
+        const hasReplacement = document.querySelector('input[name="hasReplacement"]:checked').value;
+        document.getElementById('replacementSection').style.display = hasReplacement === 'yes' ? 'block' : 'none';
+    }
+
+    // โหลดการลาของแพทย์
+    async function loadDoctorLeaves() {
+        const doctorId = document.getElementById('doctorSelect').value;
+        if (!doctorId) {
+            doctorLeaves = [];
+            renderCalendar();
+            return;
+        }
+
+        try {
+            const response = await fetch(`${LEAVE_API_URL}/api/leaves/doctor/${doctorId}`);
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                doctorLeaves = data.data;
+                renderCalendar();
+            }
+        } catch (error) {
+            console.error('Load leaves error:', error);
+            doctorLeaves = [];
+            renderCalendar();
+        }
+    }
+
+    // สร้างปฏิทิน
+    function renderCalendar() {
+        const calendar = document.getElementById('calendar');
+        const monthYear = document.getElementById('currentMonth');
         
-        // กลับไปหน้า login
-        window.location.href = 'index.html';
+        const monthNames = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+                          'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+        
+        monthYear.textContent = `${monthNames[currentMonth]} ${currentYear + 543}`;
+        
+        const firstDay = new Date(currentYear, currentMonth, 1);
+        const lastDay = new Date(currentYear, currentMonth + 1, 0);
+        const startDayOfWeek = firstDay.getDay();
+        const daysInMonth = lastDay.getDate();
+        
+        const dayHeaders = ['จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส', 'อา'];
+        
+        let html = '';
+        dayHeaders.forEach(day => {
+            html += `<div class="calendar-day-header">${day}</div>`;
+        });
+        
+        // วันว่าง
+        const startDay = startDayOfWeek === 0 ? 6 : startDayOfWeek - 1;
+        for (let i = 0; i < startDay; i++) {
+            html += '<div class="calendar-day empty"></div>';
+        }
+        
+        // วันในเดือน
+        const today = new Date();
+        for (let day = 1; day <= daysInMonth; day++) {
+            const date = new Date(currentYear, currentMonth, day);
+            const dateStr = formatDate(date);
+            const dayOfWeek = date.getDay();
+            
+            let classes = ['calendar-day'];
+            
+            // เสาร์อาทิตย์
+            if (dayOfWeek === 0 || dayOfWeek === 6) {
+                classes.push('weekend');
+            }
+            
+            // วันนี้
+            if (date.toDateString() === today.toDateString()) {
+                classes.push('today');
+            }
+            
+            // วันที่เลือก
+            if (selectedDates.includes(dateStr)) {
+                classes.push('selected');
+            }
+            
+            // วันที่ลาแล้ว
+            if (isDateOnLeave(dateStr)) {
+                classes.push('on-leave');
+            }
+            
+            html += `<div class="${classes.join(' ')}" onclick="selectDate('${dateStr}')" onmousedown="startSelection('${dateStr}')" onmouseenter="continueSelection('${dateStr}')" onmouseup="endSelection()">${day}</div>`;
+        }
+        
+        calendar.innerHTML = html;
+    }
+
+    // เช็คว่าวันนี้ลาหรือไม่
+    function isDateOnLeave(dateStr) {
+        return doctorLeaves.some(leave => {
+            return dateStr >= leave.start_date && dateStr <= leave.end_date;
+        });
+    }
+
+    // เลือกวัน
+    function selectDate(dateStr) {
+        if (isDateOnLeave(dateStr)) {
+            alert('วันนี้มีการลาอยู่แล้ว');
+            return;
+        }
+
+        if (selectedDates.includes(dateStr)) {
+            selectedDates = selectedDates.filter(d => d !== dateStr);
+        } else {
+            selectedDates.push(dateStr);
+        }
+        
+        selectedDates.sort();
+        updateSelectedRange();
+        renderCalendar();
+    }
+
+    // Drag selection
+    function startSelection(dateStr) {
+        if (isDateOnLeave(dateStr)) return;
+        isSelecting = true;
+        selectedDates = [dateStr];
+        renderCalendar();
+    }
+
+    function continueSelection(dateStr) {
+        if (!isSelecting || isDateOnLeave(dateStr)) return;
+        
+        if (selectedDates.length > 0) {
+            const start = selectedDates[0];
+            const dates = getDateRange(start, dateStr);
+            selectedDates = dates.filter(d => !isDateOnLeave(d));
+        }
+        
+        updateSelectedRange();
+        renderCalendar();
+    }
+
+    function endSelection() {
+        isSelecting = false;
+    }
+
+    // สร้างช่วงวัน
+    function getDateRange(start, end) {
+        const dates = [];
+        let current = new Date(start);
+        const endDate = new Date(end);
+        
+        if (current > endDate) {
+            [current, endDate] = [endDate, current];
+        }
+        
+        while (current <= endDate) {
+            dates.push(formatDate(current));
+            current.setDate(current.getDate() + 1);
+        }
+        
+        return dates;
+    }
+
+    // แสดงช่วงที่เลือก
+    function updateSelectedRange() {
+        const rangeDiv = document.getElementById('selectedRange');
+        if (selectedDates.length === 0) {
+            rangeDiv.style.display = 'none';
+            return;
+        }
+        
+        const start = selectedDates[0];
+        const end = selectedDates[selectedDates.length - 1];
+        const days = selectedDates.length;
+        
+        rangeDiv.textContent = `📅 เลือก: ${formatDateThai(start)} - ${formatDateThai(end)} (${days} วัน)`;
+        rangeDiv.style.display = 'block';
+    }
+
+    // ฟอร์แมตวันที่
+    function formatDate(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    function formatDateThai(dateStr) {
+        const date = new Date(dateStr);
+        const day = date.getDate();
+        const month = date.getMonth() + 1;
+        const year = date.getFullYear() + 543;
+        return `${day}/${month}/${year}`;
+    }
+
+    // เดือนก่อนหน้า
+    function previousMonth() {
+        currentMonth--;
+        if (currentMonth < 0) {
+            currentMonth = 11;
+            currentYear--;
+        }
+        renderCalendar();
+    }
+
+    // เดือนถัดไป
+    function nextMonth() {
+        currentMonth++;
+        if (currentMonth > 11) {
+            currentMonth = 0;
+            currentYear++;
+        }
+        renderCalendar();
+    }
+
+    // บันทึกการลา
+    async function submitLeave() {
+        const doctorId = document.getElementById('doctorSelect').value;
+        const leaveType = document.querySelector('input[name="leaveType"]:checked').value;
+        const hasReplacement = document.querySelector('input[name="hasReplacement"]:checked').value === 'yes';
+        const replacementDoctorId = hasReplacement ? document.getElementById('replacementDoctorSelect').value : null;
+
+        if (!doctorId) {
+            showMessage('กรุณาเลือกแพทย์', 'error');
+            return;
+        }
+
+        if (selectedDates.length === 0) {
+            showMessage('กรุณาเลือกวันที่ลา', 'error');
+            return;
+        }
+
+        if (hasReplacement && !replacementDoctorId) {
+            showMessage('กรุณาเลือกแพทย์ที่มาแทน', 'error');
+            return;
+        }
+
+        const startDate = selectedDates[0];
+        const endDate = selectedDates[selectedDates.length - 1];
+
+        try {
+            const response = await fetch(`${LEAVE_API_URL}/api/leaves`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    doctorId: parseInt(doctorId),
+                    leaveType,
+                    hasReplacement,
+                    replacementDoctorId: replacementDoctorId ? parseInt(replacementDoctorId) : null,
+                    startDate,
+                    endDate
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                showMessage('✅ บันทึกการลาสำเร็จ', 'success');
+                selectedDates = [];
+                loadDoctorLeaves();
+                updateSelectedRange();
+            } else {
+                throw new Error(data.message || 'ไม่สามารถบันทึกได้');
+            }
+        } catch (error) {
+            showMessage('❌ ' + error.message, 'error');
+        }
+    }
+
+    // แสดงข้อความ
+    function showMessage(text, type) {
+        const msg = document.getElementById('message');
+        msg.textContent = text;
+        msg.className = `message ${type} show`;
+        setTimeout(() => msg.classList.remove('show'), 5000);
     }
 </script>
 ```
