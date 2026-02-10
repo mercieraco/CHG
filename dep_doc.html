@@ -1306,9 +1306,10 @@
                 for (const dept of departments) {
                     const safeName = dept.name.replace(/'/g, "\\'");
                     
-                    const dutiesResponse = await fetch(`${API_URL}/api/duties/department/${dept.id}`);
-                    const dutiesData = await dutiesResponse.json();
-                    const duties = dutiesData.success ? dutiesData.data : [];
+                    // ใช้ API นับจำนวนแพทย์จริง
+                    const dutyCountResponse = await fetch(`${API_URL}/api/duty-count/department/${dept.id}`);
+                    const dutyCountData = await dutyCountResponse.json();
+                    const duties = dutyCountData.success ? dutyCountData.data : [];
                     
                     html += `
                         <div class="department-item">
@@ -1325,19 +1326,25 @@
                     if (duties.length > 0) {
                         html += '<div class="duty-list">';
                         duties.forEach(duty => {
+                            // ฟังก์ชันแสดงจำนวน (0 = สีแดง, ≥1 = สีดำ)
+                            const formatCount = (count) => {
+                                const color = count === 0 ? 'color: #ff4757; font-weight: 700;' : '';
+                                return `<span style="${color}">${count}</span>`;
+                            };
+                            
                             html += `
                                 <div class="duty-item">
                                     <span class="duty-name">${duty.duty_name}</span>
                                     <div class="duty-schedule">
-                                        <span class="duty-day">จ ${duty.mon_count}</span>
-                                        <span class="duty-day">อ ${duty.tue_count}</span>
-                                        <span class="duty-day">พ ${duty.wed_count}</span>
-                                        <span class="duty-day">พฤ ${duty.thu_count}</span>
-                                        <span class="duty-day">ศ ${duty.fri_count}</span>
-                                        <span class="duty-day">ส ${duty.sat_count}</span>
-                                        <span class="duty-day">อา ${duty.sun_count}</span>
+                                        <span class="duty-day">จ ${formatCount(duty.mon_count)}</span>
+                                        <span class="duty-day">อ ${formatCount(duty.tue_count)}</span>
+                                        <span class="duty-day">พ ${formatCount(duty.wed_count)}</span>
+                                        <span class="duty-day">พฤ ${formatCount(duty.thu_count)}</span>
+                                        <span class="duty-day">ศ ${formatCount(duty.fri_count)}</span>
+                                        <span class="duty-day">ส ${formatCount(duty.sat_count)}</span>
+                                        <span class="duty-day">อา ${formatCount(duty.sun_count)}</span>
                                     </div>
-                                    <button onclick="showDeleteDutyModal(${duty.id}, '${duty.duty_name.replace(/'/g, "\\'")}')" class="btn-delete-duty">ลบ</button>
+                                    <button onclick="showDeleteDutyModal(${duty.duty_id}, '${duty.duty_name.replace(/'/g, "\\'")}')" class="btn-delete-duty">ลบ</button>
                                 </div>
                             `;
                         });
