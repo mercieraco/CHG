@@ -409,6 +409,7 @@
     let selectedDates = [];
     let isSelecting = false;
     let doctorLeaves = [];
+    let hasShownAlert = false; // ป้องกัน alert ซ้ำ
 
     // โหลดเมื่อเปิดหน้า
     window.onload = function() {
@@ -639,7 +640,16 @@
         const replacementDoctorId = document.getElementById('replacementDoctorSelect').value;
 
         if (hasReplacement && !replacementDoctorId) {
-            alert('⚠️ กรุณาเลือกแพทย์ที่มาแทนก่อน');
+            // แสดง alert เฉพาะครั้งแรก
+            if (!hasShownAlert) {
+                alert('⚠️ กรุณาเลือกแพทย์ที่มาแทนก่อน');
+                hasShownAlert = true;
+                
+                // Reset flag หลัง 500ms
+                setTimeout(() => {
+                    hasShownAlert = false;
+                }, 500);
+            }
             return false;
         }
 
