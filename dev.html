@@ -213,8 +213,7 @@
     }
 
     .calendar-day.weekend {
-        border-color: #ffcdd2;
-        background: white;
+        border-color: #ffcdd2 !important;
     }
 
     .calendar-day.selected {
@@ -224,11 +223,21 @@
         font-weight: 700;
     }
 
+    .calendar-day.weekend.selected {
+        background: #bbdefb !important;
+        border-color: #ffcdd2 !important;
+    }
+
     .calendar-day.on-leave {
         background: #ffcdd2 !important;
         border-color: #ef5350 !important;
         color: #c62828;
         font-weight: 700;
+    }
+
+    .calendar-day.weekend.on-leave {
+        background: #ffcdd2 !important;
+        border-color: #ffcdd2 !important;
     }
 
     .calendar-day.today {
