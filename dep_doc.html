@@ -1306,10 +1306,27 @@
                 for (const dept of departments) {
                     const safeName = dept.name.replace(/'/g, "\\'");
                     
-                    // ใช้ API นับจำนวนแพทย์จริง
-                    const dutyCountResponse = await fetch(`${API_URL}/api/duty-count/department/${dept.id}`);
-                    const dutyCountData = await dutyCountResponse.json();
-                    const duties = dutyCountData.success ? dutyCountData.data : [];
+                    // ลองใช้ API นับจำนวนแพทย์จริงก่อน
+                    let duties = [];
+                    try {
+                        const dutyCountResponse = await fetch(`${API_URL}/api/duty-count/department/${dept.id}`);
+                        const dutyCountData = await dutyCountResponse.json();
+                        
+                        if (dutyCountResponse.ok && dutyCountData.success && dutyCountData.data.length > 0) {
+                            duties = dutyCountData.data;
+                        } else {
+                            // Fallback: ใช้ API เดิม
+                            const dutiesResponse = await fetch(`${API_URL}/api/duties/department/${dept.id}`);
+                            const dutiesData = await dutiesResponse.json();
+                            duties = dutiesData.success ? dutiesData.data : [];
+                        }
+                    } catch (error) {
+                        // ถ้า API ใหม่ error ให้ใช้ API เดิม
+                        console.error('Duty count error, using fallback:', error);
+                        const dutiesResponse = await fetch(`${API_URL}/api/duties/department/${dept.id}`);
+                        const dutiesData = await dutiesResponse.json();
+                        duties = dutiesData.success ? dutiesData.data : [];
+                    }
                     
                     html += `
                         <div class="department-item">
@@ -1332,9 +1349,12 @@
                                 return `<span style="${color}">${count}</span>`;
                             };
                             
+                            const dutyId = duty.duty_id || duty.id;
+                            const dutyName = duty.duty_name;
+                            
                             html += `
                                 <div class="duty-item">
-                                    <span class="duty-name">${duty.duty_name}</span>
+                                    <span class="duty-name">${dutyName}</span>
                                     <div class="duty-schedule">
                                         <span class="duty-day">จ ${formatCount(duty.mon_count)}</span>
                                         <span class="duty-day">อ ${formatCount(duty.tue_count)}</span>
@@ -1344,7 +1364,7 @@
                                         <span class="duty-day">ส ${formatCount(duty.sat_count)}</span>
                                         <span class="duty-day">อา ${formatCount(duty.sun_count)}</span>
                                     </div>
-                                    <button onclick="showDeleteDutyModal(${duty.duty_id}, '${duty.duty_name.replace(/'/g, "\\'")}')" class="btn-delete-duty">ลบ</button>
+                                    <button onclick="showDeleteDutyModal(${dutyId}, '${dutyName.replace(/'/g, "\\'")}')" class="btn-delete-duty">ลบ</button>
                                 </div>
                             `;
                         });
