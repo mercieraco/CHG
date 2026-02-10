@@ -1695,6 +1695,19 @@
 
     // Modal แก้ไขแพทย์
     async function showEditDoctorModal(doctorId, doctorName, departmentId, workType) {
+        // ตรวจสอบว่ามี Duty หรือไม่
+        try {
+            const dutiesResponse = await fetch(`${API_URL}/api/doctor-duties/doctor/${doctorId}`);
+            const dutiesData = await dutiesResponse.json();
+            
+            if (dutiesResponse.ok && dutiesData.success && dutiesData.data.length > 0) {
+                alert('⚠️ ไม่สามารถแก้ไขข้อมูลได้\n\nแพทย์ท่านนี้มี Duty อยู่ในระบบ\nกรุณาลบ Duty ทั้งหมดก่อน แล้วจึงสามารถแก้ไขข้อมูลได้');
+                return;
+            }
+        } catch (error) {
+            console.error('Error checking duties:', error);
+        }
+        
         editDoctorId = doctorId;
         
         // แยกชื่อและนามสกุล (ตัดสรรพนาม)
