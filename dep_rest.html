@@ -612,6 +612,11 @@
 
     // เลือกวัน
     function selectDate(dateStr) {
+        // ตรวจสอบว่าต้องเลือกแพทย์ที่มาแทนหรือไม่
+        if (!canSelectDate()) {
+            return;
+        }
+
         if (isDateOnLeave(dateStr)) {
             alert('วันนี้มีการลาอยู่แล้ว');
             return;
@@ -628,8 +633,26 @@
         renderCalendar();
     }
 
+    // ตรวจสอบว่าสามารถเลือกวันได้หรือไม่
+    function canSelectDate() {
+        const hasReplacement = document.querySelector('input[name="hasReplacement"]:checked').value === 'yes';
+        const replacementDoctorId = document.getElementById('replacementDoctorSelect').value;
+
+        if (hasReplacement && !replacementDoctorId) {
+            alert('⚠️ กรุณาเลือกแพทย์ที่มาแทนก่อน');
+            return false;
+        }
+
+        return true;
+    }
+
     // Drag selection
     function startSelection(dateStr) {
+        // ตรวจสอบว่าต้องเลือกแพทย์ที่มาแทนหรือไม่
+        if (!canSelectDate()) {
+            return;
+        }
+
         if (isDateOnLeave(dateStr)) return;
         isSelecting = true;
         selectedDates = [dateStr];
@@ -637,6 +660,12 @@
     }
 
     function continueSelection(dateStr) {
+        // ตรวจสอบก่อนทุกครั้ง
+        if (!canSelectDate()) {
+            isSelecting = false;
+            return;
+        }
+
         if (!isSelecting || isDateOnLeave(dateStr)) return;
         
         if (selectedDates.length > 0) {
