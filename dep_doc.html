@@ -658,6 +658,14 @@
         <p id="userDisplay">กำลังโหลดข้อมูล...</p>
     </div>
 
+    <!-- ปุ่มรอตรวจสอบ -->
+    <div style="margin-bottom: 20px; text-align: center;">
+        <button id="btnPending" onclick="showPendingUsers()" 
+                style="padding: 12px 30px; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s; background: #e0e0e0; color: #999;">
+            รอตรวจสอบ (<span id="pendingCount">0</span>)
+        </button>
+    </div>
+
     <!-- ปุ่มเมนู 2 ปุ่ม (ซ้าย-ขวา) -->
     <div class="menu-grid">
         <div class="menu-card" onclick="showDepartmentForm()">
@@ -911,6 +919,45 @@
     </div>
 </div>
 
+<!-- Modal รายการรอตรวจสอบ -->
+<div id="pendingUsersModal" class="modal">
+    <div class="modal-content" style="max-width: 700px;">
+        <h3>⏳ รายการรอตรวจสอบ</h3>
+        <p style="color: #666; margin-bottom: 20px;">แพทย์ที่ลงทะเบียนแล้วแต่ยังไม่มีข้อมูลในระบบ</p>
+        
+        <div id="pendingUsersList" class="loading">กำลังโหลดข้อมูล...</div>
+        
+        <div class="modal-actions" style="margin-top: 20px;">
+            <button onclick="closePendingUsersModal()" class="btn btn-secondary">ปิด</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal ยืนยันเพิ่มข้อมูล -->
+<div id="confirmAddPendingModal" class="modal">
+    <div class="modal-content">
+        <h3>✅ ยืนยันการเพิ่มข้อมูล</h3>
+        <p>คุณต้องการเพิ่มข้อมูลสำหรับ<br><strong>เลข ว: <span id="confirmAddLicense"></span></strong>?</p>
+        <div class="modal-actions">
+            <button onclick="closeConfirmAddPendingModal()" class="btn btn-secondary">ยกเลิก</button>
+            <button onclick="confirmAddPendingUser()" class="btn btn-primary">ยืนยัน</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal ยืนยันลบ Pending User -->
+<div id="confirmDeletePendingModal" class="modal">
+    <div class="modal-content">
+        <h3>⚠️ ยืนยันการลบ</h3>
+        <p>คุณแน่ใจหรือไม่ว่าต้องการลบการลงทะเบียน<br><strong>เลข ว: <span id="confirmDeleteLicense"></span></strong>?</p>
+        <p style="color: #ff4757; font-size: 13px;">การลบจะไม่สามารถย้อนกลับได้</p>
+        <div class="modal-actions">
+            <button onclick="closeConfirmDeletePendingModal()" class="btn btn-secondary">ยกเลิก</button>
+            <button onclick="confirmDeletePendingUser()" class="btn btn-primary" style="background: #ff4757;">ลบ</button>
+        </div>
+    </div>
+</div>
+
 <!-- Modal แก้ไขแพทย์ -->
 <div id="editDoctorModal" class="modal">
     <div class="modal-content">
@@ -962,6 +1009,8 @@
     let currentDoctorDepartmentId = null;
     let deleteDoctorDutyId = null;
     let allDoctors = [];
+    let pendingUserId = null;
+    let pendingLicenseNumber = null;
 
     // เลือก Work Type
     function selectWorkType(type) {
@@ -1000,7 +1049,169 @@
         }
 
         document.getElementById('userDisplay').textContent = `คุณ ${username} (Admin)`;
+        loadPendingCount();
     };
+
+    // โหลดจำนวน Pending Users
+    async function loadPendingCount() {
+        try {
+            const response = await fetch(`${API_URL}/api/pending-users`);
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                const count = data.data.length;
+                document.getElementById('pendingCount').textContent = count;
+                
+                const btn = document.getElementById('btnPending');
+                if (count > 0) {
+                    btn.style.background = 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)';
+                    btn.style.color = 'white';
+                    btn.style.cursor = 'pointer';
+                } else {
+                    btn.style.background = '#e0e0e0';
+                    btn.style.color = '#999';
+                    btn.style.cursor = 'not-allowed';
+                }
+            }
+        } catch (error) {
+            console.error('Load pending count error:', error);
+        }
+    }
+
+    // แสดง Modal รายการรอตรวจสอบ
+    async function showPendingUsers() {
+        const count = parseInt(document.getElementById('pendingCount').textContent);
+        if (count === 0) return;
+        
+        const pendingUsersList = document.getElementById('pendingUsersList');
+        pendingUsersList.innerHTML = '<div class="loading">กำลังโหลดข้อมูล...</div>';
+        
+        document.getElementById('pendingUsersModal').classList.add('show');
+        
+        try {
+            const response = await fetch(`${API_URL}/api/pending-users`);
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                const users = data.data;
+                
+                if (users.length === 0) {
+                    pendingUsersList.innerHTML = `
+                        <div class="empty-state">
+                            <div class="icon">✅</div>
+                            <p>ไม่มีรายการรอตรวจสอบ</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                let html = '<div style="display: flex; flex-direction: column; gap: 15px;">';
+                users.forEach(user => {
+                    html += `
+                        <div style="background: #f9f9f9; padding: 15px 20px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <div style="font-size: 18px; font-weight: 600; color: #333; margin-bottom: 5px;">
+                                    เลข ว: ${user.license_number}
+                                </div>
+                                <div style="font-size: 13px; color: #999;">
+                                    ลงทะเบียนเมื่อ: ${new Date(user.created_at).toLocaleString('th-TH')}
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 10px;">
+                                <button onclick="showConfirmAddPending(${user.id}, '${user.license_number}')" 
+                                        style="padding: 8px 16px; background: #11998e; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px;">
+                                    เพิ่มข้อมูล
+                                </button>
+                                <button onclick="showConfirmDeletePending(${user.id}, '${user.license_number}')" 
+                                        style="padding: 8px 16px; background: #ff4757; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px;">
+                                    ลบ
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                
+                pendingUsersList.innerHTML = html;
+            } else {
+                throw new Error(data.message || 'ไม่สามารถโหลดข้อมูลได้');
+            }
+        } catch (error) {
+            pendingUsersList.innerHTML = `<div class="empty-state"><div class="icon">⚠️</div><p>${error.message}</p></div>`;
+        }
+    }
+
+    function closePendingUsersModal() {
+        document.getElementById('pendingUsersModal').classList.remove('show');
+    }
+
+    // แสดง Modal ยืนยันเพิ่มข้อมูล
+    function showConfirmAddPending(userId, licenseNumber) {
+        pendingUserId = userId;
+        pendingLicenseNumber = licenseNumber;
+        document.getElementById('confirmAddLicense').textContent = licenseNumber;
+        document.getElementById('confirmAddPendingModal').classList.add('show');
+    }
+
+    function closeConfirmAddPendingModal() {
+        document.getElementById('confirmAddPendingModal').classList.remove('show');
+        pendingUserId = null;
+        pendingLicenseNumber = null;
+    }
+
+    // ยืนยันเพิ่มข้อมูล
+    async function confirmAddPendingUser() {
+        if (!pendingLicenseNumber) return;
+        
+        closeConfirmAddPendingModal();
+        closePendingUsersModal();
+        
+        // ไปหน้าเพิ่มแพทย์และใส่เลข ว อัตโนมัติ
+        await showDoctorForm();
+        document.getElementById('doctorLicenseNumber').value = pendingLicenseNumber;
+        document.getElementById('doctorLicenseNumber').readOnly = true;
+        
+        // Scroll ไปที่ฟอร์ม
+        document.getElementById('doctorSection').scrollIntoView({ behavior: 'smooth' });
+        
+        alert(`✅ กรุณากรอกข้อมูลสำหรับเลข ว: ${pendingLicenseNumber}`);
+    }
+
+    // แสดง Modal ยืนยันลบ
+    function showConfirmDeletePending(userId, licenseNumber) {
+        pendingUserId = userId;
+        pendingLicenseNumber = licenseNumber;
+        document.getElementById('confirmDeleteLicense').textContent = licenseNumber;
+        document.getElementById('confirmDeletePendingModal').classList.add('show');
+    }
+
+    function closeConfirmDeletePendingModal() {
+        document.getElementById('confirmDeletePendingModal').classList.remove('show');
+        pendingUserId = null;
+        pendingLicenseNumber = null;
+    }
+
+    // ยืนยันลบ Pending User
+    async function confirmDeletePendingUser() {
+        if (!pendingUserId) return;
+        
+        try {
+            const response = await fetch(`${API_URL}/api/pending-users/${pendingUserId}`, { method: 'DELETE' });
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                closeConfirmDeletePendingModal();
+                closePendingUsersModal();
+                loadPendingCount();
+                alert('✅ ลบสำเร็จ');
+            } else {
+                throw new Error(data.message || 'ไม่สามารถลบได้');
+            }
+        } catch (error) {
+            alert('❌ ' + error.message);
+            closeConfirmDeletePendingModal();
+        }
+    }
 
     // แสดงฟอร์มจัดการแผนก
     function showDepartmentForm() {
@@ -1400,8 +1611,10 @@
                 addDoctorMessage.textContent = '✅ เพิ่มแพทย์สำเร็จ';
                 document.getElementById('addDoctorForm').reset();
                 document.getElementById('doctorWorkType').value = 'full';
+                document.getElementById('doctorLicenseNumber').readOnly = false;
                 selectWorkType('full');
                 loadDoctors();
+                loadPendingCount();
                 
                 setTimeout(() => {
                     addDoctorMessage.classList.remove('show');
