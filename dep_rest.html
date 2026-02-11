@@ -376,27 +376,6 @@
         </div>
     </div>
 
-    <div id="replacementSection" class="replacement-section">
-        <div class="filter-row">
-            <div class="form-group">
-                <select id="filterDepartment" onfocus="checkDoctorSelectedFocus(event, this)" onchange="loadReplacementDoctors()">
-                    <option value="">-- เลือกแผนก --</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <select id="filterWorkType" onfocus="checkDoctorSelectedFocus(event, this)" onchange="loadReplacementDoctors()">
-                    <option value="full" selected>Full time</option>
-                    <option value="part">Part time</option>
-                </select>
-            </div>
-        </div>
-        <div class="form-group">
-            <select id="replacementDoctorSelect" onfocus="checkDoctorSelectedFocus(event, this)">
-                <option value="">-- เลือกแพทย์ที่จะมาแทน --</option>
-            </select>
-        </div>
-    </div>
-
     <!-- แสดงช่วงวันที่เลือก -->
     <div id="selectedRange" class="selected-range" style="display: none;"></div>
 
@@ -410,6 +389,28 @@
             </div>
         </div>
         <div class="calendar" id="calendar"></div>
+    </div>
+
+    <!-- ส่วนเลือกแพทย์ที่มาแทน (ย้ายมาใต้ปฏิทิน) -->
+    <div id="replacementSection" class="replacement-section">
+        <div class="filter-row">
+            <div class="form-group">
+                <select id="filterDepartment" onfocus="checkReplacementFocus(event, this)" onchange="loadReplacementDoctors()">
+                    <option value="">-- เลือกแผนก --</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <select id="filterWorkType" onfocus="checkReplacementFocus(event, this)" onchange="loadReplacementDoctors()">
+                    <option value="full" selected>Full time</option>
+                    <option value="part">Part time</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <select id="replacementDoctorSelect" onfocus="checkReplacementFocus(event, this)">
+                <option value="">-- เลือกแพทย์ที่จะมาแทน --</option>
+            </select>
+        </div>
     </div>
 
     <button class="btn-submit" onclick="submitLeave()">💾 บันทึกการลา</button>
@@ -612,6 +613,35 @@
         return true;
     }
 
+    // ตรวจสอบก่อนเลือกแพทย์ที่มาแทน - ต้องเลือกวันก่อน
+    function checkReplacementFocus(event, element) {
+        // 1. ต้องเลือกแพทย์ที่ลาก่อน
+        const selectedDoctorId = document.getElementById('doctorSelect').value;
+        if (!selectedDoctorId) {
+            element.blur();
+            alert('⚠️ กรุณาเลือกแพทย์ที่จะลา เป็นอันดับแรก\n(เลือก แผนก >> แพทย์)');
+            setTimeout(() => {
+                const deptSelect = document.getElementById('departmentSelect');
+                if (!deptSelect.value) {
+                    deptSelect.focus();
+                } else {
+                    document.getElementById('doctorSelect').focus();
+                }
+            }, 100);
+            return false;
+        }
+
+        // 2. ต้องเลือกวันที่ก่อน
+        if (selectedDates.length === 0) {
+            element.blur();
+            alert('⚠️ กรุณาเลือกวันที่ลาก่อน\n(คลิก 2 ครั้งบนปฏิทิน)');
+            return false;
+        }
+
+        return true;
+    }
+
+
     // โหลดการลาของแพทย์
     async function loadDoctorLeaves() {
         const doctorId = document.getElementById('doctorSelect').value;
@@ -783,15 +813,7 @@
             return false;
         }
 
-        // ตรวจสอบว่าเลือกแพทย์ที่มาแทนหรือยัง (ถ้าเลือกมีคนมาแทน)
-        const hasReplacement = document.querySelector('input[name="hasReplacement"]:checked').value === 'yes';
-        const replacementDoctorId = document.getElementById('replacementDoctorSelect').value;
-
-        if (hasReplacement && !replacementDoctorId) {
-            alert('⚠️ กรุณาเลือกแพทย์ที่มาแทนก่อน');
-            return false;
-        }
-
+        // ไม่ต้องเช็คแพทย์ที่มาแทน - เลือกวันก่อนได้
         return true;
     }
 
