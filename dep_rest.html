@@ -451,10 +451,20 @@
             const response = await fetch(`${API_URL}/api/doctors`);
             const data = await response.json();
             
+            console.log('=== DEBUG: All doctors from API ===');
+            console.log('Total doctors:', data.data ? data.data.length : 0);
+            console.log('All doctors:', data.data);
+            
             if (response.ok && data.success) {
                 const doctors = data.data
-                    .filter(d => d.department_id == departmentId)
-                    .sort((a, b) => a.name.localeCompare(b.name, ['en', 'th']));
+                    .filter(d => d.department_id == departmentId);
+                
+                console.log('=== DEBUG: Filtered doctors ===');
+                console.log('Selected department ID:', departmentId);
+                console.log('Doctors in this department:', doctors.length);
+                console.log('Doctors:', doctors);
+                
+                doctors.sort((a, b) => a.name.localeCompare(b.name, ['en', 'th']));
                 
                 doctors.forEach(doc => {
                     doctorSelect.innerHTML += `<option value="${doc.id}">${doc.name}</option>`;
@@ -594,6 +604,12 @@
             console.error('Load leaves error:', error);
             doctorLeaves = [];
             renderCalendar();
+        }
+        
+        // โหลดแพทย์ที่มาแทนด้วย (ถ้ามีคนมาแทน)
+        const hasReplacement = document.querySelector('input[name="hasReplacement"]:checked').value;
+        if (hasReplacement === 'yes') {
+            loadReplacementDoctors();
         }
     }
 
