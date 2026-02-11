@@ -360,13 +360,13 @@
         <div class="filter-row">
             <div class="form-group">
                 <label>กรองแผนก</label>
-                <select id="filterDepartment" onclick="checkDoctorSelected()" onchange="loadReplacementDoctors()">
+                <select id="filterDepartment" onclick="checkDoctorSelected(event)" onchange="loadReplacementDoctors()">
                     <option value="">-- เลือกแผนก --</option>
                 </select>
             </div>
             <div class="form-group">
                 <label>กรองประเภท</label>
-                <select id="filterWorkType" onclick="checkDoctorSelected()" onchange="loadReplacementDoctors()">
+                <select id="filterWorkType" onclick="checkDoctorSelected(event)" onchange="loadReplacementDoctors()">
                     <option value="all">All</option>
                     <option value="full">Full time</option>
                     <option value="part">Part time</option>
@@ -375,7 +375,7 @@
         </div>
         <div class="form-group">
             <label>เลือกแพทย์ที่มาแทน</label>
-            <select id="replacementDoctorSelect" onclick="checkDoctorSelected()">
+            <select id="replacementDoctorSelect" onclick="checkDoctorSelected(event)">
                 <option value="">-- เลือกแพทย์ --</option>
             </select>
         </div>
@@ -529,13 +529,25 @@
     }
 
     // ตรวจสอบว่าเลือกแพทย์ที่จะลาหรือยัง (เมื่อคลิก dropdown แพทย์ที่มาแทน)
-    function checkDoctorSelected() {
+    function checkDoctorSelected(event) {
         const selectedDoctorId = document.getElementById('doctorSelect').value;
         if (!selectedDoctorId) {
+            // ป้องกัน dropdown เปิด
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            
             alert('⚠️ กรุณาเลือกแพทย์ที่จะลา เป็นอันดับแรก\n(เลือก แผนก >> แพทย์)');
+            
             // Focus กลับไปที่ dropdown แพทย์
-            document.getElementById('doctorSelect').focus();
+            setTimeout(() => {
+                document.getElementById('doctorSelect').focus();
+            }, 100);
+            
+            return false;
         }
+        return true;
     }
 
     // โหลดการลาของแพทย์
