@@ -219,6 +219,21 @@
         font-weight: 700;
     }
 
+    .calendar-day.start-date {
+        position: relative;
+    }
+
+    .calendar-day.start-date::after {
+        content: '→';
+        position: absolute;
+        right: 5px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 18px;
+        font-weight: bold;
+    }
+
     .calendar-day.weekend.selected {
         background: #bbdefb !important;
         border-color: #ffcdd2 !important;
@@ -408,6 +423,11 @@
     let isSelecting = false;
     let doctorLeaves = [];
     let hasShownAlert = false; // ป้องกัน alert ซ้ำ
+    
+    // ระบบเลือกวันแบบใหม่
+    let selectionStep = 0; // 0 = ยังไม่เริ่ม, 1 = เลือกวันเริ่มต้นแล้ว, 2 = เลือกวันสิ้นสุดแล้ว
+    let startDate = null;
+    let endDate = null;
 
     // โหลดเมื่อเปิดหน้า
     window.onload = function() {
@@ -670,6 +690,10 @@
             // วันที่เลือก
             if (selectedDates.includes(dateStr)) {
                 classes.push('selected');
+                // เพิ่มลูกศรถ้าเป็นวันเริ่มต้น
+                if (startDate === dateStr && selectionStep === 1) {
+                    classes.push('start-date');
+                }
             }
             
             // วันที่ลาแล้ว
@@ -677,7 +701,7 @@
                 classes.push('on-leave');
             }
             
-            html += `<div class="${classes.join(' ')}" onmousedown="handleMouseDown('${dateStr}', event)" onmouseenter="continueSelection('${dateStr}')" onmouseup="endSelection()">${day}</div>`;
+            html += `<div class="${classes.join(' ')}" onmousedown="handleMouseDown('${dateStr}', event)">${day}</div>`;
         }
         
         calendar.innerHTML = html;
@@ -690,10 +714,11 @@
         });
     }
 
-    // เลือกวัน
-    // เลือกวัน
-    function selectDate(dateStr, event) {
-        // ตรวจสอบว่าสามารถเลือกได้หรือไม่
+    // เลือกวัน - ระบบใหม่: คลิก 2 ครั้ง
+    function handleMouseDown(dateStr, event) {
+        event.preventDefault();
+        
+        // ตรวจสอบก่อน
         if (!canSelectDate()) {
             return;
         }
@@ -703,28 +728,35 @@
             return;
         }
 
-        if (selectedDates.includes(dateStr)) {
-            selectedDates = selectedDates.filter(d => d !== dateStr);
-        } else {
-            selectedDates.push(dateStr);
+        // Step 0 หรือ Step 2 (รีเซ็ต) → เริ่มใหม่
+        if (selectionStep === 0 || selectionStep === 2) {
+            selectionStep = 1;
+            startDate = dateStr;
+            endDate = null;
+            selectedDates = [dateStr];
+        }
+        // Step 1 → เลือกวันสิ้นสุด
+        else if (selectionStep === 1) {
+            selectionStep = 2;
+            endDate = dateStr;
+            
+            // สร้างช่วงวัน
+            const dates = getDateRange(startDate, endDate);
+            // เช็คว่าไม่มีวันที่ลาอยู่แล้ว
+            const hasConflict = dates.some(d => isDateOnLeave(d));
+            if (hasConflict) {
+                alert('ช่วงวันที่เลือกมีวันที่ลาอยู่แล้ว กรุณาเลือกใหม่');
+                selectionStep = 0;
+                startDate = null;
+                endDate = null;
+                selectedDates = [];
+            } else {
+                selectedDates = dates;
+            }
         }
         
-        selectedDates.sort();
         updateSelectedRange();
         renderCalendar();
-    }
-
-    // จัดการ mouse down (รวม click + drag)
-    function handleMouseDown(dateStr, event) {
-        event.preventDefault();
-        
-        // ตรวจสอบก่อน
-        if (!canSelectDate()) {
-            return;
-        }
-
-        // เริ่ม drag selection
-        startSelection(dateStr);
     }
 
     // ตรวจสอบว่าสามารถเลือกวันได้หรือไม่
@@ -762,30 +794,6 @@
     }
 
     // Drag selection
-    function startSelection(dateStr) {
-        if (isDateOnLeave(dateStr)) return;
-        isSelecting = true;
-        selectedDates = [dateStr];
-        renderCalendar();
-    }
-
-    function continueSelection(dateStr) {
-        if (!isSelecting || isDateOnLeave(dateStr)) return;
-        
-        if (selectedDates.length > 0) {
-            const start = selectedDates[0];
-            const dates = getDateRange(start, dateStr);
-            selectedDates = dates.filter(d => !isDateOnLeave(d));
-        }
-        
-        updateSelectedRange();
-        renderCalendar();
-    }
-
-    function endSelection() {
-        isSelecting = false;
-    }
-
     // สร้างช่วงวัน
     function getDateRange(start, end) {
         const dates = [];
@@ -859,9 +867,13 @@
     // บันทึกการลา
     async function submitLeave() {
         const doctorId = document.getElementById('doctorSelect').value;
+        const doctorName = document.getElementById('doctorSelect').selectedOptions[0]?.text || '';
         const leaveType = document.querySelector('input[name="leaveType"]:checked').value;
         const hasReplacement = document.querySelector('input[name="hasReplacement"]:checked').value === 'yes';
         const replacementDoctorId = hasReplacement ? document.getElementById('replacementDoctorSelect').value : null;
+        const replacementDoctorName = hasReplacement && replacementDoctorId 
+            ? document.getElementById('replacementDoctorSelect').selectedOptions[0]?.text || '' 
+            : '';
 
         if (!doctorId) {
             showMessage('กรุณาเลือกแพทย์ที่จะลา เป็นอันดับแรก (เลือก แผนก >> แพทย์)', 'error');
@@ -878,8 +890,26 @@
             return;
         }
 
-        const startDate = selectedDates[0];
-        const endDate = selectedDates[selectedDates.length - 1];
+        const startDateStr = selectedDates[0];
+        const endDateStr = selectedDates[selectedDates.length - 1];
+        
+        // สร้างข้อความยืนยัน
+        const leaveTypeText = leaveType === 'more_24' ? 'ลา > 24 ชม' : 'ลา ≤ 24 ชม';
+        const replacementText = hasReplacement 
+            ? `มีแพทย์ที่มาแทน: ${replacementDoctorName}`
+            : 'ไม่มีแพทย์ที่มาแทน';
+        
+        const confirmMessage = `📋 ยืนยันการบันทึก\n\n` +
+            `แพทย์ที่ลา: ${doctorName}\n` +
+            `ประเภท: ${leaveTypeText}\n` +
+            `วันที่: ${formatDateThai(startDateStr)} - ${formatDateThai(endDateStr)}\n` +
+            `จำนวน: ${selectedDates.length} วัน\n` +
+            `${replacementText}\n\n` +
+            `ต้องการบันทึกหรือไม่?`;
+        
+        if (!confirm(confirmMessage)) {
+            return;
+        }
 
         try {
             const response = await fetch(`${LEAVE_API_URL}/api/leaves`, {
@@ -890,8 +920,8 @@
                     leaveType,
                     hasReplacement,
                     replacementDoctorId: replacementDoctorId ? parseInt(replacementDoctorId) : null,
-                    startDate,
-                    endDate
+                    startDate: startDateStr,
+                    endDate: endDateStr
                 })
             });
 
@@ -899,7 +929,11 @@
 
             if (response.ok && data.success) {
                 showMessage('✅ บันทึกการลาสำเร็จ', 'success');
+                // รีเซ็ตสถานะ
                 selectedDates = [];
+                selectionStep = 0;
+                startDate = null;
+                endDate = null;
                 loadDoctorLeaves();
                 updateSelectedRange();
             } else {
