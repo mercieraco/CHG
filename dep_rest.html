@@ -360,13 +360,13 @@
         <div class="filter-row">
             <div class="form-group">
                 <label>กรองแผนก</label>
-                <select id="filterDepartment" onclick="checkDoctorSelected(event)" onchange="loadReplacementDoctors()">
+                <select id="filterDepartment" onfocus="checkDoctorSelectedFocus(event, this)" onchange="loadReplacementDoctors()">
                     <option value="">-- เลือกแผนก --</option>
                 </select>
             </div>
             <div class="form-group">
                 <label>กรองประเภท</label>
-                <select id="filterWorkType" onclick="checkDoctorSelected(event)" onchange="loadReplacementDoctors()">
+                <select id="filterWorkType" onfocus="checkDoctorSelectedFocus(event, this)" onchange="loadReplacementDoctors()">
                     <option value="all">All</option>
                     <option value="full">Full time</option>
                     <option value="part">Part time</option>
@@ -375,7 +375,7 @@
         </div>
         <div class="form-group">
             <label>เลือกแพทย์ที่มาแทน</label>
-            <select id="replacementDoctorSelect" onclick="checkDoctorSelected(event)">
+            <select id="replacementDoctorSelect" onfocus="checkDoctorSelectedFocus(event, this)">
                 <option value="">-- เลือกแพทย์ --</option>
             </select>
         </div>
@@ -529,14 +529,32 @@
     }
 
     // ตรวจสอบว่าเลือกแพทย์ที่จะลาหรือยัง (เมื่อคลิก dropdown แพทย์ที่มาแทน)
-    function checkDoctorSelected(event) {
+    function checkDoctorSelected(element) {
         const selectedDoctorId = document.getElementById('doctorSelect').value;
         if (!selectedDoctorId) {
-            // ป้องกัน dropdown เปิด
-            if (event) {
-                event.preventDefault();
-                event.stopPropagation();
+            // Blur ทันที (ป้องกัน dropdown เปิด)
+            if (element) {
+                element.blur();
             }
+            
+            alert('⚠️ กรุณาเลือกแพทย์ที่จะลา เป็นอันดับแรก\n(เลือก แผนก >> แพทย์)');
+            
+            // Focus กลับไปที่ dropdown แพทย์
+            setTimeout(() => {
+                document.getElementById('doctorSelect').focus();
+            }, 100);
+            
+            return false;
+        }
+        return true;
+    }
+
+    // สำหรับ onfocus event
+    function checkDoctorSelectedFocus(event, element) {
+        const selectedDoctorId = document.getElementById('doctorSelect').value;
+        if (!selectedDoctorId) {
+            // Blur ทันที (ป้องกัน dropdown เปิด)
+            element.blur();
             
             alert('⚠️ กรุณาเลือกแพทย์ที่จะลา เป็นอันดับแรก\n(เลือก แผนก >> แพทย์)');
             
