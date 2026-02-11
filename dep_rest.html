@@ -242,15 +242,15 @@
     }
 
     .calendar-day.on-leave {
-        background: #ffcdd2 !important;
-        border-color: #ef5350 !important;
-        color: #c62828;
+        background: #c8e6c9 !important;
+        border-color: #66bb6a !important;
+        color: #2e7d32;
         font-weight: 700;
     }
 
     .calendar-day.weekend.on-leave {
-        background: #ffcdd2 !important;
-        border-color: #ffcdd2 !important;
+        background: #c8e6c9 !important;
+        border-color: #c8e6c9 !important;
     }
 
     .calendar-day.today {
@@ -308,6 +308,47 @@
         text-align: center;
         font-weight: 600;
         color: #1976d2;
+    }
+
+    .leave-records {
+        margin-top: 20px;
+        margin-bottom: 20px;
+    }
+
+    .leave-record {
+        background: #f5f5f5;
+        padding: 12px 15px;
+        border-radius: 6px;
+        margin-bottom: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-left: 4px solid #66bb6a;
+    }
+
+    .leave-record-info {
+        flex: 1;
+        font-size: 14px;
+        color: #333;
+    }
+
+    .leave-record-info strong {
+        color: #2e7d32;
+    }
+
+    .btn-delete {
+        background: #ef5350;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 13px;
+        transition: background 0.3s;
+    }
+
+    .btn-delete:hover {
+        background: #e53935;
     }
 </style>
 ```
@@ -412,6 +453,9 @@
             </select>
         </div>
     </div>
+
+    <!-- แสดงข้อมูลการลาที่บันทึกแล้ว -->
+    <div id="leaveRecords" class="leave-records"></div>
 
     <button class="btn-submit" onclick="submitLeave()">💾 บันทึกการลา</button>
 </div>
@@ -648,6 +692,7 @@
         if (!doctorId) {
             doctorLeaves = [];
             renderCalendar();
+            displayLeaveRecords();
             return;
         }
 
@@ -658,11 +703,13 @@
             if (response.ok && data.success) {
                 doctorLeaves = data.data;
                 renderCalendar();
+                displayLeaveRecords();
             }
         } catch (error) {
             console.error('Load leaves error:', error);
             doctorLeaves = [];
             renderCalendar();
+            displayLeaveRecords();
         }
         
         // โหลดแพทย์ที่มาแทนด้วย (ถ้ามีคนมาแทน)
@@ -671,6 +718,72 @@
             loadReplacementDoctors();
         }
     }
+
+    // แสดงแถบข้อมูลการลา
+    function displayLeaveRecords() {
+        const container = document.getElementById('leaveRecords');
+        container.innerHTML = '';
+
+        if (doctorLeaves.length === 0) {
+            return;
+        }
+
+        doctorLeaves.forEach(leave => {
+            const startDate = formatDateThai(leave.start_date);
+            const endDate = formatDateThai(leave.end_date);
+            const leaveType = leave.leave_type === 'more_24' ? 'ลา > 24 ชม' : 'ลา ≤ 24 ชม';
+            const replacement = leave.has_replacement 
+                ? `มีแพทย์มาแทน: ${leave.replacement_doctor_name || 'ไม่ระบุ'}`
+                : 'ไม่มีแพทย์มาแทน';
+
+            const days = Math.ceil((new Date(leave.end_date) - new Date(leave.start_date)) / (1000 * 60 * 60 * 24)) + 1;
+
+            const recordDiv = document.createElement('div');
+            recordDiv.className = 'leave-record';
+            recordDiv.innerHTML = `
+                <div class="leave-record-info">
+                    <strong>📅 ${startDate} - ${endDate}</strong> (${days} วัน) | 
+                    ${leaveType} | ${replacement}
+                </div>
+                <button class="btn-delete" onclick="deleteLeave(${leave.id})">🗑️ ลบ</button>
+            `;
+            container.appendChild(recordDiv);
+        });
+    }
+
+    // ลบข้อมูลการลา
+    async function deleteLeave(leaveId) {
+        const leave = doctorLeaves.find(l => l.id === leaveId);
+        if (!leave) return;
+
+        const startDate = formatDateThai(leave.start_date);
+        const endDate = formatDateThai(leave.end_date);
+        
+        const confirmMsg = `❌ ยืนยันการลบ\n\nต้องการลบข้อมูลการลานี้หรือไม่?\n\n` +
+            `วันที่: ${startDate} - ${endDate}\n\nการกระทำนี้ไม่สามารถย้อนกลับได้`;
+
+        if (!confirm(confirmMsg)) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`${LEAVE_API_URL}/api/leaves/${leaveId}`, {
+                method: 'DELETE'
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                showMessage('✅ ลบข้อมูลการลาสำเร็จ', 'success');
+                await loadDoctorLeaves();
+            } else {
+                throw new Error(data.message || 'ไม่สามารถลบได้');
+            }
+        } catch (error) {
+            showMessage('❌ ' + error.message, 'error');
+        }
+    }
+
 
     // สร้างปฏิทิน
     function renderCalendar() {
