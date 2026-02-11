@@ -367,7 +367,7 @@
         </div>
         <div class="form-group">
             <select id="replacementDoctorSelect" onfocus="checkDoctorSelectedFocus(event, this)">
-                <option value="">-- เลือกแพทย์ --</option>
+                <option value="">-- เลือกที่จะมาแทน --</option>
             </select>
         </div>
     </div>
@@ -481,7 +481,7 @@
         const filterDept = document.getElementById('filterDepartment').value;
         const filterType = document.getElementById('filterWorkType').value;
         const replacementSelect = document.getElementById('replacementDoctorSelect');
-        replacementSelect.innerHTML = '<option value="">-- เลือกแพทย์ --</option>';
+        replacementSelect.innerHTML = '<option value="">-- เลือกที่จะมาแทน --</option>';
 
         if (!filterDept) return;
 
