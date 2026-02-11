@@ -361,7 +361,22 @@
         </div>
     </div>
 
-    <!-- แพทย์ที่มาแทน -->
+    <!-- ปฏิทิน -->
+    <div class="calendar-container">
+        <div class="calendar-header">
+            <div class="month-nav">
+                <button onclick="previousMonth()">◀ เดือนก่อน</button>
+                <span id="currentMonth"></span>
+                <button onclick="nextMonth()">เดือนถัดไป ▶</button>
+            </div>
+        </div>
+        <div class="calendar" id="calendar"></div>
+    </div>
+
+    <!-- แสดงช่วงวันที่เลือก (ย้ายมาใต้ปฏิทิน) -->
+    <div id="selectedRange" class="selected-range" style="display: none;"></div>
+
+    <!-- แพทย์ที่มาแทน (ย้ายมาใต้แถบสีฟ้า) -->
     <div class="form-group">
         <label>แพทย์ที่มาแทน</label>
         <div class="radio-group">
@@ -376,22 +391,7 @@
         </div>
     </div>
 
-    <!-- แสดงช่วงวันที่เลือก -->
-    <div id="selectedRange" class="selected-range" style="display: none;"></div>
-
-    <!-- ปฏิทิน -->
-    <div class="calendar-container">
-        <div class="calendar-header">
-            <div class="month-nav">
-                <button onclick="previousMonth()">◀ เดือนก่อน</button>
-                <span id="currentMonth"></span>
-                <button onclick="nextMonth()">เดือนถัดไป ▶</button>
-            </div>
-        </div>
-        <div class="calendar" id="calendar"></div>
-    </div>
-
-    <!-- ส่วนเลือกแพทย์ที่มาแทน (ย้ายมาใต้ปฏิทิน) -->
+    <!-- ส่วนเลือกแพทย์ที่มาแทน -->
     <div id="replacementSection" class="replacement-section">
         <div class="filter-row">
             <div class="form-group">
