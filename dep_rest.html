@@ -540,9 +540,16 @@
             
             alert('⚠️ กรุณาเลือกแพทย์ที่จะลา เป็นอันดับแรก\n(เลือก แผนก >> แพทย์)');
             
-            // Focus กลับไปที่ dropdown แพทย์
+            // Focus กลับไปที่ dropdown แผนกหรือแพทย์
             setTimeout(() => {
-                document.getElementById('doctorSelect').focus();
+                const deptSelect = document.getElementById('departmentSelect');
+                if (!deptSelect.value) {
+                    // ถ้ายังไม่เลือกแผนก ให้ focus ที่แผนก
+                    deptSelect.focus();
+                } else {
+                    // ถ้าเลือกแผนกแล้ว ให้ focus ที่แพทย์
+                    document.getElementById('doctorSelect').focus();
+                }
             }, 100);
             
             return false;
@@ -559,9 +566,16 @@
             
             alert('⚠️ กรุณาเลือกแพทย์ที่จะลา เป็นอันดับแรก\n(เลือก แผนก >> แพทย์)');
             
-            // Focus กลับไปที่ dropdown แพทย์
+            // Focus กลับไปที่ dropdown แผนกหรือแพทย์
             setTimeout(() => {
-                document.getElementById('doctorSelect').focus();
+                const deptSelect = document.getElementById('departmentSelect');
+                if (!deptSelect.value) {
+                    // ถ้ายังไม่เลือกแผนก ให้ focus ที่แผนก
+                    deptSelect.focus();
+                } else {
+                    // ถ้าเลือกแผนกแล้ว ให้ focus ที่แพทย์
+                    document.getElementById('doctorSelect').focus();
+                }
             }, 100);
             
             return false;
@@ -706,6 +720,19 @@
         const doctorId = document.getElementById('doctorSelect').value;
         if (!doctorId) {
             alert('⚠️ กรุณาเลือกแพทย์ที่จะลา เป็นอันดับแรก\n(เลือก แผนก >> แพทย์)');
+            
+            // Focus กลับไปที่ dropdown แผนกหรือแพทย์
+            setTimeout(() => {
+                const deptSelect = document.getElementById('departmentSelect');
+                if (!deptSelect.value) {
+                    // ถ้ายังไม่เลือกแผนก ให้ focus ที่แผนก
+                    deptSelect.focus();
+                } else {
+                    // ถ้าเลือกแผนกแล้ว ให้ focus ที่แพทย์
+                    document.getElementById('doctorSelect').focus();
+                }
+            }, 100);
+            
             return false;
         }
 
