@@ -498,11 +498,30 @@
                 } else if (filterType === 'part') {
                     doctors = doctors.filter(d => d.work_type === 'part');
                 }
+                // ถ้าเลือก 'all' ไม่ต้องกรอง (แสดงทั้ง full + part)
                 
                 // ซ่อนแพทย์ที่กำลังจะลา
                 doctors = doctors.filter(d => d.id != selectedDoctorId);
                 
-                doctors.sort((a, b) => a.name.localeCompare(b.name, ['en', 'th']));
+                // เรียงลำดับ: A-Z ก่อน, ก-ฮ ทีหลัง, Full time ก่อน Part time
+                doctors.sort((a, b) => {
+                    // เช็คว่าเป็นภาษาอังกฤษหรือไทย
+                    const aIsEnglish = /^[A-Za-z]/.test(a.name);
+                    const bIsEnglish = /^[A-Za-z]/.test(b.name);
+                    
+                    // ถ้าคนหนึ่งเป็นอังกฤษ อีกคนเป็นไทย → อังกฤษขึ้นก่อน
+                    if (aIsEnglish && !bIsEnglish) return -1;
+                    if (!aIsEnglish && bIsEnglish) return 1;
+                    
+                    // ถ้าชื่อเหมือนกัน → เรียงตาม work_type (full ก่อน part)
+                    const nameCompare = a.name.localeCompare(b.name, aIsEnglish ? 'en' : 'th');
+                    if (nameCompare !== 0) return nameCompare;
+                    
+                    // ชื่อเหมือนกัน → full time ขึ้นก่อน
+                    if (a.work_type === 'full' && b.work_type === 'part') return -1;
+                    if (a.work_type === 'part' && b.work_type === 'full') return 1;
+                    return 0;
+                });
                 
                 doctors.forEach(doc => {
                     replacementSelect.innerHTML += `<option value="${doc.id}">${doc.name} (${doc.work_type === 'full' ? 'Full time' : 'Part time'})</option>`;
