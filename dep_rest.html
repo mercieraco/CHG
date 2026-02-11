@@ -309,13 +309,11 @@
     <!-- แผนกและแพทย์ -->
     <div class="form-row">
         <div class="form-group">
-            <label>เลือกแผนก</label>
             <select id="departmentSelect" onchange="loadDoctors()">
                 <option value="">-- เลือกแผนก --</option>
             </select>
         </div>
         <div class="form-group">
-            <label>เลือกแพทย์</label>
             <select id="doctorSelect" onchange="loadDoctorLeaves()">
                 <option value="">-- เลือกแพทย์ --</option>
             </select>
@@ -355,13 +353,11 @@
     <div id="replacementSection" class="replacement-section">
         <div class="filter-row">
             <div class="form-group">
-                <label>กรองแผนก</label>
                 <select id="filterDepartment" onfocus="checkDoctorSelectedFocus(event, this)" onchange="loadReplacementDoctors()">
                     <option value="">-- เลือกแผนก --</option>
                 </select>
             </div>
             <div class="form-group">
-                <label>กรองประเภท</label>
                 <select id="filterWorkType" onfocus="checkDoctorSelectedFocus(event, this)" onchange="loadReplacementDoctors()">
                     <option value="all">All</option>
                     <option value="full">Full time</option>
@@ -370,7 +366,6 @@
             </div>
         </div>
         <div class="form-group">
-            <label>เลือกแพทย์ที่มาแทน</label>
             <select id="replacementDoctorSelect" onfocus="checkDoctorSelectedFocus(event, this)">
                 <option value="">-- เลือกแพทย์ --</option>
             </select>
