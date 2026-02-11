@@ -483,7 +483,7 @@
         // ตรวจสอบว่าเลือกแพทย์ที่จะลาหรือยัง
         const selectedDoctorId = document.getElementById('doctorSelect').value;
         if (!selectedDoctorId) {
-            alert('⚠️ กรุณาเลือกแพทย์ที่จะลาก่อน');
+            alert('⚠️ กรุณาเลือกแพทย์ที่จะลา เป็นอันดับแรก\n(เลือก แผนก >> แพทย์)');
             return;
         }
 
@@ -532,7 +532,7 @@
     function checkDoctorSelected() {
         const selectedDoctorId = document.getElementById('doctorSelect').value;
         if (!selectedDoctorId) {
-            alert('⚠️ กรุณาเลือกแพทย์ที่จะลาก่อน');
+            alert('⚠️ กรุณาเลือกแพทย์ที่จะลา เป็นอันดับแรก\n(เลือก แผนก >> แพทย์)');
             // Focus กลับไปที่ dropdown แพทย์
             document.getElementById('doctorSelect').focus();
         }
@@ -674,7 +674,7 @@
         // ตรวจสอบว่าเลือกแพทย์ที่จะลาหรือยัง
         const doctorId = document.getElementById('doctorSelect').value;
         if (!doctorId) {
-            alert('⚠️ กรุณาเลือกแพทย์ก่อน');
+            alert('⚠️ กรุณาเลือกแพทย์ที่จะลา เป็นอันดับแรก\n(เลือก แผนก >> แพทย์)');
             return false;
         }
 
@@ -793,7 +793,7 @@
         const replacementDoctorId = hasReplacement ? document.getElementById('replacementDoctorSelect').value : null;
 
         if (!doctorId) {
-            showMessage('กรุณาเลือกแพทย์', 'error');
+            showMessage('กรุณาเลือกแพทย์ที่จะลา เป็นอันดับแรก (เลือก แผนก >> แพทย์)', 'error');
             return;
         }
 
