@@ -314,8 +314,17 @@
             </select>
         </div>
         <div class="form-group">
+            <select id="workTypeSelect" onchange="loadDoctors()">
+                <option value="full" selected>Full time</option>
+                <option value="part">Part time</option>
+            </select>
+        </div>
+    </div>
+    
+    <div class="form-row">
+        <div class="form-group">
             <select id="doctorSelect" onchange="loadDoctorLeaves()">
-                <option value="">-- เลือกแพทย์ --</option>
+                <option value="">-- เลือกแพทย์ที่จะลา --</option>
             </select>
         </div>
     </div>
@@ -439,8 +448,9 @@
     // โหลดแพทย์ตามแผนก
     async function loadDoctors() {
         const departmentId = document.getElementById('departmentSelect').value;
+        const workType = document.getElementById('workTypeSelect').value;
         const doctorSelect = document.getElementById('doctorSelect');
-        doctorSelect.innerHTML = '<option value="">-- เลือกแพทย์ --</option>';
+        doctorSelect.innerHTML = '<option value="">-- เลือกแพทย์ที่จะลา --</option>';
 
         if (!departmentId) return;
 
@@ -451,18 +461,15 @@
             const response = await fetch(`${API_URL}/api/doctors`);
             const data = await response.json();
             
-            console.log('=== DEBUG: All doctors from API ===');
-            console.log('Total doctors:', data.data ? data.data.length : 0);
-            console.log('All doctors:', data.data);
-            
             if (response.ok && data.success) {
-                const doctors = data.data
-                    .filter(d => d.department_id == departmentId);
+                let doctors = data.data.filter(d => d.department_id == departmentId);
                 
-                console.log('=== DEBUG: Filtered doctors ===');
-                console.log('Selected department ID:', departmentId);
-                console.log('Doctors in this department:', doctors.length);
-                console.log('Doctors:', doctors);
+                // กรองตาม work_type
+                if (workType === 'full') {
+                    doctors = doctors.filter(d => d.work_type === 'full');
+                } else if (workType === 'part') {
+                    doctors = doctors.filter(d => d.work_type === 'part');
+                }
                 
                 doctors.sort((a, b) => a.name.localeCompare(b.name, ['en', 'th']));
                 
