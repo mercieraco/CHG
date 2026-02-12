@@ -344,6 +344,26 @@
         -webkit-user-select: none;
     }
 
+    /* แสดง/ซ่อนชื่อตามขนาดหน้าจอ */
+    .name-short {
+        display: inline; /* แสดงบนมือถือ */
+    }
+    
+    .name-full {
+        display: none; /* ซ่อนบนมือถือ */
+    }
+    
+    /* หน้าจอใหญ่ (> 768px) */
+    @media (min-width: 769px) {
+        .name-short {
+            display: none; /* ซ่อนชื่อย่อ */
+        }
+        
+        .name-full {
+            display: inline; /* แสดงชื่อเต็ม */
+        }
+    }
+
     .leave-record-info strong {
         color: #2e7d32;
     }
@@ -755,11 +775,11 @@
             
             const days = Math.ceil((new Date(leave.end_date) - new Date(leave.start_date)) / (1000 * 60 * 60 * 24)) + 1;
 
-            // สร้างข้อความแบบย่อ (แสดงปกติ)
+            // สร้างข้อความแบบย่อ (สำหรับมือถือ)
             let shortText = `${startDate} - ${endDate} (${days} วัน) | ${doctorFirstName} (${doctorLastInitial})`;
             
-            // สร้างข้อความแบบเต็ม (แสดงเมื่อคลิก)
-            let fullText = doctorFullName;
+            // สร้างข้อความแบบเต็ม (สำหรับหน้าจอใหญ่)
+            let fullText = `${startDate} - ${endDate} (${days} วัน) | ${doctorFullName}`;
             
             // เพิ่มข้อมูลแพทย์ที่มาแทน
             if (leave.has_replacement && leave.replacement_doctor_name) {
@@ -772,34 +792,15 @@
 
             const recordDiv = document.createElement('div');
             recordDiv.className = 'leave-record';
-            recordDiv.setAttribute('data-short-text', shortText);
-            recordDiv.setAttribute('data-full-text', fullText);
-            recordDiv.onclick = function() { toggleFullName(this); };
             recordDiv.innerHTML = `
                 <div class="leave-record-info">
-                    ${shortText}
+                    <span class="name-short">${shortText}</span>
+                    <span class="name-full">${fullText}</span>
                 </div>
-                <button class="btn-delete" onclick="event.stopPropagation(); deleteLeave(${leave.id});">🗑️ ลบ</button>
+                <button class="btn-delete" onclick="deleteLeave(${leave.id});">🗑️ ลบ</button>
             `;
             container.appendChild(recordDiv);
         });
-    }
-
-    // Toggle แสดงชื่อเต็ม 3 วินาที
-    function toggleFullName(element) {
-        const infoDiv = element.querySelector('.leave-record-info');
-        const shortText = element.getAttribute('data-short-text');
-        const fullText = element.getAttribute('data-full-text');
-        
-        // ถ้ากำลังแสดงชื่อย่ออยู่ → เปลี่ยนเป็นชื่อเต็ม
-        if (infoDiv.textContent === shortText) {
-            infoDiv.textContent = fullText;
-            
-            // กลับมาเป็นชื่อย่อหลัง 3 วินาที
-            setTimeout(() => {
-                infoDiv.textContent = shortText;
-            }, 3000);
-        }
     }
 
     // ดึงชื่อ (ไม่เอานามสกุล)
