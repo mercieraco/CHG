@@ -731,24 +731,42 @@
         doctorLeaves.forEach(leave => {
             const startDate = formatDateThai(leave.start_date);
             const endDate = formatDateThai(leave.end_date);
-            const leaveType = leave.leave_type === 'more_24' ? 'ลา > 24 ชม' : 'ลา ≤ 24 ชม';
-            const replacement = leave.has_replacement 
-                ? `มีแพทย์มาแทน: ${leave.replacement_doctor_name || 'ไม่ระบุ'}`
-                : 'ไม่มีแพทย์มาแทน';
-
+            
+            // ดึงตัวอักษรแรกของนามสกุล
+            const doctorName = leave.doctor_name || '';
+            const doctorLastInitial = getLastNameInitial(doctorName);
+            
             const days = Math.ceil((new Date(leave.end_date) - new Date(leave.start_date)) / (1000 * 60 * 60 * 24)) + 1;
+
+            // สร้างข้อความ
+            let displayText = `${startDate} - ${endDate} (${days} วัน) | ${doctorName} (${doctorLastInitial})`;
+            
+            // เพิ่มข้อมูลแพทย์ที่มาแทน (ถ้ามี)
+            if (leave.has_replacement && leave.replacement_doctor_name) {
+                const replacementName = leave.replacement_doctor_name;
+                const replacementLastInitial = getLastNameInitial(replacementName);
+                displayText += ` >> ${replacementName} (${replacementLastInitial})`;
+            }
 
             const recordDiv = document.createElement('div');
             recordDiv.className = 'leave-record';
             recordDiv.innerHTML = `
                 <div class="leave-record-info">
-                    <strong>📅 ${startDate} - ${endDate}</strong> (${days} วัน) | 
-                    ${leaveType} | ${replacement}
+                    ${displayText}
                 </div>
                 <button class="btn-delete" onclick="deleteLeave(${leave.id})">🗑️ ลบ</button>
             `;
             container.appendChild(recordDiv);
         });
+    }
+
+    // ดึงตัวอักษรแรกของนามสกุล
+    function getLastNameInitial(fullName) {
+        if (!fullName) return '?';
+        const parts = fullName.trim().split(/\s+/);
+        if (parts.length < 2) return '?';
+        const lastName = parts[parts.length - 1];
+        return lastName.charAt(0);
     }
 
     // ลบข้อมูลการลา
