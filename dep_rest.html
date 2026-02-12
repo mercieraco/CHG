@@ -381,7 +381,7 @@
     
     <div class="form-row">
         <div class="form-group">
-            <select id="doctorSelect" onchange="loadDoctorLeaves()">
+            <select id="doctorSelect">
                 <option value="">-- เลือกแพทย์ที่จะลา --</option>
             </select>
         </div>
@@ -892,8 +892,8 @@
                 }
             }
             
-            // วันที่ลาแล้ว
-            if (isDateOnLeave(dateStr)) {
+            // วันที่ลาแล้ว (แสดงทุกคนในแผนก)
+            if (isDateOnLeaveByAnyone(dateStr)) {
                 classes.push('on-leave');
             }
             
@@ -904,13 +904,19 @@
     }
 
     // เช็คว่าวันนี้ลาหรือไม่
-    function isDateOnLeave(dateStr) {
-        // เช็คว่าแพทย์คนที่เลือกลาวันนี้แล้วหรือยัง
+    // เช็คว่ามีใครลาวันนี้บ้าง (สำหรับแสดงสีเขียวบนปฏิทิน)
+    function isDateOnLeaveByAnyone(dateStr) {
+        return doctorLeaves.some(leave => {
+            return dateStr >= leave.start_date && dateStr <= leave.end_date;
+        });
+    }
+
+    // เช็คว่าแพทย์ที่เลือกลาวันนี้แล้วหรือยัง (สำหรับป้องกันลาซ้ำ)
+    function isDateOnLeaveBySelectedDoctor(dateStr) {
         const selectedDoctorId = document.getElementById('doctorSelect').value;
         if (!selectedDoctorId) return false;
         
         return doctorLeaves.some(leave => {
-            // เช็คเฉพาะการลาของแพทย์คนเดียวกัน
             return leave.doctor_id == selectedDoctorId && 
                    dateStr >= leave.start_date && 
                    dateStr <= leave.end_date;
@@ -936,7 +942,7 @@
             return;
         }
 
-        if (isDateOnLeave(dateStr)) {
+        if (isDateOnLeaveBySelectedDoctor(dateStr)) {
             alert('⚠️ แพทย์ท่านนี้ลาวันนี้อยู่แล้ว');
             return;
         }
@@ -955,10 +961,10 @@
             
             // สร้างช่วงวัน
             const dates = getDateRange(startDate, endDate);
-            // เช็คว่าไม่มีวันที่ลาอยู่แล้ว
-            const hasConflict = dates.some(d => isDateOnLeave(d));
+            // เช็คว่าแพทย์ที่เลือกไม่ได้ลาช่วงนี้อยู่แล้ว
+            const hasConflict = dates.some(d => isDateOnLeaveBySelectedDoctor(d));
             if (hasConflict) {
-                alert('ช่วงวันที่เลือกมีวันที่ลาอยู่แล้ว กรุณาเลือกใหม่');
+                alert('⚠️ แพทย์ท่านนี้ลาช่วงวันนี้อยู่แล้ว กรุณาเลือกใหม่');
                 selectionStep = 0;
                 startDate = null;
                 endDate = null;
@@ -1084,7 +1090,11 @@
         }
 
         if (hasReplacement && !replacementDoctorId) {
-            showMessage('กรุณาเลือกแพทย์ที่มาแทน', 'error');
+            alert('⚠️ กรุณาเลือกแพทย์ที่มาแทน\n\nคุณเลือก "มีคนมาแทน" แต่ยังไม่ได้ระบุว่าเป็นแพทย์คนไหน');
+            // Focus ไปที่ dropdown
+            setTimeout(() => {
+                document.getElementById('replacementDoctorSelect').focus();
+            }, 100);
             return;
         }
 
