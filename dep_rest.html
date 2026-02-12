@@ -561,6 +561,11 @@
         const replacementSelect = document.getElementById('replacementDoctorSelect');
         replacementSelect.innerHTML = '<option value="">-- เลือกแพทย์ที่จะมาแทน --</option>';
 
+        console.log('=== loadReplacementDoctors ===');
+        console.log('selectedDoctorId:', selectedDoctorId, typeof selectedDoctorId);
+        console.log('filterDept:', filterDept);
+        console.log('filterType:', filterType);
+
         if (!filterDept) return;
 
         try {
@@ -569,6 +574,7 @@
             
             if (response.ok && data.success) {
                 let doctors = data.data.filter(d => d.department_id == filterDept);
+                console.log('Doctors in department:', doctors.length);
                 
                 // กรองตาม work_type
                 if (filterType === 'full') {
@@ -576,10 +582,21 @@
                 } else if (filterType === 'part') {
                     doctors = doctors.filter(d => d.work_type === 'part');
                 }
+                console.log('After work_type filter:', doctors.length);
                 
                 // ซ่อนแพทย์ที่กำลังจะลา (ถ้ามี)
                 if (selectedDoctorId) {
-                    doctors = doctors.filter(d => d.id != parseInt(selectedDoctorId));
+                    const beforeFilter = doctors.length;
+                    doctors = doctors.filter(d => {
+                        const keep = d.id != parseInt(selectedDoctorId);
+                        if (!keep) {
+                            console.log('Filtering out selected doctor:', d.name, 'd.id:', d.id, 'selectedDoctorId:', parseInt(selectedDoctorId));
+                        }
+                        return keep;
+                    });
+                    console.log('After removing selected doctor:', beforeFilter, '→', doctors.length);
+                } else {
+                    console.warn('⚠️ selectedDoctorId is empty! Cannot filter out selected doctor.');
                 }
                 
                 // เรียงตามชื่อ
@@ -588,6 +605,8 @@
                 doctors.forEach(doc => {
                     replacementSelect.innerHTML += `<option value="${doc.id}">${doc.name} (${doc.work_type === 'full' ? 'Full time' : 'Part time'})</option>`;
                 });
+                
+                console.log('Final replacement doctors:', doctors.length);
             }
         } catch (error) {
             console.error('Load replacement doctors error:', error);
