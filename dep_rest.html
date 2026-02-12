@@ -248,6 +248,14 @@
         font-weight: 700;
     }
 
+    /* ซ้อนทับ - สีแดงอ่อน */
+    .calendar-day.overlap {
+        background: #ffcdd2 !important;
+        border-color: #ef5350 !important;
+        color: #c62828;
+        font-weight: 700;
+    }
+
     .calendar-day.weekend.on-leave {
         background: #c8e6c9 !important;
         border-color: #c8e6c9 !important;
@@ -914,16 +922,26 @@
             }
             
             // วันที่เลือก
-            if (selectedDates.includes(dateStr)) {
+            const isSelected = selectedDates.includes(dateStr);
+            const isOnLeave = isDateOnLeaveByAnyone(dateStr);
+            
+            // เช็คว่าซ้อนทับหรือไม่
+            if (isSelected && isOnLeave) {
+                // ซ้อนทับ - ใช้สีแดงอ่อน
                 classes.push('selected');
+                classes.push('overlap');
                 // เพิ่มลูกศรถ้าเป็นวันเริ่มต้น
                 if (startDate === dateStr && selectionStep === 1) {
                     classes.push('start-date');
                 }
-            }
-            
-            // วันที่ลาแล้ว (แสดงทุกคนในแผนก)
-            if (isDateOnLeaveByAnyone(dateStr)) {
+            } else if (isSelected) {
+                // เลือกอย่างเดียว - สีฟ้า
+                classes.push('selected');
+                if (startDate === dateStr && selectionStep === 1) {
+                    classes.push('start-date');
+                }
+            } else if (isOnLeave) {
+                // ลาแล้วอย่างเดียว - สีเขียว
                 classes.push('on-leave');
             }
             
