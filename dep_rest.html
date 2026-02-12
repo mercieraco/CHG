@@ -462,7 +462,7 @@
 
 <script>
     const API_URL = 'https://dep-doc-worker.9vk92zm5z2.workers.dev';
-    const LEAVE_API_URL = 'https://dep-rest-worker.YOUR_SUBDOMAIN.workers.dev'; // แก้ URL ตรงนี้
+    const LEAVE_API_URL = 'https://dep-rest-worker.9vk92zm5z2.workers.dev';
 
     let currentYear = new Date().getFullYear();
     let currentMonth = new Date().getMonth();
@@ -1049,6 +1049,17 @@
         }
 
         try {
+            console.log('=== DEBUG: Sending POST request ===');
+            console.log('URL:', `${LEAVE_API_URL}/api/leaves`);
+            console.log('Body:', {
+                doctorId: parseInt(doctorId),
+                leaveType,
+                hasReplacement,
+                replacementDoctorId: replacementDoctorId ? parseInt(replacementDoctorId) : null,
+                startDate: startDateStr,
+                endDate: endDateStr
+            });
+
             const response = await fetch(`${LEAVE_API_URL}/api/leaves`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1062,7 +1073,12 @@
                 })
             });
 
+            console.log('=== DEBUG: Response ===');
+            console.log('Status:', response.status);
+            console.log('OK:', response.ok);
+
             const data = await response.json();
+            console.log('Data:', data);
 
             if (response.ok && data.success) {
                 showMessage('✅ บันทึกการลาสำเร็จ', 'success');
