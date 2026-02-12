@@ -579,7 +579,7 @@
                 
                 // ซ่อนแพทย์ที่กำลังจะลา (ถ้ามี)
                 if (selectedDoctorId) {
-                    doctors = doctors.filter(d => d.id != selectedDoctorId);
+                    doctors = doctors.filter(d => d.id != parseInt(selectedDoctorId));
                 }
                 
                 // เรียงตามชื่อ
