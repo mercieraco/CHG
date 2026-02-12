@@ -346,15 +346,15 @@
 
     /* แสดง/ซ่อนชื่อตามขนาดหน้าจอ */
     .name-short {
-        display: inline; /* แสดงบนมือถือ */
+        display: inline; /* แสดงบนมือถือแนวตั้ง */
     }
     
     .name-full {
-        display: none; /* ซ่อนบนมือถือ */
+        display: none; /* ซ่อนบนมือถือแนวตั้ง */
     }
     
-    /* หน้าจอใหญ่ (> 768px) */
-    @media (min-width: 769px) {
+    /* หน้าจอกว้าง (> 800px) - iPhone แนวนอน, iPad แนวนอน */
+    @media (min-width: 801px) {
         .name-short {
             display: none; /* ซ่อนชื่อย่อ */
         }
