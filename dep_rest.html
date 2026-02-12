@@ -550,6 +550,9 @@
 
         // ไม่เรียก loadReplacementDoctors() ที่นี่
         // จะโหลดเมื่อ user เลือกแพทย์และไปที่ส่วนแพทย์ที่มาแทนเอง
+        
+        // โหลดการลาทั้งแผนก
+        loadDoctorLeaves();
     }
 
     // โหลดแพทย์ที่มาแทน
@@ -688,8 +691,9 @@
 
     // โหลดการลาของแพทย์
     async function loadDoctorLeaves() {
-        const doctorId = document.getElementById('doctorSelect').value;
-        if (!doctorId) {
+        const departmentId = document.getElementById('departmentSelect').value;
+        
+        if (!departmentId) {
             doctorLeaves = [];
             renderCalendar();
             displayLeaveRecords();
@@ -697,11 +701,18 @@
         }
 
         try {
-            const response = await fetch(`${LEAVE_API_URL}/api/leaves/doctor/${doctorId}`);
+            // โหลดการลาทั้งแผนก (ไม่ใช่เฉพาะแพทย์คนเดียว)
+            const response = await fetch(`${LEAVE_API_URL}/api/leaves/department/${departmentId}`);
             const data = await response.json();
             
             if (response.ok && data.success) {
                 doctorLeaves = data.data;
+                renderCalendar();
+                displayLeaveRecords();
+            } else {
+                // ถ้า API ยังไม่มี endpoint นี้ ให้แสดงว่าง
+                console.warn('Department leaves API not available:', data.message);
+                doctorLeaves = [];
                 renderCalendar();
                 displayLeaveRecords();
             }
