@@ -732,20 +732,22 @@
             const startDate = formatDateThai(leave.start_date);
             const endDate = formatDateThai(leave.end_date);
             
-            // ดึงตัวอักษรแรกของนามสกุล
-            const doctorName = leave.doctor_name || '';
-            const doctorLastInitial = getLastNameInitial(doctorName);
+            // ดึงชื่อ (ไม่เอานามสกุล) + ตัวอักษรแรกของนามสกุล
+            const doctorFullName = leave.doctor_name || '';
+            const doctorFirstName = getFirstName(doctorFullName);
+            const doctorLastInitial = getLastNameInitial(doctorFullName);
             
             const days = Math.ceil((new Date(leave.end_date) - new Date(leave.start_date)) / (1000 * 60 * 60 * 24)) + 1;
 
             // สร้างข้อความ
-            let displayText = `${startDate} - ${endDate} (${days} วัน) | ${doctorName} (${doctorLastInitial})`;
+            let displayText = `${startDate} - ${endDate} (${days} วัน) | ${doctorFirstName} (${doctorLastInitial})`;
             
             // เพิ่มข้อมูลแพทย์ที่มาแทน (ถ้ามี)
             if (leave.has_replacement && leave.replacement_doctor_name) {
-                const replacementName = leave.replacement_doctor_name;
-                const replacementLastInitial = getLastNameInitial(replacementName);
-                displayText += ` >> ${replacementName} (${replacementLastInitial})`;
+                const replacementFullName = leave.replacement_doctor_name;
+                const replacementFirstName = getFirstName(replacementFullName);
+                const replacementLastInitial = getLastNameInitial(replacementFullName);
+                displayText += ` >> ${replacementFirstName} (${replacementLastInitial})`;
             }
 
             const recordDiv = document.createElement('div');
@@ -758,6 +760,15 @@
             `;
             container.appendChild(recordDiv);
         });
+    }
+
+    // ดึงชื่อ (ไม่เอานามสกุล)
+    function getFirstName(fullName) {
+        if (!fullName) return '';
+        const parts = fullName.trim().split(/\s+/);
+        if (parts.length < 2) return fullName; // ถ้ามีแค่ชื่อเดียว
+        // เอาทุกอย่างยกเว้นคำสุดท้าย (นามสกุล)
+        return parts.slice(0, -1).join(' ');
     }
 
     // ดึงตัวอักษรแรกของนามสกุล
