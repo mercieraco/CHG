@@ -347,14 +347,20 @@
     /* แสดง/ซ่อนชื่อตามขนาดหน้าจอ */
     .name-short {
         display: inline; /* แสดงบนมือถือแนวตั้ง */
+        background: #ffebee; /* สีชมพูอ่อน - มือถือ */
+        padding: 2px 4px;
+        border-radius: 3px;
     }
     
     .name-full {
         display: none; /* ซ่อนบนมือถือแนวตั้ง */
+        background: #e3f2fd; /* สีฟ้าอ่อน - หน้าจอใหญ่ */
+        padding: 2px 4px;
+        border-radius: 3px;
     }
     
-    /* หน้าจอกว้าง (> 800px) - iPhone แนวนอน, iPad แนวนอน */
-    @media (min-width: 801px) {
+    /* หน้าจอกว้าง (> 900px) - iPhone แนวนอน, iPad แนวนอน */
+    @media (min-width: 901px) {
         .name-short {
             display: none; /* ซ่อนชื่อย่อ */
         }
