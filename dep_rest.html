@@ -557,13 +557,7 @@
 
     // โหลดแพทย์ที่มาแทน
     async function loadReplacementDoctors() {
-        // ตรวจสอบว่าเลือกแพทย์ที่จะลาหรือยัง
         const selectedDoctorId = document.getElementById('doctorSelect').value;
-        if (!selectedDoctorId) {
-            alert('⚠️ กรุณาเลือกแพทย์ที่จะลา เป็นอันดับแรก\n(เลือก แผนก >> แพทย์)');
-            return;
-        }
-
         const filterDept = document.getElementById('filterDepartment').value;
         const filterType = document.getElementById('filterWorkType').value;
         const replacementSelect = document.getElementById('replacementDoctorSelect');
@@ -585,8 +579,10 @@
                     doctors = doctors.filter(d => d.work_type === 'part');
                 }
                 
-                // ซ่อนแพทย์ที่กำลังจะลา
-                doctors = doctors.filter(d => d.id != selectedDoctorId);
+                // ซ่อนแพทย์ที่กำลังจะลา (ถ้ามี)
+                if (selectedDoctorId) {
+                    doctors = doctors.filter(d => d.id != selectedDoctorId);
+                }
                 
                 // เรียงตามชื่อ
                 doctors.sort((a, b) => a.name.localeCompare(b.name, ['en', 'th']));
@@ -604,60 +600,16 @@
     function toggleReplacement() {
         const hasReplacement = document.querySelector('input[name="hasReplacement"]:checked').value;
         document.getElementById('replacementSection').style.display = hasReplacement === 'yes' ? 'block' : 'none';
-    }
-
-    // ตรวจสอบว่าเลือกแพทย์ที่จะลาหรือยัง (เมื่อคลิก dropdown แพทย์ที่มาแทน)
-    function checkDoctorSelected(element) {
-        const selectedDoctorId = document.getElementById('doctorSelect').value;
-        if (!selectedDoctorId) {
-            // Blur ทันที (ป้องกัน dropdown เปิด)
-            if (element) {
-                element.blur();
+        
+        // โหลดแพทย์มาแทนทันทีถ้าเลือก "มีคนมาแทน"
+        if (hasReplacement === 'yes') {
+            // Set default แผนกเป็นแผนกเดียวกับแพทย์ที่ลา
+            const mainDepartmentId = document.getElementById('departmentSelect').value;
+            if (mainDepartmentId) {
+                document.getElementById('filterDepartment').value = mainDepartmentId;
+                loadReplacementDoctors();
             }
-            
-            alert('⚠️ กรุณาเลือกแพทย์ที่จะลา เป็นอันดับแรก\n(เลือก แผนก >> แพทย์)');
-            
-            // Focus กลับไปที่ dropdown แผนกหรือแพทย์
-            setTimeout(() => {
-                const deptSelect = document.getElementById('departmentSelect');
-                if (!deptSelect.value) {
-                    // ถ้ายังไม่เลือกแผนก ให้ focus ที่แผนก
-                    deptSelect.focus();
-                } else {
-                    // ถ้าเลือกแผนกแล้ว ให้ focus ที่แพทย์
-                    document.getElementById('doctorSelect').focus();
-                }
-            }, 100);
-            
-            return false;
         }
-        return true;
-    }
-
-    // สำหรับ onfocus event
-    function checkDoctorSelectedFocus(event, element) {
-        const selectedDoctorId = document.getElementById('doctorSelect').value;
-        if (!selectedDoctorId) {
-            // Blur ทันที (ป้องกัน dropdown เปิด)
-            element.blur();
-            
-            alert('⚠️ กรุณาเลือกแพทย์ที่จะลา เป็นอันดับแรก\n(เลือก แผนก >> แพทย์)');
-            
-            // Focus กลับไปที่ dropdown แผนกหรือแพทย์
-            setTimeout(() => {
-                const deptSelect = document.getElementById('departmentSelect');
-                if (!deptSelect.value) {
-                    // ถ้ายังไม่เลือกแผนก ให้ focus ที่แผนก
-                    deptSelect.focus();
-                } else {
-                    // ถ้าเลือกแผนกแล้ว ให้ focus ที่แพทย์
-                    document.getElementById('doctorSelect').focus();
-                }
-            }, 100);
-            
-            return false;
-        }
-        return true;
     }
 
     // ตรวจสอบก่อนเลือกแพทย์ที่มาแทน - ต้องเลือกวันก่อน
@@ -681,7 +633,7 @@
         // 2. ต้องเลือกวันที่ก่อน
         if (selectedDates.length === 0) {
             element.blur();
-            alert('⚠️ กรุณาเลือกวันที่ลาก่อน\n(คลิก 2 ครั้งบนปฏิทิน)');
+            alert('⚠️ กรุณาเลือกวันที่ลา\n(คลิก 2 ครั้งบนปฏิทิน)\nวันเริ่มต้น และ วันสิ้นสุด');
             return false;
         }
 
@@ -1090,7 +1042,7 @@
         }
 
         if (hasReplacement && !replacementDoctorId) {
-            alert('⚠️ กรุณาเลือกแพทย์ที่มาแทน\n\nคุณเลือก "มีคนมาแทน" แต่ยังไม่ได้ระบุว่าเป็นแพทย์คนไหน');
+            alert('⚠️ กรุณาระบุแพทย์ที่มาแทน');
             // Focus ไปที่ dropdown
             setTimeout(() => {
                 document.getElementById('replacementDoctorSelect').focus();
