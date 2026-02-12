@@ -324,12 +324,19 @@
         justify-content: space-between;
         align-items: center;
         border-left: 4px solid #66bb6a;
+        cursor: pointer;
+        transition: background 0.3s;
+    }
+
+    .leave-record:hover {
+        background: #e8f5e9;
     }
 
     .leave-record-info {
         flex: 1;
         font-size: 14px;
         color: #333;
+        transition: all 0.3s ease;
     }
 
     .leave-record-info strong {
@@ -743,27 +750,51 @@
             
             const days = Math.ceil((new Date(leave.end_date) - new Date(leave.start_date)) / (1000 * 60 * 60 * 24)) + 1;
 
-            // สร้างข้อความ
-            let displayText = `${startDate} - ${endDate} (${days} วัน) | ${doctorFirstName} (${doctorLastInitial})`;
+            // สร้างข้อความแบบย่อ (แสดงปกติ)
+            let shortText = `${startDate} - ${endDate} (${days} วัน) | ${doctorFirstName} (${doctorLastInitial})`;
             
-            // เพิ่มข้อมูลแพทย์ที่มาแทน (ถ้ามี)
+            // สร้างข้อความแบบเต็ม (แสดงเมื่อคลิก)
+            let fullText = doctorFullName;
+            
+            // เพิ่มข้อมูลแพทย์ที่มาแทน
             if (leave.has_replacement && leave.replacement_doctor_name) {
                 const replacementFullName = leave.replacement_doctor_name;
                 const replacementFirstName = getFirstName(replacementFullName);
                 const replacementLastInitial = getLastNameInitial(replacementFullName);
-                displayText += ` >> ${replacementFirstName} (${replacementLastInitial})`;
+                shortText += ` >> ${replacementFirstName} (${replacementLastInitial})`;
+                fullText += ` >> ${replacementFullName}`;
             }
 
             const recordDiv = document.createElement('div');
             recordDiv.className = 'leave-record';
+            recordDiv.setAttribute('data-short-text', shortText);
+            recordDiv.setAttribute('data-full-text', fullText);
+            recordDiv.onclick = function() { toggleFullName(this); };
             recordDiv.innerHTML = `
                 <div class="leave-record-info">
-                    ${displayText}
+                    ${shortText}
                 </div>
-                <button class="btn-delete" onclick="deleteLeave(${leave.id})">🗑️ ลบ</button>
+                <button class="btn-delete" onclick="event.stopPropagation(); deleteLeave(${leave.id});">🗑️ ลบ</button>
             `;
             container.appendChild(recordDiv);
         });
+    }
+
+    // Toggle แสดงชื่อเต็ม 3 วินาที
+    function toggleFullName(element) {
+        const infoDiv = element.querySelector('.leave-record-info');
+        const shortText = element.getAttribute('data-short-text');
+        const fullText = element.getAttribute('data-full-text');
+        
+        // ถ้ากำลังแสดงชื่อย่ออยู่ → เปลี่ยนเป็นชื่อเต็ม
+        if (infoDiv.textContent === shortText) {
+            infoDiv.textContent = fullText;
+            
+            // กลับมาเป็นชื่อย่อหลัง 3 วินาที
+            setTimeout(() => {
+                infoDiv.textContent = shortText;
+            }, 3000);
+        }
     }
 
     // ดึงชื่อ (ไม่เอานามสกุล)
