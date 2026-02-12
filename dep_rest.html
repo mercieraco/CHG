@@ -380,7 +380,7 @@
     </div>
     
     <div class="form-group">
-        <select id="doctorSelect">
+        <select id="doctorSelect" onchange="onDoctorChange()">
             <option value="">-- เลือกแพทย์ที่จะลา --</option>
         </select>
     </div>
@@ -553,6 +553,18 @@
         loadDoctorLeaves();
     }
 
+    // เมื่อเลือกแพทย์ที่ลา
+    function onDoctorChange() {
+        // ถ้าเลือก "มีคนมาแทน" อยู่แล้ว → โหลดแพทย์มาแทนใหม่
+        const hasReplacement = document.querySelector('input[name="hasReplacement"]:checked').value;
+        if (hasReplacement === 'yes') {
+            const filterDept = document.getElementById('filterDepartment').value;
+            if (filterDept) {
+                loadReplacementDoctors();
+            }
+        }
+    }
+
     // โหลดแพทย์ที่มาแทน
     async function loadReplacementDoctors() {
         const selectedDoctorId = document.getElementById('doctorSelect').value;
@@ -610,6 +622,18 @@
             }
         } catch (error) {
             console.error('Load replacement doctors error:', error);
+        }
+    }
+
+    // เมื่อเปลี่ยนแพทย์ที่ลา → reload แพทย์มาแทน
+    function onDoctorChange() {
+        // ถ้าเลือก "มีคนมาแทน" และมีแผนก → reload ทันที
+        const hasReplacement = document.querySelector('input[name="hasReplacement"]:checked').value;
+        const filterDept = document.getElementById('filterDepartment').value;
+        
+        if (hasReplacement === 'yes' && filterDept) {
+            console.log('🔄 Doctor changed, reloading replacement doctors...');
+            loadReplacementDoctors();
         }
     }
 
