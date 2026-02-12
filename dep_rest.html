@@ -766,7 +766,18 @@
         const parts = fullName.trim().split(/\s+/);
         if (parts.length < 2) return '?';
         const lastName = parts[parts.length - 1];
-        return lastName.charAt(0);
+        
+        // ข้ามสระไทย (เอาแค่พยัญชนะตัวแรก)
+        const thaiVowels = ['เ', 'แ', 'โ', 'ใ', 'ไ', 'ำ', 'ั', 'า', 'ิ', 'ี', 'ึ', 'ื', 'ุ', 'ู', '็', '่', '้', '๊', '๋', '์', 'ํ', 'ๅ'];
+        
+        for (let i = 0; i < lastName.length; i++) {
+            const char = lastName.charAt(i);
+            if (!thaiVowels.includes(char)) {
+                return char;
+            }
+        }
+        
+        return lastName.charAt(0); // fallback
     }
 
     // ลบข้อมูลการลา
