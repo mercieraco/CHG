@@ -1271,8 +1271,15 @@
         // แสดง delegation section
         delegationSection.style.display = 'block';
         
-        // โหลด dropdown สำหรับ single delegation
-        loadFilterDepartments();
+        // Set แผนกใน filterDepartment ให้ตรงกับแผนกของแพทย์ที่ลา
+        const mainDepartmentId = document.getElementById('departmentSelect').value;
+        const filterDept = document.getElementById('filterDepartment');
+        if (mainDepartmentId && filterDept) {
+            filterDept.value = mainDepartmentId;
+        }
+        
+        // โหลดแพทย์สำหรับ single delegation
+        loadReplacementDoctors();
         
         // สร้าง assignment list สำหรับ multiple delegation
         buildDutyAssignmentList();
@@ -1331,12 +1338,16 @@
         if (!departmentId) return;
         
         try {
-            const response = await fetch(`${API_URL}/api/doctors/department/${departmentId}`);
+            // ใช้ API เดียวกับ loadReplacementDoctors
+            const response = await fetch(`${API_URL}/api/doctors`);
             const data = await response.json();
             
             if (data.success) {
-                // กรองแพทย์ออก (ไม่ให้เลือกตัวเอง)
-                const doctors = data.data.filter(d => d.id != parseInt(selectedDoctorId));
+                // กรองตามแผนก
+                let doctors = data.data.filter(d => d.department_id == departmentId);
+                
+                // กรองแพทย์ที่ลาออก (ไม่ให้เลือกตัวเอง)
+                doctors = doctors.filter(d => d.id != parseInt(selectedDoctorId));
                 
                 // ใส่ใน dropdown ทุกตัว
                 document.querySelectorAll('.duty-assignment-select').forEach(select => {
