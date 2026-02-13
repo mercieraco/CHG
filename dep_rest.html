@@ -398,6 +398,61 @@
     .btn-delete:hover {
         background: #e53935;
     }
+
+    /* ปุ่มยืนยันเลือกวันที่ลา */
+    .btn-confirm-dates {
+        background: #4caf50;
+        color: white;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 6px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .btn-confirm-dates:hover {
+        background: #45a049;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    }
+
+    /* Duty list items */
+    .duty-item {
+        background: white;
+        padding: 10px 15px;
+        margin-bottom: 8px;
+        border-radius: 6px;
+        border-left: 4px solid #2196f3;
+    }
+
+    .duty-date {
+        font-weight: 600;
+        color: #1976d2;
+        margin-bottom: 5px;
+    }
+
+    .duty-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .duty-tag {
+        background: #e3f2fd;
+        color: #1976d2;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 13px;
+        font-weight: 500;
+    }
+
+    .duty-tag.no-duty {
+        background: #f5f5f5;
+        color: #757575;
+    }
 </style>
 ```
 
@@ -448,6 +503,21 @@
 
     <!-- แสดงช่วงวันที่เลือก (ย้ายมาใต้ปฏิทิน) -->
     <div id="selectedRange" class="selected-range" style="display: none;"></div>
+
+    <!-- ปุ่มยืนยันเลือกวันที่ลา -->
+    <div style="text-align: center; margin: 20px 0;">
+        <button id="confirmDatesBtn" class="btn-confirm-dates" onclick="confirmSelectedDates()" style="display: none;">
+            ✅ ยืนยันเลือกวันที่ลา
+        </button>
+    </div>
+
+    <!-- แสดง Duty ของแต่ละวัน -->
+    <div id="dutySection" style="display: none; margin-bottom: 20px;">
+        <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+            <h3 style="margin: 0 0 10px 0; color: #1976d2;">📋 รายละเอียดงานที่ลา</h3>
+            <div id="dutyList"></div>
+        </div>
+    </div>
 
     <!-- แพทย์ที่มาแทน (ย้ายมาใต้แถบสีฟ้า) -->
     <div class="form-group">
@@ -1061,8 +1131,11 @@
     // แสดงช่วงที่เลือก
     function updateSelectedRange() {
         const rangeDiv = document.getElementById('selectedRange');
+        const confirmBtn = document.getElementById('confirmDatesBtn');
+        
         if (selectedDates.length === 0) {
             rangeDiv.style.display = 'none';
+            confirmBtn.style.display = 'none';
             return;
         }
         
@@ -1072,7 +1145,77 @@
         
         rangeDiv.textContent = `📅 เลือก: ${formatDateThai(start)} - ${formatDateThai(end)} (${days} วัน)`;
         rangeDiv.style.display = 'block';
+        
+        // แสดงปุ่มยืนยัน
+        confirmBtn.style.display = 'inline-block';
     }
+
+    // ยืนยันเลือกวันที่ลา → แสดง Duty
+    async function confirmSelectedDates() {
+        const doctorId = document.getElementById('doctorSelect').value;
+        
+        if (!doctorId) {
+            alert('⚠️ กรุณาเลือกแพทย์ที่จะลาก่อน');
+            return;
+        }
+        
+        if (selectedDates.length === 0) {
+            alert('⚠️ กรุณาเลือกวันที่ลาก่อน');
+            return;
+        }
+        
+        const startDate = selectedDates[0];
+        const endDate = selectedDates[selectedDates.length - 1];
+        
+        try {
+            // เรียก API ดึง Duty
+            const response = await fetch(
+                `${LEAVE_API_URL}/api/duties/doctor/${doctorId}/range?startDate=${startDate}&endDate=${endDate}`
+            );
+            const data = await response.json();
+            
+            if (data.success) {
+                displayDuties(data.data);
+                // ซ่อนปุ่มยืนยัน
+                document.getElementById('confirmDatesBtn').style.display = 'none';
+            } else {
+                alert('❌ ไม่สามารถดึงข้อมูล Duty ได้');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('❌ เกิดข้อผิดพลาด');
+        }
+    }
+
+    // แสดง Duty ของแต่ละวัน
+    function displayDuties(dutyData) {
+        const dutySection = document.getElementById('dutySection');
+        const dutyList = document.getElementById('dutyList');
+        
+        let html = '';
+        dutyData.forEach(day => {
+            const dateObj = new Date(day.duty_date);
+            const thaiDate = formatDateThai(day.duty_date);
+            
+            html += `<div class="duty-item">`;
+            html += `<div class="duty-date">วันที่ ${thaiDate}</div>`;
+            html += `<div class="duty-tags">`;
+            
+            if (day.duties.length === 0) {
+                html += `<span class="duty-tag no-duty">ไม่มีงาน</span>`;
+            } else {
+                day.duties.forEach(duty => {
+                    html += `<span class="duty-tag">${duty.duty_name}</span>`;
+                });
+            }
+            
+            html += `</div></div>`;
+        });
+        
+        dutyList.innerHTML = html;
+        dutySection.style.display = 'block';
+    }
+
 
     // ฟอร์แมตวันที่
     function formatDate(date) {
