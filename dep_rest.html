@@ -463,18 +463,30 @@
         border-left: 4px solid #ff9800;
     }
 
+    .duty-assignment-header-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+
     .duty-assignment-header {
         font-weight: 600;
         color: #e65100;
-        margin-bottom: 8px;
         font-size: 14px;
+        white-space: nowrap;
+        min-width: fit-content;
     }
 
     .duty-assignment-filters {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
+        display: flex;
         gap: 8px;
-        margin-bottom: 8px;
+        flex: 1;
+    }
+
+    .duty-assignment-filters select {
+        flex: 1;
+        min-width: 100px;
     }
 
     .duty-assignment-item select {
@@ -1326,6 +1338,9 @@
                 
                 day.duties.forEach(duty => {
                     html += `<div class="duty-assignment-item">`;
+                    
+                    // Header row (วันที่ + filters ในบรรทัดเดียวกัน)
+                    html += `<div class="duty-assignment-header-row">`;
                     html += `<div class="duty-assignment-header">วันที่ ${thaiDate}: ${duty.duty_name}</div>`;
                     
                     // Filter row
@@ -1343,8 +1358,9 @@
                     html += `<option value="part">Part time</option>`;
                     html += `</select>`;
                     html += `</div>`;
+                    html += `</div>`;
                     
-                    // Doctor dropdown
+                    // Doctor dropdown (บรรทัดถัดไป)
                     html += `<select class="duty-assignment-select" data-date="${day.duty_date}" data-duty-id="${duty.duty_id}" data-index="${assignmentIndex}">`;
                     html += `<option value="">-- เลือกแพทย์ที่จะมาแทน --</option>`;
                     html += `</select>`;
