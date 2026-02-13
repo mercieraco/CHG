@@ -433,20 +433,6 @@
         </select>
     </div>
 
-    <!-- ประเภทการลา -->
-    <div class="form-group">
-        <label>ประเภทการลา</label>
-        <div class="radio-group">
-            <label>
-                <input type="radio" name="leaveType" value="more_24" checked>
-                ลา > 24 ชม
-            </label>
-            <label>
-                <input type="radio" name="leaveType" value="less_24">
-                ลา ≤ 24 ชม
-            </label>
-        </div>
-    </div>
 
     <!-- ปฏิทิน -->
     <div class="calendar-container">
@@ -1128,7 +1114,6 @@
     async function submitLeave() {
         const doctorId = document.getElementById('doctorSelect').value;
         const doctorName = document.getElementById('doctorSelect').selectedOptions[0]?.text || '';
-        const leaveType = document.querySelector('input[name="leaveType"]:checked').value;
         const hasReplacement = document.querySelector('input[name="hasReplacement"]:checked').value === 'yes';
         const replacementDoctorId = hasReplacement ? document.getElementById('replacementDoctorSelect').value : null;
         const replacementDoctorName = hasReplacement && replacementDoctorId 
@@ -1158,14 +1143,12 @@
         const endDateStr = selectedDates[selectedDates.length - 1];
         
         // สร้างข้อความยืนยัน
-        const leaveTypeText = leaveType === 'more_24' ? 'ลา > 24 ชม' : 'ลา ≤ 24 ชม';
         const replacementText = hasReplacement 
             ? `มีแพทย์ที่มาแทน: ${replacementDoctorName}`
             : 'ไม่มีแพทย์ที่มาแทน';
         
         const confirmMessage = `📋 ยืนยันการบันทึก\n\n` +
             `แพทย์ที่ลา: ${doctorName}\n` +
-            `ประเภท: ${leaveTypeText}\n` +
             `วันที่: ${formatDateThai(startDateStr)} - ${formatDateThai(endDateStr)}\n` +
             `จำนวน: ${selectedDates.length} วัน\n` +
             `${replacementText}\n\n` +
@@ -1180,7 +1163,6 @@
             console.log('URL:', `${LEAVE_API_URL}/api/leaves`);
             console.log('Body:', {
                 doctorId: parseInt(doctorId),
-                leaveType,
                 hasReplacement,
                 replacementDoctorId: replacementDoctorId ? parseInt(replacementDoctorId) : null,
                 startDate: startDateStr,
@@ -1192,7 +1174,6 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     doctorId: parseInt(doctorId),
-                    leaveType,
                     hasReplacement,
                     replacementDoctorId: replacementDoctorId ? parseInt(replacementDoctorId) : null,
                     startDate: startDateStr,
