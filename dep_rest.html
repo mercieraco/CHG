@@ -338,7 +338,7 @@
         margin-bottom: 10px;
         display: flex;
         justify-content: space-between;
-        align-items: center;
+        align-items: flex-start;
         border-left: 4px solid #66bb6a;
         cursor: pointer;
         transition: background 0.3s;
@@ -384,6 +384,23 @@
         color: #2e7d32;
     }
 
+    /* Leave Header (บรรทัดแรก) */
+    .leave-header {
+        margin-bottom: 8px;
+        font-weight: 500;
+    }
+
+    /* Duty Details Container */
+    .duty-details {
+        padding-left: 0;
+    }
+
+    .duty-detail-item {
+        padding: 4px 0;
+        font-size: 13px;
+        color: #555;
+    }
+
     .btn-delete {
         background: #ef5350;
         color: white;
@@ -393,6 +410,7 @@
         cursor: pointer;
         font-size: 13px;
         transition: background 0.3s;
+        white-space: nowrap;
     }
 
     .btn-delete:hover {
@@ -898,15 +916,15 @@
             
             const days = Math.ceil((new Date(leave.end_date) - new Date(leave.start_date)) / (1000 * 60 * 60 * 24)) + 1;
 
-            // สร้างข้อความแบบย่อ (สำหรับมือถือ)
-            let shortText = `${startDate} - ${endDate} (${days} วัน) | ${doctorFirstName} (${doctorLastInitial})`;
-            
-            // สร้างข้อความแบบเต็ม (สำหรับหน้าจอใหญ่)
-            let fullText = `${startDate} - ${endDate} (${days} วัน) | ${doctorFullName}`;
+            const recordDiv = document.createElement('div');
+            recordDiv.className = 'leave-record';
             
             // เช็ค delegation type
             if (leave.delegation_type === 'single') {
-                // Single Delegation - แสดงแพทย์มาแทนเหมือนเดิม
+                // Single Delegation - แบบเดิม
+                let shortText = `${startDate} - ${endDate} (${days} วัน) | ${doctorFirstName} (${doctorLastInitial})`;
+                let fullText = `${startDate} - ${endDate} (${days} วัน) | ${doctorFullName}`;
+                
                 if (leave.has_replacement && leave.replacement_doctor_name) {
                     const replacementFullName = leave.replacement_doctor_name;
                     const replacementFirstName = getFirstName(replacementFullName);
@@ -914,10 +932,25 @@
                     shortText += ` >> ${replacementFirstName} (${replacementLastInitial})`;
                     fullText += ` >> ${replacementFullName}`;
                 }
+                
+                recordDiv.innerHTML = `
+                    <div class="leave-record-info">
+                        <span class="name-short">${shortText}</span>
+                        <span class="name-full">${fullText}</span>
+                    </div>
+                    <button class="btn-delete" onclick="deleteLeave(${leave.id});">ลบ</button>
+                `;
+                
             } else if (leave.delegation_type === 'multiple' && leave.duty_assignments) {
-                // Multiple Delegation - แสดง duty details
-                shortText += `\n`;
-                fullText += `\n`;
+                // Multiple Delegation - แบบใหม่ (แยกบรรทัด)
+                let html = `
+                    <div class="leave-record-info">
+                        <div class="leave-header">
+                            <span class="name-short">${startDate} - ${endDate} (${days} วัน) | ${doctorFirstName} (${doctorLastInitial})</span>
+                            <span class="name-full">${startDate} - ${endDate} (${days} วัน) | ${doctorFullName}</span>
+                        </div>
+                        <div class="duty-details">
+                `;
                 
                 leave.duty_assignments.forEach(assignment => {
                     const assignmentDate = formatDateThai(assignment.duty_date);
@@ -925,20 +958,23 @@
                     const replacementFirstName = getFirstName(replacementName);
                     const replacementLastInitial = getLastNameInitial(replacementName);
                     
-                    shortText += `  ${assignmentDate} [${assignment.duty_name}] >> ${replacementFirstName} (${replacementLastInitial})\n`;
-                    fullText += `  ${assignmentDate} [${assignment.duty_name}] >> ${replacementName}\n`;
+                    html += `
+                        <div class="duty-detail-item">
+                            <span class="name-short">${assignmentDate} [${assignment.duty_name}] >> ${replacementFirstName} (${replacementLastInitial})</span>
+                            <span class="name-full">${assignmentDate} [${assignment.duty_name}] >> ${replacementName}</span>
+                        </div>
+                    `;
                 });
+                
+                html += `
+                        </div>
+                    </div>
+                    <button class="btn-delete" onclick="deleteLeave(${leave.id});">ลบ</button>
+                `;
+                
+                recordDiv.innerHTML = html;
             }
-
-            const recordDiv = document.createElement('div');
-            recordDiv.className = 'leave-record';
-            recordDiv.innerHTML = `
-                <div class="leave-record-info">
-                    <span class="name-short">${shortText}</span>
-                    <span class="name-full">${fullText}</span>
-                </div>
-                <button class="btn-delete" onclick="deleteLeave(${leave.id});">🗑️ ลบ</button>
-            `;
+            
             container.appendChild(recordDiv);
         });
     }
