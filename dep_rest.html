@@ -470,6 +470,13 @@
         font-size: 14px;
     }
 
+    .duty-assignment-filters {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+
     .duty-assignment-item select {
         width: 100%;
         padding: 8px 12px;
@@ -1309,6 +1316,10 @@
         const departmentId = document.getElementById('departmentSelect').value;
         if (!departmentId) return;
         
+        // ดึงรายชื่อแผนกทั้งหมด
+        const departments = await loadAllDepartments();
+        
+        let assignmentIndex = 0;
         currentDutyData.forEach(day => {
             if (day.duties.length > 0) {
                 const thaiDate = formatDateThai(day.duty_date);
@@ -1316,15 +1327,43 @@
                 day.duties.forEach(duty => {
                     html += `<div class="duty-assignment-item">`;
                     html += `<div class="duty-assignment-header">วันที่ ${thaiDate}: ${duty.duty_name}</div>`;
-                    html += `<select class="duty-assignment-select" data-date="${day.duty_date}" data-duty-id="${duty.duty_id}">`;
+                    
+                    // Filter row
+                    html += `<div class="duty-assignment-filters">`;
+                    html += `<select class="duty-filter-dept" data-index="${assignmentIndex}">`;
+                    html += `<option value="">-- เลือกแผนก --</option>`;
+                    departments.forEach(dept => {
+                        const selected = dept.id == departmentId ? 'selected' : '';
+                        html += `<option value="${dept.id}" ${selected}>${dept.name}</option>`;
+                    });
+                    html += `</select>`;
+                    
+                    html += `<select class="duty-filter-type" data-index="${assignmentIndex}">`;
+                    html += `<option value="full" selected>Full time</option>`;
+                    html += `<option value="part">Part time</option>`;
+                    html += `</select>`;
+                    html += `</div>`;
+                    
+                    // Doctor dropdown
+                    html += `<select class="duty-assignment-select" data-date="${day.duty_date}" data-duty-id="${duty.duty_id}" data-index="${assignmentIndex}">`;
                     html += `<option value="">-- เลือกแพทย์ที่จะมาแทน --</option>`;
                     html += `</select>`;
                     html += `</div>`;
+                    
+                    assignmentIndex++;
                 });
             }
         });
         
         container.innerHTML = html;
+        
+        // เพิ่ม event listeners สำหรับ filters
+        document.querySelectorAll('.duty-filter-dept, .duty-filter-type').forEach(select => {
+            select.addEventListener('change', (e) => {
+                const index = e.target.dataset.index;
+                loadDoctorsForSingleAssignment(index);
+            });
+        });
         
         // โหลดแพทย์ใน dropdown แต่ละตัว
         await loadDoctorsForAssignments();
@@ -1337,30 +1376,75 @@
         
         if (!departmentId) return;
         
+        // โหลดแพทย์สำหรับแต่ละ assignment ตาม filter ของมัน
+        const assignments = document.querySelectorAll('.duty-assignment-select');
+        for (let i = 0; i < assignments.length; i++) {
+            await loadDoctorsForSingleAssignment(i);
+        }
+    }
+
+    // โหลดแพทย์สำหรับ assignment เดียว
+    async function loadDoctorsForSingleAssignment(index) {
+        const selectedDoctorId = document.getElementById('doctorSelect').value;
+        
+        // หา filter elements สำหรับ assignment นี้
+        const deptFilter = document.querySelector(`.duty-filter-dept[data-index="${index}"]`);
+        const typeFilter = document.querySelector(`.duty-filter-type[data-index="${index}"]`);
+        const doctorSelect = document.querySelector(`.duty-assignment-select[data-index="${index}"]`);
+        
+        if (!deptFilter || !doctorSelect) return;
+        
+        const filterDept = deptFilter.value;
+        const filterType = typeFilter.value;
+        
+        if (!filterDept) {
+            doctorSelect.innerHTML = '<option value="">-- เลือกแผนกก่อน --</option>';
+            return;
+        }
+        
         try {
-            // ใช้ API เดียวกับ loadReplacementDoctors
             const response = await fetch(`${API_URL}/api/doctors`);
             const data = await response.json();
             
             if (data.success) {
                 // กรองตามแผนก
-                let doctors = data.data.filter(d => d.department_id == departmentId);
+                let doctors = data.data.filter(d => d.department_id == filterDept);
+                
+                // กรองตาม work_type
+                if (filterType === 'full') {
+                    doctors = doctors.filter(d => d.work_type === 'full');
+                } else if (filterType === 'part') {
+                    doctors = doctors.filter(d => d.work_type === 'part');
+                }
                 
                 // กรองแพทย์ที่ลาออก (ไม่ให้เลือกตัวเอง)
                 doctors = doctors.filter(d => d.id != parseInt(selectedDoctorId));
                 
-                // ใส่ใน dropdown ทุกตัว
-                document.querySelectorAll('.duty-assignment-select').forEach(select => {
-                    let options = '<option value="">-- เลือกแพทย์ที่จะมาแทน --</option>';
-                    doctors.forEach(doc => {
-                        options += `<option value="${doc.id}">${doc.name}</option>`;
-                    });
-                    select.innerHTML = options;
+                // ใส่ใน dropdown
+                let options = '<option value="">-- เลือกแพทย์ที่จะมาแทน --</option>';
+                doctors.forEach(doc => {
+                    options += `<option value="${doc.id}">${doc.name}</option>`;
                 });
+                doctorSelect.innerHTML = options;
             }
         } catch (error) {
             console.error('Error loading doctors:', error);
         }
+    }
+
+    // โหลดรายชื่อแผนกทั้งหมด
+    async function loadAllDepartments() {
+        try {
+            const response = await fetch(`${API_URL}/api/departments`);
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                return data.data.sort((a, b) => a.name.localeCompare(b.name));
+            }
+        } catch (error) {
+            console.error('Load departments error:', error);
+        }
+        return [];
     }
 
 
