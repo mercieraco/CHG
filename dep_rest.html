@@ -387,12 +387,13 @@
         color: #2e7d32;
     }
 
-    /* Leave Header (บรรทัดแรก) */
+    /* Leave Header (บรรทัดแรก - สำคัญที่สุด) */
     .leave-header {
         margin-bottom: 8px;
-        font-weight: 500;
-        font-size: clamp(11px, 2.8vw, 14px);  /* ย่อหน้าจอเล็ก */
+        font-weight: 600;  /* หนาขึ้น */
+        font-size: clamp(12px, 3vw, 15px);  /* ใหญ่กว่า duty details */
         line-height: 1.3;
+        color: #1976d2;  /* เน้นสีน้ำเงิน */
     }
 
     /* Duty Details Container */
@@ -402,8 +403,8 @@
 
     .duty-detail-item {
         padding: 4px 0;
-        font-size: clamp(10px, 2.3vw, 13px);  /* ย่อหน้าจอเล็ก */
-        color: #555;
+        font-size: clamp(11px, 2.5vw, 13px);  /* เล็กกว่า header */
+        color: #666;  /* สีเทาอ่อน */
         line-height: 1.4;
     }
 
