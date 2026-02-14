@@ -276,6 +276,14 @@
         font-weight: 700;  /* ตัวเลขหนา */
     }
 
+    /* วันนี้ + มีการลา/ซ้อนทับ → ใช้กรอบบาง 3px */
+    .calendar-day.today.on-leave,
+    .calendar-day.today.overlap,
+    .calendar-day.today.selected {
+        border-width: 3px !important;
+        box-shadow: none !important;
+    }
+
     .btn-submit {
         width: 100%;
         padding: 16px;
