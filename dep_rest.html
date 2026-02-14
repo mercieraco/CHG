@@ -759,13 +759,24 @@
         console.log('filterType:', filterType);
 
         if (!filterDept) return;
+        
+        // ต้องมีข้อมูล currentDutyData (จากการกดยืนยันเลือกวันที่)
+        if (!currentDutyData || currentDutyData.length === 0) {
+            console.warn('⚠️ No duty data available. Please confirm dates first.');
+            return;
+        }
 
         try {
-            const response = await fetch(`${API_URL}/api/doctors`);
-            const data = await response.json();
+            // 1. ดึงรายชื่อแพทย์ทั้งหมด
+            const doctorsResponse = await fetch(`${API_URL}/api/doctors`);
+            const doctorsData = await doctorsResponse.json();
             
-            if (response.ok && data.success) {
-                let doctors = data.data.filter(d => d.department_id == filterDept);
+            // 2. ดึง doctor_duties ของแผนกนี้
+            const dutiesResponse = await fetch(`${LEAVE_API_URL}/api/duties/department/${filterDept}`);
+            const dutiesData = await dutiesResponse.json();
+            
+            if (doctorsResponse.ok && doctorsData.success && dutiesData.success) {
+                let doctors = doctorsData.data.filter(d => d.department_id == filterDept);
                 console.log('Doctors in department:', doctors.length);
                 
                 // กรองตาม work_type
@@ -791,12 +802,46 @@
                     console.warn('⚠️ selectedDoctorId is empty! Cannot filter out selected doctor.');
                 }
                 
+                // *** ขั้นตอนที่ 1: กรองแพทย์ที่มี Duty ซ้ำในวันใดวันหนึ่ง ***
+                const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+                
+                doctors = doctors.filter(doc => {
+                    // เช็คทุกวันที่ลา
+                    for (const day of currentDutyData) {
+                        if (day.duties.length > 0) {
+                            const dayOfWeek = new Date(day.duty_date).getDay();
+                            const dayName = dayNames[dayOfWeek];
+                            
+                            // เช็คว่าแพทย์คนนี้มี Duty ซ้ำกับวันนี้หรือไม่
+                            for (const duty of day.duties) {
+                                const hasBusyDuty = dutiesData.data.some(dd => 
+                                    dd.doctor_id === doc.id && 
+                                    dd.duty_id === duty.duty_id && 
+                                    dd[dayName] === 1
+                                );
+                                
+                                if (hasBusyDuty) {
+                                    console.log(`❌ ${doc.name} ไม่ว่าง: มี ${duty.duty_name} วันที่ ${day.duty_date}`);
+                                    return false; // กรองออก
+                                }
+                            }
+                        }
+                    }
+                    return true; // ว่างทุกวัน
+                });
+                
+                console.log('After busy check:', doctors.length);
+                
                 // เรียงตามชื่อ
                 doctors.sort((a, b) => a.name.localeCompare(b.name, ['en', 'th']));
                 
                 doctors.forEach(doc => {
                     replacementSelect.innerHTML += `<option value="${doc.id}">${doc.name} (${doc.work_type === 'full' ? 'Full time' : 'Part time'})</option>`;
                 });
+                
+                if (doctors.length === 0) {
+                    replacementSelect.innerHTML = '<option value="">-- ไม่มีแพทย์ว่างในช่วงนี้ --</option>';
+                }
                 
                 console.log('Final replacement doctors:', doctors.length);
             }
