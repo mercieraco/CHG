@@ -887,7 +887,6 @@
                 // *** ขั้นตอนที่ 3: กรองแพทย์ที่ได้รับมอบหมายให้มาแทน ***
                 console.log('=== Checking Assignments ===');
                 console.log('Total leaves:', doctorLeaves.length);
-                console.log('Leaves with duty_assignments:', doctorLeaves.filter(l => l.duty_assignments).length);
                 
                 doctors = doctors.filter(doc => {
                     // เช็คทุกวันที่ลา
@@ -898,18 +897,37 @@
                             // เช็คว่าแพทย์คนนี้ได้รับมอบหมายให้มาแทนในวันนี้หรือไม่
                             for (const duty of day.duties) {
                                 const isAssigned = doctorLeaves.some(leave => {
-                                    if (!leave.duty_assignments) return false;
-                                    
-                                    return leave.duty_assignments.some(assignment => {
-                                        const match = assignment.replacement_doctor_id === doc.id &&
-                                            assignment.duty_date === checkDate &&
-                                            assignment.duty_id === duty.duty_id;
-                                        
-                                        if (match) {
-                                            console.log(`Found assignment: ${doc.name} for ${duty.duty_name} on ${checkDate}`);
+                                    // Case 1: Single Delegation
+                                    if (leave.delegation_type === 'single') {
+                                        // เช็คว่าเป็นแพทย์มาแทนหรือไม่ + วันที่ซ้อนทับ
+                                        if (leave.replacement_doctor_id === doc.id) {
+                                            const leaveStart = new Date(leave.start_date);
+                                            const leaveEnd = new Date(leave.end_date);
+                                            const checkDateObj = new Date(checkDate);
+                                            
+                                            const isInRange = checkDateObj >= leaveStart && checkDateObj <= leaveEnd;
+                                            if (isInRange) {
+                                                console.log(`Found Single Assignment: ${doc.name} replacing on ${checkDate}`);
+                                                return true;
+                                            }
                                         }
-                                        return match;
-                                    });
+                                    }
+                                    
+                                    // Case 2: Multiple Delegation
+                                    if (leave.delegation_type === 'multiple' && leave.duty_assignments) {
+                                        return leave.duty_assignments.some(assignment => {
+                                            const match = assignment.replacement_doctor_id === doc.id &&
+                                                assignment.duty_date === checkDate &&
+                                                assignment.duty_id === duty.duty_id;
+                                            
+                                            if (match) {
+                                                console.log(`Found Multiple Assignment: ${doc.name} for ${duty.duty_name} on ${checkDate}`);
+                                            }
+                                            return match;
+                                        });
+                                    }
+                                    
+                                    return false;
                                 });
                                 
                                 if (isAssigned) {
@@ -1655,11 +1673,31 @@
                 doctors = doctors.filter(d => !onLeaveDoctorIds.includes(d.id));
                 
                 // *** ขั้นตอนที่ 3: กรองแพทย์ที่ได้รับมอบหมายในวันนี้ออก ***
+                console.log('=== Checking Assignments (Multiple) ===');
+                console.log('Total leaves:', doctorLeaves.length);
+                console.log('Checking date:', dutyDate, 'Duty ID:', dutyId);
+                
                 const assignedDoctorIds = [];
+                
                 doctorLeaves.forEach(leave => {
-                    if (leave.duty_assignments) {
+                    // Case 1: Single Delegation
+                    if (leave.delegation_type === 'single' && leave.replacement_doctor_id) {
+                        const leaveStart = new Date(leave.start_date);
+                        const leaveEnd = new Date(leave.end_date);
+                        const checkDateObj = new Date(dutyDate);
+                        
+                        // ถ้าวันนี้อยู่ในช่วงลา → แพทย์มาแทนไม่ว่าง
+                        if (checkDateObj >= leaveStart && checkDateObj <= leaveEnd) {
+                            console.log(`Found Single: Doctor ${leave.replacement_doctor_id} replacing ${leave.doctor_id} (${leave.start_date} - ${leave.end_date})`);
+                            assignedDoctorIds.push(leave.replacement_doctor_id);
+                        }
+                    }
+                    
+                    // Case 2: Multiple Delegation
+                    if (leave.delegation_type === 'multiple' && leave.duty_assignments) {
                         leave.duty_assignments.forEach(assignment => {
                             if (assignment.duty_date === dutyDate && assignment.duty_id === dutyId) {
+                                console.log(`Found Multiple: Doctor ${assignment.replacement_doctor_id} for duty ${dutyId} on ${dutyDate}`);
                                 assignedDoctorIds.push(assignment.replacement_doctor_id);
                             }
                         });
