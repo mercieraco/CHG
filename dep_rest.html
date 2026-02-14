@@ -299,24 +299,40 @@
     .message {
         padding: 15px;
         border-radius: 8px;
-        margin-bottom: 20px;
+        margin-bottom: 15px;
         display: none;
+        font-weight: 600;
+        font-size: 15px;
+        text-align: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     }
 
     .message.success {
         background: #d4edda;
         color: #155724;
-        border: 1px solid #c3e6cb;
+        border: 2px solid #28a745;
     }
 
     .message.error {
         background: #f8d7da;
         color: #721c24;
-        border: 1px solid #f5c6cb;
+        border: 2px solid #dc3545;
     }
 
     .message.show {
         display: block;
+        animation: slideDown 0.3s ease-out;
+    }
+
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 
     .selected-range {
@@ -536,8 +552,6 @@
         </div>
 
 ```
-    <div id="message" class="message"></div>
-
     <!-- แผนกและแพทย์ -->
     <div class="form-row">
         <div class="form-group">
@@ -636,6 +650,9 @@
 
     <!-- แสดงข้อมูลการลาที่บันทึกแล้ว -->
     <div id="leaveRecords" class="leave-records"></div>
+
+    <!-- Message แสดงผล (ย้ายมาอยู่เหนือปุ่มบันทึก) -->
+    <div id="message" class="message"></div>
 
     <button class="btn-submit" onclick="submitLeave()">💾 บันทึกการลา</button>
 </div>
