@@ -885,6 +885,10 @@
                 console.log('After leave check:', doctors.length);
                 
                 // *** ขั้นตอนที่ 3: กรองแพทย์ที่ได้รับมอบหมายให้มาแทน ***
+                console.log('=== Checking Assignments ===');
+                console.log('Total leaves:', doctorLeaves.length);
+                console.log('Leaves with duty_assignments:', doctorLeaves.filter(l => l.duty_assignments).length);
+                
                 doctors = doctors.filter(doc => {
                     // เช็คทุกวันที่ลา
                     for (const day of currentDutyData) {
@@ -896,11 +900,16 @@
                                 const isAssigned = doctorLeaves.some(leave => {
                                     if (!leave.duty_assignments) return false;
                                     
-                                    return leave.duty_assignments.some(assignment => 
-                                        assignment.replacement_doctor_id === doc.id &&
-                                        assignment.duty_date === checkDate &&
-                                        assignment.duty_id === duty.duty_id
-                                    );
+                                    return leave.duty_assignments.some(assignment => {
+                                        const match = assignment.replacement_doctor_id === doc.id &&
+                                            assignment.duty_date === checkDate &&
+                                            assignment.duty_id === duty.duty_id;
+                                        
+                                        if (match) {
+                                            console.log(`Found assignment: ${doc.name} for ${duty.duty_name} on ${checkDate}`);
+                                        }
+                                        return match;
+                                    });
                                 });
                                 
                                 if (isAssigned) {
