@@ -1391,15 +1391,6 @@
                 if (startDate === dateStr && selectionStep === 1) {
                     classes.push('start-date');
                 }
-            } else if (isOnLeave) {
-                // ลาแล้วอย่างเดียว
-                if (isNoDelegation) {
-                    // ไม่ฝากงาน = สีเหลือง
-                    classes.push('no-delegation');
-                } else {
-                    // ลาปกติ = สีเขียว
-                    classes.push('on-leave');
-                }
             }
             
             html += `<div class="${classes.join(' ')}" onmousedown="handleMouseDown('${dateStr}', event)">${day}</div>`;
