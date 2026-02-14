@@ -985,9 +985,14 @@
         }
         
         // โหลดแพทย์ที่มาแทนด้วย (ถ้ามีคนมาแทน)
-        const hasReplacement = document.querySelector('input[name="hasReplacement"]:checked').value;
-        if (hasReplacement === 'yes') {
-            loadReplacementDoctors();
+        try {
+            const hasReplacementRadio = document.querySelector('input[name="hasReplacement"]:checked');
+            if (hasReplacementRadio && hasReplacementRadio.value === 'yes') {
+                loadReplacementDoctors();
+            }
+        } catch (error) {
+            // ไม่มี radio button (ยังไม่ได้ยืนยันวันที่) → ไม่ต้องทำอะไร
+            console.log('No hasReplacement radio found (normal after delete)');
         }
     }
 
