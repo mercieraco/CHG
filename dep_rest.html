@@ -852,6 +852,33 @@
                 
                 console.log('After busy check:', doctors.length);
                 
+                // *** ขั้นตอนที่ 2: กรองแพทย์ที่ลาอยู่แล้ว ***
+                doctors = doctors.filter(doc => {
+                    // เช็คทุกวันที่ลา
+                    for (const day of currentDutyData) {
+                        const checkDate = day.duty_date;
+                        
+                        // เช็คว่าแพทย์คนนี้มีการลาในวันนี้หรือไม่
+                        const isOnLeave = doctorLeaves.some(leave => {
+                            if (leave.doctor_id !== doc.id) return false;
+                            
+                            const leaveStart = new Date(leave.start_date);
+                            const leaveEnd = new Date(leave.end_date);
+                            const checkDateObj = new Date(checkDate);
+                            
+                            return checkDateObj >= leaveStart && checkDateObj <= leaveEnd;
+                        });
+                        
+                        if (isOnLeave) {
+                            console.log(`❌ ${doc.name} ลาอยู่: วันที่ ${checkDate}`);
+                            return false; // กรองออก
+                        }
+                    }
+                    return true; // ไม่มีการลา
+                });
+                
+                console.log('After leave check:', doctors.length);
+                
                 // เรียงตามชื่อ
                 doctors.sort((a, b) => a.name.localeCompare(b.name, ['en', 'th']));
                 
@@ -1570,6 +1597,21 @@
                 
                 // กรองแพทย์ที่ไม่ว่างออก
                 doctors = doctors.filter(d => !busyDoctorIds.includes(d.id));
+                
+                // *** ขั้นตอนที่ 2: กรองแพทย์ที่ลาในวันนี้ออก ***
+                const checkDateObj = new Date(dutyDate);
+                const onLeaveDoctorIds = doctorLeaves
+                    .filter(leave => {
+                        const leaveStart = new Date(leave.start_date);
+                        const leaveEnd = new Date(leave.end_date);
+                        return checkDateObj >= leaveStart && checkDateObj <= leaveEnd;
+                    })
+                    .map(leave => leave.doctor_id);
+                
+                console.log('On Leave Doctor IDs on', dutyDate, ':', onLeaveDoctorIds);
+                
+                // กรองแพทย์ที่ลาออก
+                doctors = doctors.filter(d => !onLeaveDoctorIds.includes(d.id));
                 
                 // ใส่ใน dropdown
                 let options = '<option value="">-- เลือกแพทย์ที่จะมาแทน --</option>';
