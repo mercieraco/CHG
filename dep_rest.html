@@ -1456,18 +1456,27 @@
         const filterDept = deptFilter.value;
         const filterType = typeFilter.value;
         
+        // ดึง duty_id และ duty_date จาก dropdown
+        const dutyId = parseInt(doctorSelect.dataset.dutyId);
+        const dutyDate = doctorSelect.dataset.date;
+        
         if (!filterDept) {
             doctorSelect.innerHTML = '<option value="">-- เลือกแผนกก่อน --</option>';
             return;
         }
         
         try {
-            const response = await fetch(`${API_URL}/api/doctors`);
-            const data = await response.json();
+            // 1. ดึงรายชื่อแพทย์ทั้งหมด
+            const doctorsResponse = await fetch(`${API_URL}/api/doctors`);
+            const doctorsData = await doctorsResponse.json();
             
-            if (data.success) {
+            // 2. ดึง doctor_duties ของแผนกนี้
+            const dutiesResponse = await fetch(`${LEAVE_API_URL}/api/duties/department/${filterDept}`);
+            const dutiesData = await dutiesResponse.json();
+            
+            if (doctorsData.success && dutiesData.success) {
                 // กรองตามแผนก
-                let doctors = data.data.filter(d => d.department_id == filterDept);
+                let doctors = doctorsData.data.filter(d => d.department_id == filterDept);
                 
                 // กรองตาม work_type
                 if (filterType === 'full') {
@@ -1479,11 +1488,34 @@
                 // กรองแพทย์ที่ลาออก (ไม่ให้เลือกตัวเอง)
                 doctors = doctors.filter(d => d.id != parseInt(selectedDoctorId));
                 
+                // *** ขั้นตอนที่ 1: กรองแพทย์ที่มี Duty ซ้ำกันออก ***
+                const dayOfWeek = new Date(dutyDate).getDay(); // 0=อาทิตย์, 1=จันทร์, ...
+                const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+                const dayName = dayNames[dayOfWeek];
+                
+                // หาแพทย์ที่มี Duty ตรงกับ dutyId และ วันนี้
+                const busyDoctorIds = dutiesData.data
+                    .filter(dd => dd.duty_id === dutyId && dd[dayName] === 1)
+                    .map(dd => dd.doctor_id);
+                
+                console.log('=== Filtering Busy Doctors ===');
+                console.log('Date:', dutyDate, 'Day:', dayName);
+                console.log('Duty ID:', dutyId);
+                console.log('Busy Doctor IDs:', busyDoctorIds);
+                
+                // กรองแพทย์ที่ไม่ว่างออก
+                doctors = doctors.filter(d => !busyDoctorIds.includes(d.id));
+                
                 // ใส่ใน dropdown
                 let options = '<option value="">-- เลือกแพทย์ที่จะมาแทน --</option>';
                 doctors.forEach(doc => {
                     options += `<option value="${doc.id}">${doc.name}</option>`;
                 });
+                
+                if (doctors.length === 0) {
+                    options = '<option value="">-- ไม่มีแพทย์ว่างในวันนี้ --</option>';
+                }
+                
                 doctorSelect.innerHTML = options;
             }
         } catch (error) {
