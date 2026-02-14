@@ -614,8 +614,12 @@
                     ฝากงานแพทย์หนึ่งท่าน
                 </label>
                 <label>
-                    <input type="radio" name="delegationType" value="multiple" onchange="toggleDelegationType()">
-                    ฝากงานแพทย์หลายท่าน
+                    <input type="radio" name="delegationType" value="custom" onchange="toggleDelegationType()">
+                    ฝากงานแบบกำหนดเอง
+                </label>
+                <label>
+                    <input type="radio" name="delegationType" value="none" onchange="toggleDelegationType()">
+                    ไม่ฝากงาน
                 </label>
             </div>
         </div>
@@ -642,9 +646,22 @@
             </div>
         </div>
 
-        <!-- Multiple Delegation: เลือกแพทย์แต่ละ Duty -->
-        <div id="multipleDelegationSection" style="display: none;">
+        <!-- Custom Delegation: ฝากงานแบบกำหนดเอง (เดิมคือ Multiple) -->
+        <div id="customDelegationSection" style="display: none;">
             <div id="dutyAssignmentList"></div>
+        </div>
+
+        <!-- No Delegation: ไม่ฝากงาน -->
+        <div id="noDelegationSection" style="display: none;">
+            <div class="form-group">
+                <label>เหตุผลที่ไม่ฝากงาน <span style="color: red;">*</span></label>
+                <textarea 
+                    id="noDelegationReason" 
+                    rows="4" 
+                    placeholder="กรุณาระบุเหตุผล (บังคับ)"
+                    style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; resize: vertical;"
+                ></textarea>
+            </div>
         </div>
     </div>
 
@@ -1502,14 +1519,21 @@
     function toggleDelegationType() {
         const type = document.querySelector('input[name="delegationType"]:checked').value;
         const singleSection = document.getElementById('singleDelegationSection');
-        const multipleSection = document.getElementById('multipleDelegationSection');
+        const customSection = document.getElementById('customDelegationSection');
+        const noneSection = document.getElementById('noDelegationSection');
         
+        // ซ่อนทุก section
+        singleSection.style.display = 'none';
+        customSection.style.display = 'none';
+        noneSection.style.display = 'none';
+        
+        // แสดง section ที่เลือก
         if (type === 'single') {
             singleSection.style.display = 'block';
-            multipleSection.style.display = 'none';
-        } else {
-            singleSection.style.display = 'none';
-            multipleSection.style.display = 'block';
+        } else if (type === 'custom') {
+            customSection.style.display = 'block';
+        } else if (type === 'none') {
+            noneSection.style.display = 'block';
         }
     }
 
