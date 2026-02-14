@@ -270,18 +270,11 @@
     }
 
     .calendar-day.today {
-        border-color: #2196f3;  /* สีน้ำเงิน */
-        border-width: 8px;  /* หนามาก! */
-        box-shadow: 0 0 0 2px #2196f3 inset;  /* เส้นขอบด้านใน */
+        outline: 8px solid #2196f3;  /* ใช้ outline แทน border */
+        outline-offset: -8px;  /* ให้ outline อยู่ด้านใน */
+        position: relative;
+        z-index: 100;  /* อยู่บนสุด */
         font-weight: 700;  /* ตัวเลขหนา */
-    }
-
-    /* วันนี้ + มีการลา/ซ้อนทับ → ใช้กรอบบาง 3px */
-    .calendar-day.today.on-leave,
-    .calendar-day.today.overlap,
-    .calendar-day.today.selected {
-        border-width: 3px !important;
-        box-shadow: none !important;
     }
 
     .btn-submit {
