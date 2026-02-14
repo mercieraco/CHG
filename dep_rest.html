@@ -1145,8 +1145,8 @@
                     <button class="btn-delete" onclick="deleteLeave(${leave.id});">ลบ</button>
                 `;
                 
-            } else if (leave.delegation_type === 'multiple' && leave.duty_assignments) {
-                // Multiple Delegation - แบบใหม่ (แยกบรรทัด)
+            } else if (leave.delegation_type === 'custom' && leave.duty_assignments) {
+                // Custom Delegation (เดิมคือ Multiple) - แยกบรรทัด
                 let html = `
                     <div class="leave-record-info">
                         <div class="leave-header">
@@ -1177,6 +1177,26 @@
                 `;
                 
                 recordDiv.innerHTML = html;
+                
+            } else if (leave.delegation_type === 'none') {
+                // No Delegation - ไม่ฝากงาน (สีเหลือง + รออนุมัติ)
+                let shortText = `${startDate} - ${endDate} (${days} วัน) | ${doctorFirstName} (${doctorLastInitial})`;
+                let fullText = `${startDate} - ${endDate} (${days} วัน) | ${doctorFullName}`;
+                
+                shortText += ` | ไม่ฝากงาน ⏳ รออนุมัติ`;
+                fullText += ` | ไม่ฝากงาน (รออนุมัติ)`;
+                
+                // เพิ่มสีเหลืองให้ record
+                recordDiv.style.background = '#fff9c4';
+                recordDiv.style.borderLeftColor = '#fdd835';
+                
+                recordDiv.innerHTML = `
+                    <div class="leave-record-info">
+                        <span class="name-short">${shortText}</span>
+                        <span class="name-full">${fullText}</span>
+                    </div>
+                    <button class="btn-delete" onclick="deleteLeave(${leave.id});">ลบ</button>
+                `;
             }
             
             container.appendChild(recordDiv);
