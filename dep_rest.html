@@ -248,11 +248,27 @@
         font-weight: 700;
     }
 
+    /* ไม่ฝากงาน - สีเหลือง */
+    .calendar-day.no-delegation {
+        background: #fff9c4 !important;
+        border-color: #fdd835 !important;
+        color: #f57f17;
+        font-weight: 700;
+    }
+
     /* ซ้อนทับ - สีแดงอ่อน */
     .calendar-day.overlap {
         background: #ffcdd2 !important;
         border-color: #ef5350 !important;
         color: #c62828;
+        font-weight: 700;
+    }
+
+    /* ซ้อนทับ + ไม่ฝากงาน - สีส้ม */
+    .calendar-day.overlap-no-delegation {
+        background: #ffe0b2 !important;
+        border-color: #fb8c00 !important;
+        color: #e65100;
         font-weight: 700;
     }
 
@@ -264,9 +280,22 @@
         font-weight: 700;
     }
 
+    /* ซ้อนทับ + ไม่ฝากงาน ในวันเสาร์-อาทิตย์ - สีส้ม */
+    .calendar-day.weekend.overlap-no-delegation {
+        background: #ffe0b2 !important;
+        border-color: #fb8c00 !important;
+        color: #e65100;
+        font-weight: 700;
+    }
+
     .calendar-day.weekend.on-leave {
         background: #c8e6c9 !important;
         border-color: #c8e6c9 !important;
+    }
+
+    .calendar-day.weekend.no-delegation {
+        background: #fff9c4 !important;
+        border-color: #fdd835 !important;
     }
 
     .calendar-day.today {
@@ -1267,12 +1296,21 @@
             // วันที่เลือก
             const isSelected = selectedDates.includes(dateStr);
             const isOnLeave = isDateOnLeaveByAnyone(dateStr);
+            const isNoDelegation = isDateNoDelegation(dateStr);
             
             // เช็คว่าซ้อนทับหรือไม่
             if (isSelected && isOnLeave) {
-                // ซ้อนทับ - ใช้สีแดงอ่อน
+                // ซ้อนทับ
                 classes.push('selected');
-                classes.push('overlap');
+                
+                if (isNoDelegation) {
+                    // ซ้อนทับ + ไม่ฝากงาน = สีส้ม
+                    classes.push('overlap-no-delegation');
+                } else {
+                    // ซ้อนทับปกติ = สีแดงอ่อน
+                    classes.push('overlap');
+                }
+                
                 // เพิ่มลูกศรถ้าเป็นวันเริ่มต้น
                 if (startDate === dateStr && selectionStep === 1) {
                     classes.push('start-date');
@@ -1284,8 +1322,14 @@
                     classes.push('start-date');
                 }
             } else if (isOnLeave) {
-                // ลาแล้วอย่างเดียว - สีเขียว
-                classes.push('on-leave');
+                // ลาแล้วอย่างเดียว
+                if (isNoDelegation) {
+                    // ไม่ฝากงาน = สีเหลือง
+                    classes.push('no-delegation');
+                } else {
+                    // ลาปกติ = สีเขียว
+                    classes.push('on-leave');
+                }
             }
             
             html += `<div class="${classes.join(' ')}" onmousedown="handleMouseDown('${dateStr}', event)">${day}</div>`;
@@ -1299,6 +1343,15 @@
     function isDateOnLeaveByAnyone(dateStr) {
         return doctorLeaves.some(leave => {
             return dateStr >= leave.start_date && dateStr <= leave.end_date;
+        });
+    }
+
+    // เช็คว่ามีการลาแบบไม่ฝากงานในวันนี้หรือไม่
+    function isDateNoDelegation(dateStr) {
+        return doctorLeaves.some(leave => {
+            return leave.delegation_type === 'none' &&
+                   dateStr >= leave.start_date && 
+                   dateStr <= leave.end_date;
         });
     }
 
@@ -1858,8 +1911,8 @@
             
             confirmMessage += `แพทย์ที่มาแทน: ${replacementDoctorName}\n`;
 
-        } else {
-            // Multiple Delegation
+        } else if (delegationType === 'custom') {
+            // Custom Delegation (เดิมคือ Multiple)
             const dutyAssignments = [];
             const selects = document.querySelectorAll('.duty-assignment-select');
             
@@ -1878,13 +1931,56 @@
             }
             
             requestBody.dutyAssignments = dutyAssignments;
-            confirmMessage += `ฝากงานแพทย์หลายท่าน (${dutyAssignments.length} งาน)\n`;
+            confirmMessage += `ฝากงานแบบกำหนดเอง (${dutyAssignments.length} งาน)\n`;
+            
+        } else if (delegationType === 'none') {
+            // No Delegation - ไม่ฝากงาน
+            const reason = document.getElementById('noDelegationReason').value.trim();
+            
+            if (!reason) {
+                showMessage('กรุณาระบุเหตุผลที่ไม่ฝากงาน', 'error');
+                document.getElementById('noDelegationReason').focus();
+                return;
+            }
+            
+            // Pop-up ครั้งที่ 1
+            const confirm1 = confirm(
+                '⚠️ ยืนยันการลางานโดยไม่ฝากงาน\n\n' +
+                'ท่านยืนยันที่จะเลือกการลางานโดยไม่ฝากงาน\n' +
+                'การลานี้อาจก่อความเสียหาย\n' +
+                'ท่านยินดีรับผิดชอบ\n\n' +
+                'ต้องการดำเนินการต่อหรือไม่?'
+            );
+            
+            if (!confirm1) {
+                return;
+            }
+            
+            // Pop-up ครั้งที่ 2
+            const confirm2 = confirm(
+                '📌 แจ้งเตือน\n\n' +
+                'การลานี้จะต้องรอการอนุมัติ\n' +
+                'และอาจจะไม่ผ่าน\n\n' +
+                'ยืนยันการบันทึก?'
+            );
+            
+            if (!confirm2) {
+                return;
+            }
+            
+            requestBody.hasReplacement = false;
+            requestBody.noDelegationReason = reason;
+            confirmMessage += `ไม่ฝากงาน (รอการอนุมัติ)\n`;
+            confirmMessage += `เหตุผล: ${reason}\n`;
         }
 
         confirmMessage += `\nต้องการบันทึกหรือไม่?`;
         
-        if (!confirm(confirmMessage)) {
-            return;
+        // ถ้าไม่ใช่ none ให้ confirm ปกติ
+        if (delegationType !== 'none') {
+            if (!confirm(confirmMessage)) {
+                return;
+            }
         }
 
         try {
