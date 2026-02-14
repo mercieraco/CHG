@@ -756,7 +756,12 @@
     // เมื่อเลือกแพทย์ที่ลา
     function onDoctorChange() {
         // ถ้าเลือก "มีคนมาแทน" อยู่แล้ว → โหลดแพทย์มาแทนใหม่
-        const hasReplacement = document.querySelector('input[name="hasReplacement"]:checked').value;
+        const hasReplacementRadio = document.querySelector('input[name="hasReplacement"]:checked');
+        
+        // ถ้ายังไม่มี radio (ยังไม่ได้ยืนยันวันที่) → ไม่ต้องทำอะไร
+        if (!hasReplacementRadio) return;
+        
+        const hasReplacement = hasReplacementRadio.value;
         if (hasReplacement === 'yes') {
             const filterDept = document.getElementById('filterDepartment').value;
             if (filterDept) {
@@ -897,21 +902,12 @@
         }
     }
 
-    // เมื่อเปลี่ยนแพทย์ที่ลา → reload แพทย์มาแทน
-    function onDoctorChange() {
-        // ถ้าเลือก "มีคนมาแทน" และมีแผนก → reload ทันที
-        const hasReplacement = document.querySelector('input[name="hasReplacement"]:checked').value;
-        const filterDept = document.getElementById('filterDepartment').value;
-        
-        if (hasReplacement === 'yes' && filterDept) {
-            console.log('🔄 Doctor changed, reloading replacement doctors...');
-            loadReplacementDoctors();
-        }
-    }
-
     // Toggle replacement section
     function toggleReplacement() {
-        const hasReplacement = document.querySelector('input[name="hasReplacement"]:checked').value;
+        const hasReplacementRadio = document.querySelector('input[name="hasReplacement"]:checked');
+        if (!hasReplacementRadio) return;
+        
+        const hasReplacement = hasReplacementRadio.value;
         document.getElementById('replacementSection').style.display = hasReplacement === 'yes' ? 'block' : 'none';
         
         // โหลดแพทย์มาแทนทันทีถ้าเลือก "มีคนมาแทน"
