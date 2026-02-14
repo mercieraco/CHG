@@ -1127,10 +1127,7 @@
 
             if (response.ok && data.success) {
                 showMessage('✅ ลบข้อมูลการลาสำเร็จ', 'success');
-                // Delay เล็กน้อยให้เห็น message ก่อน reload
-                setTimeout(async () => {
-                    await loadDoctorLeaves();
-                }, 1500);  // รอ 1.5 วินาที
+                await loadDoctorLeaves();
             } else {
                 throw new Error(data.message || 'ไม่สามารถลบได้');
             }
