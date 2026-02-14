@@ -1294,6 +1294,66 @@
             html += '<div class="calendar-day empty"></div>';
         }
         
+        // ฟังก์ชันคำนวณสีตามลำดับความสำคัญ
+        const calculateColorClass = (dateStr, isSelected) => {
+            // นับจำนวนการลาแต่ละประเภทในวันนี้
+            const leaveTypes = {
+                green: 0,   // ฝากงานปกติ (single/custom)
+                yellow: 0,  // ไม่ฝากงาน (none)
+                selected: isSelected ? 1 : 0  // กำลังเลือก (blue)
+            };
+            
+            // Loop ทุกการลาในวันนี้
+            doctorLeaves.forEach(leave => {
+                if (dateStr >= leave.start_date && dateStr <= leave.end_date) {
+                    if (leave.delegation_type === 'none') {
+                        leaveTypes.yellow++;
+                    } else if (leave.delegation_type === 'single' || leave.delegation_type === 'custom') {
+                        leaveTypes.green++;
+                    }
+                }
+            });
+            
+            // คำนวณสีตามลำดับความสำคัญ
+            // แดง > ส้ม > เขียว > เหลือง > น้ำเงิน
+            
+            const totalLeaves = leaveTypes.green + leaveTypes.yellow + leaveTypes.selected;
+            
+            // ไม่มีการลา
+            if (totalLeaves === 0) {
+                return null;
+            }
+            
+            // มีแค่ตัวเอง (selected)
+            if (totalLeaves === 1 && leaveTypes.selected === 1) {
+                return 'selected';
+            }
+            
+            // มีการลาหลายคน (ซ้อนทับ)
+            // แดง: เขียว >= 2 (ไม่รวม selected)
+            if (leaveTypes.green >= 2) {
+                return isSelected ? 'overlap selected' : 'overlap';
+            }
+            
+            // ส้ม: เขียว + เหลือง, หรือ ส้ม + เหลือง, หรือ ส้ม + เขียว
+            if ((leaveTypes.green >= 1 && leaveTypes.yellow >= 1) ||
+                (leaveTypes.yellow >= 2)) {
+                return isSelected ? 'overlap-no-delegation selected' : 'overlap-no-delegation';
+            }
+            
+            // เขียว: มีแค่เขียวคนเดียว
+            if (leaveTypes.green === 1 && leaveTypes.yellow === 0) {
+                return isSelected ? 'on-leave selected' : 'on-leave';
+            }
+            
+            // เหลือง: มีแค่เหลืองคนเดียว
+            if (leaveTypes.yellow === 1 && leaveTypes.green === 0) {
+                return isSelected ? 'no-delegation selected' : 'no-delegation';
+            }
+            
+            return 'on-leave';  // default
+        };
+        
         // วันในเดือน
         const today = new Date();
         for (let day = 1; day <= daysInMonth; day++) {
@@ -1313,23 +1373,13 @@
                 classes.push('today');
             }
             
-            // วันที่เลือก
+            // คำนวณสี
             const isSelected = selectedDates.includes(dateStr);
-            const isOnLeave = isDateOnLeaveByAnyone(dateStr);
-            const isNoDelegation = isDateNoDelegation(dateStr);
+            const colorClass = calculateColorClass(dateStr, isSelected);
             
-            // เช็คว่าซ้อนทับหรือไม่
-            if (isSelected && isOnLeave) {
-                // ซ้อนทับ
-                classes.push('selected');
-                
-                if (isNoDelegation) {
-                    // ซ้อนทับ + ไม่ฝากงาน = สีส้ม
-                    classes.push('overlap-no-delegation');
-                } else {
-                    // ซ้อนทับปกติ = สีแดงอ่อน
-                    classes.push('overlap');
-                }
+            if (colorClass) {
+                const colorClasses = colorClass.split(' ');
+                classes.push(...colorClasses);
                 
                 // เพิ่มลูกศรถ้าเป็นวันเริ่มต้น
                 if (startDate === dateStr && selectionStep === 1) {
@@ -1356,14 +1406,6 @@
         }
         
         calendar.innerHTML = html;
-    }
-
-    // เช็คว่าวันนี้ลาหรือไม่
-    // เช็คว่ามีใครลาวันนี้บ้าง (สำหรับแสดงสีเขียวบนปฏิทิน)
-    function isDateOnLeaveByAnyone(dateStr) {
-        return doctorLeaves.some(leave => {
-            return dateStr >= leave.start_date && dateStr <= leave.end_date;
-        });
     }
 
     // เช็คว่ามีการลาแบบไม่ฝากงานในวันนี้หรือไม่
