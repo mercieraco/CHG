@@ -399,6 +399,48 @@
         background: #e8f5e9;
     }
 
+    /* Single Delegation - สีเทา */
+    .leave-record.single-delegation {
+        background: #F3F4F6;  /* Light Cool Gray */
+        border-left-color: #9ca3af;
+    }
+
+    .leave-record.single-delegation:hover {
+        background: #e5e7eb;
+    }
+
+    .leave-record.single-delegation .leave-record-info {
+        color: #1F2937;  /* Dark Slate Gray */
+    }
+
+    /* Custom Delegation - สีเทา */
+    .leave-record.custom-delegation {
+        background: #F3F4F6;  /* Light Cool Gray */
+        border-left-color: #9ca3af;
+    }
+
+    .leave-record.custom-delegation:hover {
+        background: #e5e7eb;
+    }
+
+    .leave-record.custom-delegation .leave-header {
+        color: #1F2937;  /* Dark Slate Gray - บรรทัดบน */
+    }
+
+    .leave-record.custom-delegation .duty-detail-item {
+        color: #374151;  /* Charcoal Gray - รายละเอียด */
+    }
+
+    /* No Delegation - สีเหลือง (เดิม) */
+    .leave-record.no-delegation {
+        background: #fff9c4;
+        border-left-color: #fdd835;
+    }
+
+    .leave-record.no-delegation:hover {
+        background: #fff59d;
+    }
+
     .leave-record-info {
         flex: 1;
         font-size: clamp(11px, 2.5vw, 14px);  /* ปรับขนาดอัตโนมัติ */
@@ -1125,7 +1167,9 @@
             
             // เช็ค delegation type
             if (leave.delegation_type === 'single') {
-                // Single Delegation - แบบเดิม
+                // Single Delegation - สีเทา
+                recordDiv.classList.add('single-delegation');
+                
                 let shortText = `${startDate} - ${endDate} (${days} วัน) | ${doctorFirstName} (${doctorLastInitial})`;
                 let fullText = `${startDate} - ${endDate} (${days} วัน) | ${doctorFullName}`;
                 
@@ -1146,7 +1190,9 @@
                 `;
                 
             } else if (leave.delegation_type === 'custom' && leave.duty_assignments) {
-                // Custom Delegation (เดิมคือ Multiple) - แยกบรรทัด
+                // Custom Delegation - สีเทา
+                recordDiv.classList.add('custom-delegation');
+                
                 let html = `
                     <div class="leave-record-info">
                         <div class="leave-header">
@@ -1179,16 +1225,14 @@
                 recordDiv.innerHTML = html;
                 
             } else if (leave.delegation_type === 'none') {
-                // No Delegation - ไม่ฝากงาน (สีเหลือง + รออนุมัติ)
+                // No Delegation - สีเหลือง
+                recordDiv.classList.add('no-delegation');
+                
                 let shortText = `${startDate} - ${endDate} (${days} วัน) | ${doctorFirstName} (${doctorLastInitial})`;
                 let fullText = `${startDate} - ${endDate} (${days} วัน) | ${doctorFullName}`;
                 
                 shortText += ` | ไม่ฝากงาน ⏳ รออนุมัติ`;
                 fullText += ` | ไม่ฝากงาน (รออนุมัติ)`;
-                
-                // เพิ่มสีเหลืองให้ record
-                recordDiv.style.background = '#fff9c4';
-                recordDiv.style.borderLeftColor = '#fdd835';
                 
                 recordDiv.innerHTML = `
                     <div class="leave-record-info">
