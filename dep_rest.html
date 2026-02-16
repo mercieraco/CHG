@@ -786,7 +786,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 17/2/69 06:02</span>
+        <span id="versionInfo">Version 17/2/69 06:17</span>
     </div>
 </div>
 
@@ -1239,15 +1239,8 @@
                     fullText += ` >> ${replacementFullName}`;
                 }
                 
-                // เพิ่ม onclick event
-                recordDiv.onclick = function(e) {
-                    // ถ้าคลิกที่ปุ่มลบ ไม่ต้อง highlight
-                    if (e.target.classList.contains('btn-delete')) return;
-                    highlightLeaveDates('${leave.start_date}', '${leave.end_date}');
-                };
-                
                 recordDiv.innerHTML = `
-                    <div class="leave-record-info">
+                    <div class="leave-record-info" onclick="highlightLeaveDates('${leave.start_date}', '${leave.end_date}'); event.stopPropagation();">
                         <span class="name-short">${shortText}</span>
                         <span class="name-full">${fullText}</span>
                     </div>
@@ -1287,13 +1280,17 @@
                     <button class="btn-delete" onclick="deleteLeave(${leave.id}); event.stopPropagation();">ลบ</button>
                 `;
                 
-                // เพิ่ม onclick event
-                recordDiv.onclick = function(e) {
-                    if (e.target.classList.contains('btn-delete')) return;
-                    highlightLeaveDates('${leave.start_date}', '${leave.end_date}');
-                };
-                
                 recordDiv.innerHTML = html;
+                
+                // เพิ่ม onclick ที่ leave-record-info
+                const infoDiv = recordDiv.querySelector('.leave-record-info');
+                if (infoDiv) {
+                    infoDiv.onclick = function(e) {
+                        highlightLeaveDates(leave.start_date, leave.end_date);
+                        e.stopPropagation();
+                    };
+                    infoDiv.style.cursor = 'pointer';
+                }
                 
             } else if (leave.delegation_type === 'none') {
                 // No Delegation - สีเหลือง
@@ -1305,14 +1302,8 @@
                 shortText += ` | ไม่ฝากงาน ⏳ รออนุมัติ`;
                 fullText += ` | ไม่ฝากงาน (รออนุมัติ)`;
                 
-                // เพิ่ม onclick event
-                recordDiv.onclick = function(e) {
-                    if (e.target.classList.contains('btn-delete')) return;
-                    highlightLeaveDates('${leave.start_date}', '${leave.end_date}');
-                };
-                
                 recordDiv.innerHTML = `
-                    <div class="leave-record-info">
+                    <div class="leave-record-info" onclick="highlightLeaveDates('${leave.start_date}', '${leave.end_date}'); event.stopPropagation();">
                         <span class="name-short">${shortText}</span>
                         <span class="name-full">${fullText}</span>
                     </div>
