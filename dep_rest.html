@@ -1388,6 +1388,11 @@
                 return null;
             }
             
+            // ถ้าเลือกอย่างเดียว (ไม่ซ้อนกับใคร) → สีฟ้า
+            if (isSelected && totalLeaves === 1 && leaveTypes.green === 1) {
+                return 'selected';
+            }
+            
             // แดง: เขียว >= 2 (รวม selected)
             if (leaveTypes.green >= 2) {
                 return isSelected ? 'overlap selected' : 'overlap';
