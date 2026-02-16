@@ -1386,6 +1386,13 @@
                 if (dateStr >= leave.start_date && dateStr <= leave.end_date) {
                     if (leave.delegation_type === 'none') {
                         leaveTypes.yellow++;
+                        leavesInDay.push(leave);
+                        
+                        // DEBUG: เช็คว่ามีการลา none หรือไม่
+                        if (dateStr === '2026-02-03' || dateStr === '2026-02-04') {
+                            console.log('📅 Date:', dateStr);
+                            console.log('Found NONE delegation:', leave.doctor_id);
+                        }
                     } else if (leave.delegation_type === 'single' || leave.delegation_type === 'custom') {
                         // เก็บข้อมูลการลาเพื่อเช็คว่ามี duty หรือไม่
                         leavesInDay.push(leave);
