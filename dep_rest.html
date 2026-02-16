@@ -1127,6 +1127,22 @@
             
             if (response.ok && data.success) {
                 doctorLeaves = data.data;
+                
+                // DEBUG: แสดงข้อมูลใน console
+                console.log('=== Doctor Leaves Data ===');
+                console.log(JSON.stringify(data, null, 2));
+                
+                // แสดงเฉพาะ custom delegation
+                const customLeaves = doctorLeaves.filter(l => l.delegation_type === 'custom');
+                if (customLeaves.length > 0) {
+                    console.log('=== Custom Leaves ===');
+                    customLeaves.forEach(leave => {
+                        console.log('Leave ID:', leave.id);
+                        console.log('Start-End:', leave.start_date, '-', leave.end_date);
+                        console.log('Duty Assignments:', leave.duty_assignments);
+                    });
+                }
+                
                 renderCalendar();
                 displayLeaveRecords();
             } else {
