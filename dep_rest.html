@@ -1121,40 +1121,37 @@
         }
 
         try {
-            // โหลดการลาทั้งแผนก (ไม่ใช่เฉพาะแพทย์คนเดียว)
-            const response = await fetch(`${LEAVE_API_URL}/api/leaves/department/${departmentId}`);
-            const data = await response.json();
+            // โหลดการลาทั้งแผนก
+            const leavesResponse = await fetch(`${LEAVE_API_URL}/api/leaves/department/${departmentId}`);
+            const leavesData = await leavesResponse.json();
             
-            if (response.ok && data.success) {
-                doctorLeaves = data.data;
+            // โหลด doctor_duties ทั้งแผนก
+            const dutiesResponse = await fetch(`${LEAVE_API_URL}/api/duties/department/${departmentId}`);
+            const dutiesData = await dutiesResponse.json();
+            
+            if (leavesResponse.ok && leavesData.success && dutiesResponse.ok && dutiesData.success) {
+                doctorLeaves = leavesData.data;
                 
-                // DEBUG: แสดงข้อมูลใน console
+                // เก็บ duties data ไว้ใช้ตอนคำนวณสี
+                window.departmentDuties = dutiesData.data;
+                
                 console.log('=== Doctor Leaves Data ===');
-                console.log(JSON.stringify(data, null, 2));
-                
-                // แสดงเฉพาะ custom delegation
-                const customLeaves = doctorLeaves.filter(l => l.delegation_type === 'custom');
-                if (customLeaves.length > 0) {
-                    console.log('=== Custom Leaves ===');
-                    customLeaves.forEach(leave => {
-                        console.log('Leave ID:', leave.id);
-                        console.log('Start-End:', leave.start_date, '-', leave.end_date);
-                        console.log('Duty Assignments:', leave.duty_assignments);
-                    });
-                }
+                console.log('Leaves:', doctorLeaves.length);
+                console.log('Duties:', window.departmentDuties.length);
                 
                 renderCalendar();
                 displayLeaveRecords();
             } else {
-                // ถ้า API ยังไม่มี endpoint นี้ ให้แสดงว่าง
-                console.warn('Department leaves API not available:', data.message);
+                console.warn('API not available');
                 doctorLeaves = [];
+                window.departmentDuties = [];
                 renderCalendar();
                 displayLeaveRecords();
             }
         } catch (error) {
             console.error('Load leaves error:', error);
             doctorLeaves = [];
+            window.departmentDuties = [];
             renderCalendar();
             displayLeaveRecords();
         }
@@ -1438,9 +1435,23 @@
                                 assignment => assignment.duty_date === dateStr
                             );
                         }
-                    } else if (leave.delegation_type === 'single') {
-                        // Single: ถือว่ามี duty เสมอ
-                        hasDutyOnThisDay = true;
+                    } else if (leave.delegation_type === 'single' || leave.delegation_type === 'none') {
+                        // Single หรือ None: เช็คจาก doctor_duties ว่าวันนี้มี duty หรือไม่
+                        const doctorId = leave.doctor_id;
+                        const checkDate = new Date(dateStr);
+                        const dayOfWeek = checkDate.getDay(); // 0=อาทิตย์, 1=จันทร์, ...
+                        const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+                        const dayName = dayNames[dayOfWeek];
+                        
+                        // เช็คว่าแพทย์คนนี้มี duty ในวันนี้หรือไม่
+                        if (window.departmentDuties && window.departmentDuties.length > 0) {
+                            hasDutyOnThisDay = window.departmentDuties.some(dd => 
+                                dd.doctor_id === doctorId && dd[dayName] === 1
+                            );
+                        } else {
+                            // ถ้าไม่มี duties data → ถือว่ามี duty (safe default)
+                            hasDutyOnThisDay = true;
+                        }
                     } else {
                         // delegation_type อื่นๆ
                         hasDutyOnThisDay = false;
