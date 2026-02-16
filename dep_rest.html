@@ -248,6 +248,14 @@
         font-weight: 700;
     }
 
+    /* ลาวันที่ไม่มี duty - สีเขียวอ่อน */
+    .calendar-day.on-leave-no-duty {
+        background: #d4f1d7 !important;
+        border-color: #81c784 !important;
+        color: #388e3c;
+        font-weight: 700;
+    }
+
     /* ไม่ฝากงาน - สีเหลือง */
     .calendar-day.no-delegation {
         background: #fff9c4 !important;
@@ -1347,11 +1355,14 @@
             };
             
             // Loop ทุกการลาในวันนี้
+            const leavesInDay = [];
             doctorLeaves.forEach(leave => {
                 if (dateStr >= leave.start_date && dateStr <= leave.end_date) {
                     if (leave.delegation_type === 'none') {
                         leaveTypes.yellow++;
                     } else if (leave.delegation_type === 'single' || leave.delegation_type === 'custom') {
+                        // เก็บข้อมูลการลาเพื่อเช็คว่ามี duty หรือไม่
+                        leavesInDay.push(leave);
                         leaveTypes.green++;
                     }
                 }
@@ -1383,9 +1394,23 @@
                 return isSelected ? 'overlap-no-delegation selected' : 'overlap-no-delegation';
             }
             
-            // เขียว: มีแค่เขียวคนเดียว (รวม selected)
+            // เขียว/เขียวอ่อน: มีแค่คนเดียว (รวม selected)
             if (leaveTypes.green === 1 && leaveTypes.yellow === 0) {
-                return isSelected ? 'on-leave selected' : 'on-leave';
+                // ถ้าไม่ได้ selected และมีการลาที่บันทึกแล้ว
+                if (!isSelected && leavesInDay.length === 1) {
+                    const leave = leavesInDay[0];
+                    
+                    // เช็คว่าวันนี้ แพทย์คนนี้ มี duty หรือไม่
+                    const hasDutyOnThisDay = leave.duty_assignments && 
+                        leave.duty_assignments.some(assignment => assignment.duty_date === dateStr);
+                    
+                    // ถ้าไม่มี duty → สีเขียวอ่อน
+                    if (!hasDutyOnThisDay) {
+                        return 'on-leave-no-duty';  // เขียวอ่อน
+                    }
+                }
+                
+                return isSelected ? 'on-leave selected' : 'on-leave';  // เขียว
             }
             
             // เหลือง: มีแค่เหลืองคนเดียว
