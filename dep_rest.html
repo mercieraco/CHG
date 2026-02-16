@@ -264,11 +264,11 @@
         font-weight: 700;
     }
 
-    /* ไม่ฝากงาน + ไม่มี duty - สีเหลืองอ่อน (50% lighter) */
+    /* ไม่ฝากงาน + ไม่มี duty - สีชมพู (TESTING!) */
     .calendar-day.no-delegation-no-duty {
-        background: #fffce1 !important;
-        border-color: #ffe082 !important;
-        color: #f57f17;
+        background: #ff69b4 !important; /* PINK! */
+        border-color: #ff1493 !important;
+        color: #8b0000;
         font-weight: 700;
     }
 
@@ -1492,12 +1492,20 @@
                         hasDutyOnThisDay = window.departmentDuties.some(dd => 
                             dd.doctor_id === doctorId && dd[dayName] === 1
                         );
+                        
+                        // DEBUG
+                        if (dateStr === '2026-02-03' || dateStr === '2026-02-04') {
+                            console.log('🟡 Yellow Check:', dateStr, dayName);
+                            console.log('Doctor ID:', doctorId);
+                            console.log('Has Duty:', hasDutyOnThisDay);
+                        }
                     } else {
                         hasDutyOnThisDay = true;  // safe default
                     }
                     
-                    // ถ้าไม่มี duty → สีเหลืองอ่อน
+                    // ถ้าไม่มี duty → สีเหลืองอ่อน (ชมพู)
                     if (!hasDutyOnThisDay) {
+                        console.log('✅ Return: no-delegation-no-duty (PINK!)', dateStr);
                         return 'no-delegation-no-duty';
                     }
                 }
