@@ -264,11 +264,11 @@
         font-weight: 700;
     }
 
-    /* ไม่ฝากงาน + ไม่มี duty - สีชมพู (TESTING!) */
+    /* ไม่ฝากงาน + ไม่มี duty - สีเหลืองอ่อน (50% lighter) */
     .calendar-day.no-delegation-no-duty {
-        background: #ff69b4 !important; /* PINK! */
-        border-color: #ff1493 !important;
-        color: #8b0000;
+        background: #fffce1 !important;
+        border-color: #ffe082 !important;
+        color: #f57f17;
         font-weight: 700;
     }
 
@@ -762,7 +762,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 16/2/69 22:01</span>
+        <span id="versionInfo">Version 16/2/69 22:24</span>
     </div>
 </div>
 
@@ -1387,12 +1387,6 @@
                     if (leave.delegation_type === 'none') {
                         leaveTypes.yellow++;
                         leavesInDay.push(leave);
-                        
-                        // DEBUG: เช็คว่ามีการลา none หรือไม่
-                        if (dateStr === '2026-02-03' || dateStr === '2026-02-04') {
-                            console.log('📅 Date:', dateStr);
-                            console.log('Found NONE delegation:', leave.doctor_id);
-                        }
                     } else if (leave.delegation_type === 'single' || leave.delegation_type === 'custom') {
                         // เก็บข้อมูลการลาเพื่อเช็คว่ามี duty หรือไม่
                         leavesInDay.push(leave);
@@ -1499,20 +1493,12 @@
                         hasDutyOnThisDay = window.departmentDuties.some(dd => 
                             dd.doctor_id === doctorId && dd[dayName] === 1
                         );
-                        
-                        // DEBUG
-                        if (dateStr === '2026-02-03' || dateStr === '2026-02-04') {
-                            console.log('🟡 Yellow Check:', dateStr, dayName);
-                            console.log('Doctor ID:', doctorId);
-                            console.log('Has Duty:', hasDutyOnThisDay);
-                        }
                     } else {
                         hasDutyOnThisDay = true;  // safe default
                     }
                     
-                    // ถ้าไม่มี duty → สีเหลืองอ่อน (ชมพู)
+                    // ถ้าไม่มี duty → สีเหลืองอ่อน
                     if (!hasDutyOnThisDay) {
-                        console.log('✅ Return: no-delegation-no-duty (PINK!)', dateStr);
                         return 'no-delegation-no-duty';
                     }
                 }
