@@ -322,6 +322,30 @@
         font-weight: 700;  /* ตัวเลขหนา */
     }
 
+    /* Highlight เมื่อคลิกที่ leave record */
+    .calendar-day.highlight {
+        outline: 10px solid #2196f3 !important;  /* เส้นประสีน้ำเงิน 10px */
+        outline-offset: -10px !important;
+        position: relative;
+        z-index: 200 !important;  /* อยู่บนสุดกว่า today */
+        animation: highlightPulse 3s ease-out;
+    }
+
+    @keyframes highlightPulse {
+        0% {
+            outline-color: #2196f3;
+            outline-width: 10px;
+        }
+        50% {
+            outline-color: #1976d2;
+            outline-width: 12px;
+        }
+        100% {
+            outline-color: #2196f3;
+            outline-width: 10px;
+        }
+    }
+
     .btn-submit {
         width: 100%;
         padding: 16px;
@@ -762,7 +786,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 16/2/69 22:36</span>
+        <span id="versionInfo">Version 17/2/69 06:02</span>
     </div>
 </div>
 
@@ -1215,12 +1239,19 @@
                     fullText += ` >> ${replacementFullName}`;
                 }
                 
+                // เพิ่ม onclick event
+                recordDiv.onclick = function(e) {
+                    // ถ้าคลิกที่ปุ่มลบ ไม่ต้อง highlight
+                    if (e.target.classList.contains('btn-delete')) return;
+                    highlightLeaveDates('${leave.start_date}', '${leave.end_date}');
+                };
+                
                 recordDiv.innerHTML = `
                     <div class="leave-record-info">
                         <span class="name-short">${shortText}</span>
                         <span class="name-full">${fullText}</span>
                     </div>
-                    <button class="btn-delete" onclick="deleteLeave(${leave.id});">ลบ</button>
+                    <button class="btn-delete" onclick="deleteLeave(${leave.id}); event.stopPropagation();">ลบ</button>
                 `;
                 
             } else if (leave.delegation_type === 'custom' && leave.duty_assignments) {
@@ -1253,8 +1284,14 @@
                 html += `
                         </div>
                     </div>
-                    <button class="btn-delete" onclick="deleteLeave(${leave.id});">ลบ</button>
+                    <button class="btn-delete" onclick="deleteLeave(${leave.id}); event.stopPropagation();">ลบ</button>
                 `;
+                
+                // เพิ่ม onclick event
+                recordDiv.onclick = function(e) {
+                    if (e.target.classList.contains('btn-delete')) return;
+                    highlightLeaveDates('${leave.start_date}', '${leave.end_date}');
+                };
                 
                 recordDiv.innerHTML = html;
                 
@@ -1268,12 +1305,18 @@
                 shortText += ` | ไม่ฝากงาน ⏳ รออนุมัติ`;
                 fullText += ` | ไม่ฝากงาน (รออนุมัติ)`;
                 
+                // เพิ่ม onclick event
+                recordDiv.onclick = function(e) {
+                    if (e.target.classList.contains('btn-delete')) return;
+                    highlightLeaveDates('${leave.start_date}', '${leave.end_date}');
+                };
+                
                 recordDiv.innerHTML = `
                     <div class="leave-record-info">
                         <span class="name-short">${shortText}</span>
                         <span class="name-full">${fullText}</span>
                     </div>
-                    <button class="btn-delete" onclick="deleteLeave(${leave.id});">ลบ</button>
+                    <button class="btn-delete" onclick="deleteLeave(${leave.id}); event.stopPropagation();">ลบ</button>
                 `;
             }
             
@@ -1548,7 +1591,7 @@
                 }
             }
             
-            html += `<div class="${classes.join(' ')}" onmousedown="handleMouseDown('${dateStr}', event)">${day}</div>`;
+            html += `<div class="${classes.join(' ')}" data-date="${dateStr}" onmousedown="handleMouseDown('${dateStr}', event)">${day}</div>`;
         }
         
         calendar.innerHTML = html;
@@ -2237,6 +2280,41 @@
         msg.textContent = text;
         msg.className = `message ${type} show`;
         setTimeout(() => msg.classList.remove('show'), 5000);
+    }
+
+    // Highlight วันที่ลาในปฏิทิน
+    function highlightLeaveDates(startDate, endDate) {
+        // ลบ highlight เก่าทั้งหมด
+        document.querySelectorAll('.calendar-day.highlight').forEach(el => {
+            el.classList.remove('highlight');
+        });
+
+        // สร้าง array วันที่
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        const dates = [];
+        
+        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+            dates.push(formatDate(d));
+        }
+
+        // Highlight แต่ละวัน
+        dates.forEach(dateStr => {
+            const dayElements = document.querySelectorAll('.calendar-day');
+            dayElements.forEach(el => {
+                const dateAttribute = el.getAttribute('data-date');
+                if (dateAttribute === dateStr) {
+                    el.classList.add('highlight');
+                }
+            });
+        });
+
+        // ลบ highlight หลัง 3 วินาที
+        setTimeout(() => {
+            document.querySelectorAll('.calendar-day.highlight').forEach(el => {
+                el.classList.remove('highlight');
+            });
+        }, 3000);
     }
 </script>
 ```
