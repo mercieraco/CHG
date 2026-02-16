@@ -754,7 +754,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 16/2/69 12:43</span>
+        <span id="versionInfo">Version 16/2/69 15:21</span>
     </div>
 </div>
 
@@ -787,21 +787,7 @@
 
         loadDepartments();
         renderCalendar();
-        updateVersion();
     };
-
-    // อัพเดท Version Info
-    function updateVersion() {
-        const now = new Date();
-        const day = now.getDate();
-        const month = now.getMonth() + 1;
-        const year = (now.getFullYear() + 543) % 100; // เอาแค่ 2 หัก
-        const hours = String(now.getHours()).padStart(2, '0');
-        const minutes = String(now.getMinutes()).padStart(2, '0');
-        
-        const versionText = `Version ${day}/${month}/${year} ${hours}:${minutes}`;
-        document.getElementById('versionInfo').textContent = versionText;
-    }
 
     // โหลดแผนก
     async function loadDepartments() {
@@ -2182,7 +2168,6 @@
     }
 </script>
 ```
-
 
 </body>
 </html>
