@@ -248,6 +248,14 @@
         font-weight: 700;
     }
 
+    /* ลาวันที่ไม่มี duty - สีเขียวอ่อน */
+    .calendar-day.on-leave-no-duty {
+        background: #d4f1d7 !important;
+        border-color: #81c784 !important;
+        color: #388e3c;
+        font-weight: 700;
+    }
+
     /* ไม่ฝากงาน - สีเหลือง */
     .calendar-day.no-delegation {
         background: #fff9c4 !important;
@@ -1342,8 +1350,9 @@
         const calculateColorClass = (dateStr, isSelected) => {
             // นับจำนวนการลาแต่ละประเภทในวันนี้
             const leaveTypes = {
-                green: 0,   // ฝากงานปกติ (single/custom)
-                yellow: 0,  // ไม่ฝากงาน (none)
+                green: 0,        // ฝากงานปกติ (มี duty)
+                lightGreen: 0,   // ฝากงานปกติ (ไม่มี duty) ← NEW!
+                yellow: 0,       // ไม่ฝากงาน (none)
             };
             
             // Loop ทุกการลาในวันนี้
@@ -1352,44 +1361,64 @@
                     if (leave.delegation_type === 'none') {
                         leaveTypes.yellow++;
                     } else if (leave.delegation_type === 'single' || leave.delegation_type === 'custom') {
-                        leaveTypes.green++;
+                        // เช็คว่าวันนี้มี duty หรือไม่
+                        const hasDuty = currentDutyData.some(day => day.duty_date === dateStr && day.duties.length > 0);
+                        
+                        if (hasDuty) {
+                            leaveTypes.green++;        // มี duty → เขียว
+                        } else {
+                            leaveTypes.lightGreen++;   // ไม่มี duty → เขียวอ่อน
+                        }
                     }
                 }
             });
             
-            // *** สำคัญ: ถ้ากำลังเลือก (selected) ให้นับเป็นสีเขียว ***
+            // *** สำคัญ: ถ้ากำลังเลือก (selected) ให้นับเป็นสีเขียว/เขียวอ่อน ***
             if (isSelected) {
-                leaveTypes.green++;
+                const hasDuty = currentDutyData.some(day => day.duty_date === dateStr && day.duties.length > 0);
+                
+                if (hasDuty) {
+                    leaveTypes.green++;
+                } else {
+                    leaveTypes.lightGreen++;
+                }
             }
             
             // คำนวณสีตามลำดับความสำคัญ
-            // แดง > ส้ม > เขียว > เหลือง
+            // แดง > ส้ม > เขียว = เขียวอ่อน > เหลือง
             
-            const totalLeaves = leaveTypes.green + leaveTypes.yellow;
+            // รวม green + lightGreen (เพราะมีค่าเท่ากัน)
+            const totalGreen = leaveTypes.green + leaveTypes.lightGreen;
+            const totalLeaves = totalGreen + leaveTypes.yellow;
             
             // ไม่มีการลา
             if (totalLeaves === 0) {
                 return null;
             }
             
-            // แดง: เขียว >= 2 (รวม selected)
-            if (leaveTypes.green >= 2) {
+            // แดง: เขียว+เขียวอ่อน >= 2 (รวม selected)
+            if (totalGreen >= 2) {
                 return isSelected ? 'overlap selected' : 'overlap';
             }
             
-            // ส้ม: เขียว + เหลือง, หรือ เหลือง >= 2
-            if ((leaveTypes.green >= 1 && leaveTypes.yellow >= 1) ||
+            // ส้ม: (เขียว หรือ เขียวอ่อน) + เหลือง, หรือ เหลือง >= 2
+            if ((totalGreen >= 1 && leaveTypes.yellow >= 1) ||
                 (leaveTypes.yellow >= 2)) {
                 return isSelected ? 'overlap-no-delegation selected' : 'overlap-no-delegation';
             }
             
-            // เขียว: มีแค่เขียวคนเดียว (รวม selected)
-            if (leaveTypes.green === 1 && leaveTypes.yellow === 0) {
-                return isSelected ? 'on-leave selected' : 'on-leave';
+            // เขียว/เขียวอ่อน: มีแค่คนเดียว (รวม selected)
+            if (totalGreen === 1 && leaveTypes.yellow === 0) {
+                // เช็คว่าเป็นเขียวหรือเขียวอ่อน
+                if (leaveTypes.lightGreen === 1) {
+                    return isSelected ? 'on-leave-no-duty selected' : 'on-leave-no-duty';  // เขียวอ่อน
+                } else {
+                    return isSelected ? 'on-leave selected' : 'on-leave';  // เขียว
+                }
             }
             
             // เหลือง: มีแค่เหลืองคนเดียว
-            if (leaveTypes.yellow === 1 && leaveTypes.green === 0) {
+            if (leaveTypes.yellow === 1 && totalGreen === 0) {
                 return isSelected ? 'no-delegation selected' : 'no-delegation';
             }
             
