@@ -250,9 +250,9 @@
 
     /* ลาวันที่ไม่มี duty - สีเขียวอ่อน (50% lighter) */
     .calendar-day.on-leave-no-duty {
-        background: #e3f2e4 !important;
-        border-color: #81c784 !important;
-        color: #2e7d32;
+        background: #ff69b4 !important; /* PINK for testing! */
+        border-color: #ff1493 !important;
+        color: #8b0000;
         font-weight: 700;
     }
 
@@ -1411,30 +1411,25 @@
                     const leave = leavesInDay[0];
                     let hasDutyOnThisDay = false;
                     
-                    console.log('=== Check Light Green ===');
-                    console.log('Date:', dateStr);
-                    console.log('Delegation Type:', leave.delegation_type);
-                    console.log('Duty Assignments:', leave.duty_assignments);
-                    
                     // เช็คตามประเภทการลา
-                    if (leave.delegation_type === 'custom' && leave.duty_assignments) {
-                        // Custom: เช็คจาก duty_assignments
-                        hasDutyOnThisDay = leave.duty_assignments.some(
-                            assignment => assignment.duty_date === dateStr
-                        );
-                        console.log('Custom - Has Duty:', hasDutyOnThisDay);
+                    if (leave.delegation_type === 'custom') {
+                        if (leave.duty_assignments && leave.duty_assignments.length > 0) {
+                            // Custom: เช็คจาก duty_assignments
+                            hasDutyOnThisDay = leave.duty_assignments.some(
+                                assignment => assignment.duty_date === dateStr
+                            );
+                        } else {
+                            // Custom แต่ไม่มี duty_assignments หรือเป็น array ว่าง → ไม่มี duty
+                            hasDutyOnThisDay = false;
+                        }
                     } else if (leave.delegation_type === 'single') {
                         // Single: ถือว่ามี duty เสมอ
                         hasDutyOnThisDay = true;
-                        console.log('Single - Has Duty:', hasDutyOnThisDay);
                     }
                     
                     // ถ้าไม่มี duty → สีเขียวอ่อน
                     if (!hasDutyOnThisDay) {
-                        console.log('✅ Return: on-leave-no-duty (เขียวอ่อน)');
                         return 'on-leave-no-duty';
-                    } else {
-                        console.log('Return: on-leave (เขียว)');
                     }
                 }
                 
