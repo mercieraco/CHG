@@ -754,7 +754,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 16/2/69 15:34</span>
+        <span id="versionInfo">Version 16/2/69 15:55</span>
     </div>
 </div>
 
@@ -1411,23 +1411,30 @@
                     const leave = leavesInDay[0];
                     let hasDutyOnThisDay = false;
                     
+                    console.log('=== Check Light Green ===');
+                    console.log('Date:', dateStr);
+                    console.log('Delegation Type:', leave.delegation_type);
+                    console.log('Duty Assignments:', leave.duty_assignments);
+                    
                     // เช็คตามประเภทการลา
                     if (leave.delegation_type === 'custom' && leave.duty_assignments) {
                         // Custom: เช็คจาก duty_assignments
                         hasDutyOnThisDay = leave.duty_assignments.some(
                             assignment => assignment.duty_date === dateStr
                         );
+                        console.log('Custom - Has Duty:', hasDutyOnThisDay);
                     } else if (leave.delegation_type === 'single') {
-                        // Single: เช็คจาก currentDutyData ว่าวันนี้มี duty หรือไม่
-                        // (ถ้าลาวันนี้แต่ไม่มี duty ใน currentDutyData = ไม่มี duty)
-                        // แต่เรายังไม่มี access ถึง doctor_id ของ leave นี้ใน context นี้
-                        // วิธีง่ายๆ: ถ้าเป็น single → ถือว่ามี duty (เพราะ single ต้องมีคนมาแทน)
-                        hasDutyOnThisDay = true;  // Single มักมี duty
+                        // Single: ถือว่ามี duty เสมอ
+                        hasDutyOnThisDay = true;
+                        console.log('Single - Has Duty:', hasDutyOnThisDay);
                     }
                     
                     // ถ้าไม่มี duty → สีเขียวอ่อน
                     if (!hasDutyOnThisDay) {
-                        return 'on-leave-no-duty';  // เขียวอ่อน
+                        console.log('✅ Return: on-leave-no-duty (เขียวอ่อน)');
+                        return 'on-leave-no-duty';
+                    } else {
+                        console.log('Return: on-leave (เขียว)');
                     }
                 }
                 
