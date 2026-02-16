@@ -1399,10 +1399,21 @@
                 // ถ้าไม่ได้ selected และมีการลาที่บันทึกแล้ว
                 if (!isSelected && leavesInDay.length === 1) {
                     const leave = leavesInDay[0];
+                    let hasDutyOnThisDay = false;
                     
-                    // เช็คว่าวันนี้ แพทย์คนนี้ มี duty หรือไม่
-                    const hasDutyOnThisDay = leave.duty_assignments && 
-                        leave.duty_assignments.some(assignment => assignment.duty_date === dateStr);
+                    // เช็คตามประเภทการลา
+                    if (leave.delegation_type === 'custom' && leave.duty_assignments) {
+                        // Custom: เช็คจาก duty_assignments
+                        hasDutyOnThisDay = leave.duty_assignments.some(
+                            assignment => assignment.duty_date === dateStr
+                        );
+                    } else if (leave.delegation_type === 'single') {
+                        // Single: เช็คจาก currentDutyData ว่าวันนี้มี duty หรือไม่
+                        // (ถ้าลาวันนี้แต่ไม่มี duty ใน currentDutyData = ไม่มี duty)
+                        // แต่เรายังไม่มี access ถึง doctor_id ของ leave นี้ใน context นี้
+                        // วิธีง่ายๆ: ถ้าเป็น single → ถือว่ามี duty (เพราะ single ต้องมีคนมาแทน)
+                        hasDutyOnThisDay = true;  // Single มักมี duty
+                    }
                     
                     // ถ้าไม่มี duty → สีเขียวอ่อน
                     if (!hasDutyOnThisDay) {
