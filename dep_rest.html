@@ -1413,21 +1413,24 @@
                     
                     // เช็คตามประเภทการลา
                     if (leave.delegation_type === 'custom') {
-                        if (leave.duty_assignments && leave.duty_assignments.length > 0) {
-                            // Custom: เช็คจาก duty_assignments
+                        if (!leave.duty_assignments || leave.duty_assignments.length === 0) {
+                            // Custom แต่ไม่มี duty_assignments เลย → ทุกวันไม่มี duty
+                            hasDutyOnThisDay = false;
+                        } else {
+                            // Custom + มี duty_assignments → เช็คว่าวันนี้มีหรือไม่
                             hasDutyOnThisDay = leave.duty_assignments.some(
                                 assignment => assignment.duty_date === dateStr
                             );
-                        } else {
-                            // Custom แต่ไม่มี duty_assignments หรือเป็น array ว่าง → ไม่มี duty
-                            hasDutyOnThisDay = false;
                         }
                     } else if (leave.delegation_type === 'single') {
                         // Single: ถือว่ามี duty เสมอ
                         hasDutyOnThisDay = true;
+                    } else {
+                        // delegation_type อื่นๆ
+                        hasDutyOnThisDay = false;
                     }
                     
-                    // ถ้าไม่มี duty → สีเขียวอ่อน
+                    // ถ้าไม่มี duty → สีเขียวอ่อน (ชมพู for testing)
                     if (!hasDutyOnThisDay) {
                         return 'on-leave-no-duty';
                     }
