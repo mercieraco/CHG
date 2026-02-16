@@ -256,10 +256,18 @@
         font-weight: 700;
     }
 
-    /* ไม่ฝากงาน - สีเหลือง */
+    /* ไม่ฝากงาน - สีเหลือง (มี duty) */
     .calendar-day.no-delegation {
         background: #fff9c4 !important;
         border-color: #fdd835 !important;
+        color: #f57f17;
+        font-weight: 700;
+    }
+
+    /* ไม่ฝากงาน + ไม่มี duty - สีเหลืองอ่อน (50% lighter) */
+    .calendar-day.no-delegation-no-duty {
+        background: #fffce1 !important;
+        border-color: #ffe082 !important;
         color: #f57f17;
         font-weight: 700;
     }
@@ -754,7 +762,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 16/2/69 21:41</span>
+        <span id="versionInfo">Version 16/2/69 22:01</span>
     </div>
 </div>
 
@@ -1466,8 +1474,34 @@
                 return isSelected ? 'on-leave selected' : 'on-leave';  // เขียว
             }
             
-            // เหลือง: มีแค่เหลืองคนเดียว
+            // เหลือง/เหลืองอ่อน: มีแค่เหลืองคนเดียว (none delegation)
             if (leaveTypes.yellow === 1 && leaveTypes.green === 0) {
+                // ถ้าไม่ได้ selected และมีการลาที่บันทึกแล้ว
+                if (!isSelected && leavesInDay.length === 1) {
+                    const leave = leavesInDay[0];
+                    let hasDutyOnThisDay = false;
+                    
+                    // เช็คว่าวันนี้มี duty หรือไม่
+                    const doctorId = leave.doctor_id;
+                    const checkDate = new Date(dateStr);
+                    const dayOfWeek = checkDate.getDay();
+                    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+                    const dayName = dayNames[dayOfWeek];
+                    
+                    if (window.departmentDuties && window.departmentDuties.length > 0) {
+                        hasDutyOnThisDay = window.departmentDuties.some(dd => 
+                            dd.doctor_id === doctorId && dd[dayName] === 1
+                        );
+                    } else {
+                        hasDutyOnThisDay = true;  // safe default
+                    }
+                    
+                    // ถ้าไม่มี duty → สีเหลืองอ่อน
+                    if (!hasDutyOnThisDay) {
+                        return 'no-delegation-no-duty';
+                    }
+                }
+                
                 return isSelected ? 'no-delegation selected' : 'no-delegation';
             }
             
