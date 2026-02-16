@@ -324,26 +324,10 @@
 
     /* Highlight เมื่อคลิกที่ leave record */
     .calendar-day.highlight {
-        outline: 10px solid #2196f3 !important;  /* เส้นประสีน้ำเงิน 10px */
-        outline-offset: -10px !important;
+        outline: 8px solid #2196f3 !important;  /* เส้นประสีน้ำเงิน 8px */
+        outline-offset: -8px !important;
         position: relative;
         z-index: 200 !important;  /* อยู่บนสุดกว่า today */
-        animation: highlightPulse 3s ease-out;
-    }
-
-    @keyframes highlightPulse {
-        0% {
-            outline-color: #2196f3;
-            outline-width: 10px;
-        }
-        50% {
-            outline-color: #1976d2;
-            outline-width: 12px;
-        }
-        100% {
-            outline-color: #2196f3;
-            outline-width: 10px;
-        }
     }
 
     .btn-submit {
@@ -786,7 +770,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 17/2/69 06:17</span>
+        <span id="versionInfo">Version 17/2/69 06:29</span>
     </div>
 </div>
 
@@ -2273,13 +2257,8 @@
         setTimeout(() => msg.classList.remove('show'), 5000);
     }
 
-    // Highlight วันที่ลาในปฏิทิน
+    // Highlight วันที่ลาในปฏิทิน (toggle on/off)
     function highlightLeaveDates(startDate, endDate) {
-        // ลบ highlight เก่าทั้งหมด
-        document.querySelectorAll('.calendar-day.highlight').forEach(el => {
-            el.classList.remove('highlight');
-        });
-
         // สร้าง array วันที่
         const start = new Date(startDate);
         const end = new Date(endDate);
@@ -2289,23 +2268,47 @@
             dates.push(formatDate(d));
         }
 
-        // Highlight แต่ละวัน
+        // เช็คว่ามี highlight อยู่แล้วหรือไม่
+        let hasHighlight = false;
         dates.forEach(dateStr => {
             const dayElements = document.querySelectorAll('.calendar-day');
             dayElements.forEach(el => {
                 const dateAttribute = el.getAttribute('data-date');
-                if (dateAttribute === dateStr) {
-                    el.classList.add('highlight');
+                if (dateAttribute === dateStr && el.classList.contains('highlight')) {
+                    hasHighlight = true;
                 }
             });
         });
 
-        // ลบ highlight หลัง 3 วินาที
-        setTimeout(() => {
+        if (hasHighlight) {
+            // ถ้ามี highlight อยู่แล้ว → ลบออก (toggle off)
+            dates.forEach(dateStr => {
+                const dayElements = document.querySelectorAll('.calendar-day');
+                dayElements.forEach(el => {
+                    const dateAttribute = el.getAttribute('data-date');
+                    if (dateAttribute === dateStr) {
+                        el.classList.remove('highlight');
+                    }
+                });
+            });
+        } else {
+            // ถ้ายังไม่มี → เพิ่ม highlight (toggle on)
+            // ลบ highlight เก่าทั้งหมดก่อน
             document.querySelectorAll('.calendar-day.highlight').forEach(el => {
                 el.classList.remove('highlight');
             });
-        }, 3000);
+
+            // เพิ่ม highlight ใหม่
+            dates.forEach(dateStr => {
+                const dayElements = document.querySelectorAll('.calendar-day');
+                dayElements.forEach(el => {
+                    const dateAttribute = el.getAttribute('data-date');
+                    if (dateAttribute === dateStr) {
+                        el.classList.add('highlight');
+                    }
+                });
+            });
+        }
     }
 </script>
 ```
