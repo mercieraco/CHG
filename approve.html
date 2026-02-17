@@ -81,9 +81,15 @@
 
     .calendar-header {
         display: flex;
-        justify-content: space-between;
+        justify-content: center;
         align-items: center;
         margin-bottom: 20px;
+    }
+
+    .month-nav {
+        display: flex;
+        align-items: center;
+        gap: 20px;
     }
 
     .month-nav button {
@@ -104,7 +110,24 @@
         font-size: 20px;
         font-weight: 600;
         color: #333;
-        margin: 0 20px;
+        min-width: 200px;
+        text-align: center;
+    }
+
+    /* หัวตารางวัน */
+    .calendar-weekdays {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+
+    .calendar-weekday {
+        text-align: center;
+        font-weight: 700;
+        color: #667eea;
+        font-size: 14px;
+        padding: 10px 0;
     }
 
     .calendar {
@@ -338,6 +361,16 @@
                 <span id="currentMonth"></span>
                 <button onclick="nextMonth()">เดือนถัดไป ▶</button>
             </div>
+        </div>
+        <!-- หัวตารางวัน -->
+        <div class="calendar-weekdays">
+            <div class="calendar-weekday">จ</div>
+            <div class="calendar-weekday">อ</div>
+            <div class="calendar-weekday">พ</div>
+            <div class="calendar-weekday">พฤ</div>
+            <div class="calendar-weekday">ศ</div>
+            <div class="calendar-weekday">ส</div>
+            <div class="calendar-weekday">อา</div>
         </div>
         <div class="calendar" id="calendar"></div>
     </div>
