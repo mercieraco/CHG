@@ -175,6 +175,8 @@
 </div>
 
 <script>
+    const API_URL = 'https://approval-worker.9vk92zm5z2.workers.dev';
+
     // ตรวจสอบการ login
     window.onload = function() {
         const loggedIn = sessionStorage.getItem('loggedIn');
@@ -189,7 +191,27 @@
 
         // แสดงข้อมูลผู้ใช้
         document.getElementById('userDisplay').textContent = `คุณ ${username} (Admin)`;
+        
+        // โหลดจำนวนรออนุมัติ
+        loadPendingCount();
     };
+
+    // โหลดจำนวนรออนุมัติ
+    async function loadPendingCount() {
+        try {
+            const response = await fetch(`${API_URL}/api/leaves/pending`);
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                const count = data.data.length;
+                document.getElementById('pendingCount').textContent = count;
+            } else {
+                console.error('Load pending count error:', data.message);
+            }
+        } catch (error) {
+            console.error('Load pending count error:', error);
+        }
+    }
 
     function logout() {
         // ลบข้อมูล session
