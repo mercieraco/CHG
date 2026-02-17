@@ -91,9 +91,9 @@
 
     .radio-group {
         display: flex;
-        gap: 12px;  /* ลดจาก 30px → 12px */
+        gap: 12px;  /* หน้าจอเล็ก (<580px) */
         margin-bottom: 20px;
-        flex-wrap: nowrap;  /* ห้ามขึ้นบรรทัดใหม่ */
+        flex-wrap: nowrap;
     }
 
     .radio-group label {
@@ -101,15 +101,26 @@
         align-items: center;
         cursor: pointer;
         font-weight: 500;
-        white-space: nowrap;  /* ห้ามตัดคำ */
+        white-space: nowrap;
     }
 
     .radio-group input[type="radio"] {
-        margin-right: 4px;  /* ลดจาก 8px → 4px */
+        margin-right: 4px;  /* หน้าจอเล็ก (<580px) */
         width: 18px;
         height: 18px;
         cursor: pointer;
-        flex-shrink: 0;  /* ห้ามหด radio button */
+        flex-shrink: 0;
+    }
+
+    /* หน้าจอใหญ่ (≥580px) - ใช้ค่าเดิม */
+    @media (min-width: 580px) {
+        .radio-group {
+            gap: 30px;  /* กลับไปใช้ค่าเดิม */
+        }
+        
+        .radio-group input[type="radio"] {
+            margin-right: 8px;  /* กลับไปใช้ค่าเดิม */
+        }
     }
 
     .replacement-section {
@@ -780,7 +791,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 17/2/69 11:49</span>
+        <span id="versionInfo">Version 17/2/69 12:01</span>
     </div>
 </div>
 
