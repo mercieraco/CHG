@@ -369,7 +369,7 @@
         loadPendingApprovals();
     };
 
-    const API_URL = 'https://dep-rest-worker.9vk92zm5z2.workers.dev';
+    const API_URL = 'https://approval-worker.9vk92zm5z2.workers.dev';
     let currentYear = new Date().getFullYear();
     let currentMonth = new Date().getMonth();
 
@@ -405,7 +405,10 @@
         const firstDay = new Date(currentYear, currentMonth, 1);
         const lastDay = new Date(currentYear, currentMonth + 1, 0);
         const daysInMonth = lastDay.getDate();
-        const startDay = firstDay.getDay();
+        let startDay = firstDay.getDay();
+        
+        // แปลงให้จันทร์ = 0, อาทิตย์ = 6
+        startDay = (startDay === 0) ? 6 : startDay - 1;
         
         const thaiMonths = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
                            'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
@@ -425,11 +428,15 @@
         // วันในเดือน
         for (let day = 1; day <= daysInMonth; day++) {
             const date = new Date(currentYear, currentMonth, day);
-            const dayOfWeek = date.getDay();
+            let dayOfWeek = date.getDay();
+            
+            // แปลงให้จันทร์ = 0, อาทิตย์ = 6
+            dayOfWeek = (dayOfWeek === 0) ? 6 : dayOfWeek - 1;
             
             let classes = ['calendar-day'];
             
-            if (dayOfWeek === 0 || dayOfWeek === 6) {
+            // เสาร์ (5) และอาทิตย์ (6)
+            if (dayOfWeek === 5 || dayOfWeek === 6) {
                 classes.push('weekend');
             }
             
