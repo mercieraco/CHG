@@ -490,7 +490,7 @@
         color: #374151;  /* Charcoal Gray - รายละเอียด */
     }
 
-    /* No Delegation - สีเหลือง (เดิม) */
+    /* No Delegation - สีเหลือง (รออนุมัติ) */
     .leave-record.no-delegation {
         background: #fff9c4;
         border-left-color: #fdd835;
@@ -498,6 +498,37 @@
 
     .leave-record.no-delegation:hover {
         background: #fff59d;
+    }
+
+    /* No Delegation - อนุมัติแล้ว (สีดำ) */
+    .leave-record.no-delegation.approved {
+        background: #000000;
+        border-left-color: #000000;
+        color: #ffffff;
+    }
+
+    .leave-record.no-delegation.approved:hover {
+        background: #1a1a1a;
+    }
+
+    .leave-record.no-delegation.approved .leave-record-info {
+        color: #ffffff;
+    }
+
+    /* No Delegation - ไม่อนุมัติ (ขาว กรอบดำ) */
+    .leave-record.no-delegation.rejected {
+        background: #ffffff;
+        border: 2px solid #000000;
+        border-left-width: 5px;
+    }
+
+    .leave-record.no-delegation.rejected:hover {
+        background: #f5f5f5;
+    }
+
+    .leave-record.no-delegation.rejected .leave-record-info {
+        text-decoration: line-through;  /* Strikethrough */
+        color: #666;
     }
 
     .leave-record-info {
@@ -805,7 +836,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 17/2/69 16:49</span>
+        <span id="versionInfo">Version 17/2/69 20:10</span>
     </div>
 </div>
 
@@ -1312,14 +1343,26 @@
                 }
                 
             } else if (leave.delegation_type === 'none') {
-                // No Delegation - สีเหลือง
+                // No Delegation - สีเหลือง/ดำ/ขาว ตามสถานะ
                 recordDiv.classList.add('no-delegation');
                 
                 let shortText = `${startDate} - ${endDate} (${days} วัน) | ${doctorFirstName} (${doctorLastInitial})`;
                 let fullText = `${startDate} - ${endDate} (${days} วัน) | ${doctorFullName}`;
                 
-                shortText += ` | ไม่ฝากงาน ⏳ รออนุมัติ`;
-                fullText += ` | ไม่ฝากงาน (รออนุมัติ)`;
+                // เช็คสถานะอนุมัติ
+                if (leave.approval_status === 'approved') {
+                    recordDiv.classList.add('approved');
+                    shortText += ` | ไม่ฝากงาน อนุมัติ <span style="color: #4caf50;">✓</span>`;
+                    fullText += ` | ไม่ฝากงาน อนุมัติ <span style="color: #4caf50;">✓</span>`;
+                } else if (leave.approval_status === 'rejected') {
+                    recordDiv.classList.add('rejected');
+                    shortText = `<span style="text-decoration: line-through;">${startDate} - ${endDate} (${days} วัน) | ${doctorFirstName} (${doctorLastInitial}) | ไม่ฝากงาน</span> <span style="text-decoration: none; color: #333;">ไม่อนุมัติ</span> <span style="color: #f44336;">✗</span>`;
+                    fullText = `<span style="text-decoration: line-through;">${startDate} - ${endDate} (${days} วัน) | ${doctorFullName} | ไม่ฝากงาน</span> <span style="text-decoration: none; color: #333;">ไม่อนุมัติ</span> <span style="color: #f44336;">✗</span>`;
+                } else {
+                    // pending
+                    shortText += ` | ไม่ฝากงาน ⏳ รออนุมัติ`;
+                    fullText += ` | ไม่ฝากงาน (รออนุมัติ)`;
+                }
                 
                 recordDiv.innerHTML = `
                     <div class="leave-record-info" onclick="highlightLeaveDates('${leave.start_date}', '${leave.end_date}'); event.stopPropagation();">
