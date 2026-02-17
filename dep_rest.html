@@ -309,6 +309,20 @@
         font-weight: 700;
     }
 
+    /* อนุมัติแล้ว - สีดำ (สูงสุด ทับทุกอย่าง) */
+    .calendar-day.approved {
+        background: #000000 !important;
+        border-color: #000000 !important;
+        color: #ffffff !important;
+        font-weight: 700;
+    }
+
+    /* ไม่อนุมัติ - สีเดิม + กรอบดำ */
+    .calendar-day.rejected {
+        border-color: #000000 !important;
+        border-width: 3px !important;
+    }
+
     /* ซ้อนทับในวันเสาร์-อาทิตย์ - สีแดงอ่อน */
     .calendar-day.weekend.overlap {
         background: #ffcdd2 !important;
@@ -791,7 +805,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 17/2/69 12:01</span>
+        <span id="versionInfo">Version 17/2/69 16:49</span>
     </div>
 </div>
 
@@ -1417,13 +1431,22 @@
             const leaveTypes = {
                 green: 0,   // ฝากงานปกติ (single/custom)
                 yellow: 0,  // ไม่ฝากงาน (none)
+                approved: 0,  // อนุมัติแล้ว
+                rejected: 0,  // ไม่อนุมัติ
             };
             
             // Loop ทุกการลาในวันนี้
             const leavesInDay = [];
             doctorLeaves.forEach(leave => {
                 if (dateStr >= leave.start_date && dateStr <= leave.end_date) {
-                    if (leave.delegation_type === 'none') {
+                    // เช็คสถานะอนุมัติก่อน
+                    if (leave.approval_status === 'approved') {
+                        leaveTypes.approved++;
+                        leavesInDay.push(leave);
+                    } else if (leave.approval_status === 'rejected') {
+                        leaveTypes.rejected++;
+                        leavesInDay.push(leave);
+                    } else if (leave.delegation_type === 'none') {
                         leaveTypes.yellow++;
                         leavesInDay.push(leave);
                     } else if (leave.delegation_type === 'single' || leave.delegation_type === 'custom') {
@@ -1440,9 +1463,14 @@
             }
             
             // คำนวณสีตามลำดับความสำคัญ
-            // แดง > ส้ม > เขียว > เหลือง
+            // อนุมัติ > ไม่อนุมัติ > แดง > ส้ม > เขียว > เหลือง
             
-            const totalLeaves = leaveTypes.green + leaveTypes.yellow;
+            // *** อนุมัติแล้ว → สีดำ (ทับทุกอย่าง) ***
+            if (leaveTypes.approved > 0) {
+                return 'approved';
+            }
+            
+            const totalLeaves = leaveTypes.green + leaveTypes.yellow + leaveTypes.rejected;
             
             // ไม่มีการลา
             if (totalLeaves === 0) {
@@ -1454,19 +1482,20 @@
                 return 'selected';
             }
             
+            // *** ไม่อนุมัติ → เพิ่มกรอบดำ (ไม่เปลี่ยนสีพื้น) ***
+            let baseClass = '';
+            
             // แดง: เขียว >= 2 (รวม selected)
             if (leaveTypes.green >= 2) {
-                return isSelected ? 'overlap selected' : 'overlap';
+                baseClass = isSelected ? 'overlap selected' : 'overlap';
             }
-            
             // ส้ม: เขียว + เหลือง, หรือ เหลือง >= 2
-            if ((leaveTypes.green >= 1 && leaveTypes.yellow >= 1) ||
+            else if ((leaveTypes.green >= 1 && leaveTypes.yellow >= 1) ||
                 (leaveTypes.yellow >= 2)) {
-                return isSelected ? 'overlap-no-delegation selected' : 'overlap-no-delegation';
+                baseClass = isSelected ? 'overlap-no-delegation selected' : 'overlap-no-delegation';
             }
-            
             // เขียว/เขียวอ่อน: มีแค่คนเดียว (รวม selected)
-            if (leaveTypes.green === 1 && leaveTypes.yellow === 0) {
+            else if (leaveTypes.green === 1 && leaveTypes.yellow === 0) {
                 // ถ้าไม่ได้ selected และมีการลาที่บันทึกแล้ว
                 if (!isSelected && leavesInDay.length === 1) {
                     const leave = leavesInDay[0];
@@ -1505,17 +1534,18 @@
                         hasDutyOnThisDay = false;
                     }
                     
-                    // ถ้าไม่มี duty → สีเขียวอ่อน (ชมพู for testing)
+                    // ถ้าไม่มี duty → สีเขียวอ่อน
                     if (!hasDutyOnThisDay) {
-                        return 'on-leave-no-duty';
+                        baseClass = 'on-leave-no-duty';
+                    } else {
+                        baseClass = isSelected ? 'on-leave selected' : 'on-leave';
                     }
+                } else {
+                    baseClass = isSelected ? 'on-leave selected' : 'on-leave';  // เขียว
                 }
-                
-                return isSelected ? 'on-leave selected' : 'on-leave';  // เขียว
             }
-            
             // เหลือง/เหลืองอ่อน: มีแค่เหลืองคนเดียว (none delegation)
-            if (leaveTypes.yellow === 1 && leaveTypes.green === 0) {
+            else if (leaveTypes.yellow === 1 && leaveTypes.green === 0) {
                 // ถ้าไม่ได้ selected และมีการลาที่บันทึกแล้ว
                 if (!isSelected && leavesInDay.length === 1) {
                     const leave = leavesInDay[0];
@@ -1538,14 +1568,23 @@
                     
                     // ถ้าไม่มี duty → สีเหลืองอ่อน
                     if (!hasDutyOnThisDay) {
-                        return 'no-delegation-no-duty';
+                        baseClass = 'no-delegation-no-duty';
+                    } else {
+                        baseClass = isSelected ? 'no-delegation selected' : 'no-delegation';
                     }
+                } else {
+                    baseClass = isSelected ? 'no-delegation selected' : 'no-delegation';
                 }
-                
-                return isSelected ? 'no-delegation selected' : 'no-delegation';
+            } else {
+                baseClass = 'on-leave';  // default
             }
             
-            return 'on-leave';  // default
+            // *** เพิ่มกรอบดำถ้ามี rejected ***
+            if (leaveTypes.rejected > 0 && baseClass) {
+                return baseClass + ' rejected';
+            }
+            
+            return baseClass || 'on-leave';
         };
         
         // วันในเดือน
