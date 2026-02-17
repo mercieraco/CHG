@@ -192,7 +192,7 @@
         background: white;
     }
 
-    .calendar-day:hover:not(.empty):not(.other-month) {
+    .calendar-day:hover:not(.empty):not(.other-month):not(.past-date) {
         transform: scale(1.05);
         box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
@@ -206,6 +206,13 @@
     .calendar-day.other-month {
         color: #ccc;
         cursor: default;
+    }
+
+    /* วันที่ผ่านมาแล้ว - สีเทาเข้มขึ้น */
+    .calendar-day.past-date {
+        background: #e0e0e0 !important;
+        color: #757575;
+        cursor: not-allowed;
     }
 
     .calendar-day.weekend {
@@ -770,7 +777,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 17/2/69 06:34</span>
+        <span id="versionInfo">Version 17/2/69 07:51</span>
     </div>
 </div>
 
@@ -1544,6 +1551,11 @@
             // วันนี้
             if (date.toDateString() === today.toDateString()) {
                 classes.push('today');
+            }
+            
+            // วันที่ผ่านมาแล้ว (ก่อนวันนี้)
+            if (date < today && date.toDateString() !== today.toDateString()) {
+                classes.push('past-date');
             }
             
             // คำนวณสี
