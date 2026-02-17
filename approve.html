@@ -264,13 +264,23 @@
     }
 
     .approval-item-top {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
+        cursor: pointer;  /* เปลี่ยนเมาส์เป็น pointer */
+        padding: 10px;
+        border-radius: 6px;
+        transition: background 0.2s;
+    }
+
+    .approval-item-top:hover {
+        background: #f5f5f5;  /* สีเทาอ่อนเมื่อ hover */
+    }
+
+    .approval-item-top:active {
+        background: #e0e0e0;  /* เข้มขึ้นเมื่อคลิก */
     }
 
     .approval-item-info {
         flex: 1;
+        user-select: none;  /* ห้ามเลือกข้อความ */
     }
 
     .approval-item-info h3 {
@@ -282,23 +292,7 @@
     .approval-item-info p {
         color: #666;
         font-size: 14px;
-    }
-
-    /* ปุ่มดูแผนก */
-    .btn-view-department {
-        background: #667eea;
-        color: white;
-        border: none;
-        padding: 6px 12px;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 12px;
-        font-weight: 600;
-        white-space: nowrap;
-    }
-
-    .btn-view-department:hover {
-        background: #5568d3;
+        margin: 3px 0;
     }
 
     .approval-buttons {
@@ -646,15 +640,12 @@
                     html += `
                         <div class="approval-item">
                             <div class="approval-item-header">
-                                <div class="approval-item-top">
+                                <div class="approval-item-top" onclick="viewDepartment(${leave.department_id})">
                                     <div class="approval-item-info">
                                         <h3>${leave.doctor_name} (${leave.department_name})</h3>
                                         <p>📅 ${startDate} - ${endDate} (${days} วัน)</p>
                                         <p>💬 เหตุผล: ${leave.no_delegation_reason || '-'}</p>
                                     </div>
-                                    <button class="btn-view-department" onclick="viewDepartment(${leave.department_id}); event.stopPropagation();">
-                                        📍 ${leave.department_name}
-                                    </button>
                                 </div>
                                 <div class="approval-buttons">
                                     <button class="btn-approve" onclick="approveLeave(${leave.id})">✓ อนุมัติ</button>
