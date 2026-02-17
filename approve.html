@@ -429,9 +429,38 @@
     }
 
     // โหลดข้อมูลตามแผนก
-    function loadDepartmentData() {
+    async function loadDepartmentData() {
+        const departmentId = document.getElementById('departmentSelect').value;
+        
+        if (departmentId) {
+            await loadDepartmentLeaves(departmentId);
+        } else {
+            // ถ้าเลือก "ทุกแผนก" ให้โหลดทุกแผนก
+            departmentLeaves = [];
+        }
+        
         renderCalendar();
         loadPendingApprovals();
+    }
+
+    let departmentLeaves = [];
+
+    // โหลดการลาของแผนก
+    async function loadDepartmentLeaves(departmentId) {
+        try {
+            const response = await fetch(`${API_URL}/api/leaves/department/${departmentId}`);
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                departmentLeaves = data.data;
+            } else {
+                console.error('Load leaves error:', data.message);
+                departmentLeaves = [];
+            }
+        } catch (error) {
+            console.error('Load leaves error:', error);
+            departmentLeaves = [];
+        }
     }
 
     // แสดงปฏิทิน (read-only)
@@ -470,6 +499,7 @@
             // แปลงให้จันทร์ = 0, อาทิตย์ = 6
             dayOfWeek = (dayOfWeek === 0) ? 6 : dayOfWeek - 1;
             
+            const dateStr = formatDate(date);
             let classes = ['calendar-day'];
             
             // เสาร์ (5) และอาทิตย์ (6)
@@ -485,10 +515,67 @@
                 classes.push('past-date');
             }
             
+            // คำนวณสีตามการลา
+            const colorClass = calculateColorClass(dateStr);
+            if (colorClass) {
+                classes.push(colorClass);
+            }
+            
             html += `<div class="${classes.join(' ')}">${day}</div>`;
         }
         
         calendar.innerHTML = html;
+    }
+
+    // ฟังก์ชัน format date เป็น YYYY-MM-DD
+    function formatDate(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    // คำนวณสีตามการลา
+    function calculateColorClass(dateStr) {
+        const leavesOnDate = departmentLeaves.filter(leave => 
+            dateStr >= leave.start_date && dateStr <= leave.end_date
+        );
+        
+        if (leavesOnDate.length === 0) return null;
+        
+        // นับประเภทการลา
+        const leaveTypes = { green: 0, yellow: 0, approved: 0, rejected: 0 };
+        
+        leavesOnDate.forEach(leave => {
+            if (leave.approval_status === 'approved') {
+                leaveTypes.approved++;
+            } else if (leave.approval_status === 'rejected') {
+                leaveTypes.rejected++;
+            } else if (leave.delegation_type === 'none') {
+                leaveTypes.yellow++;
+            } else {
+                leaveTypes.green++;
+            }
+        });
+        
+        // ลำดับความสำคัญของสี
+        if (leaveTypes.approved > 0) return 'approved';  // ดำ
+        if (leaveTypes.rejected > 0) return 'rejected';  // ขาว กรอบดำ
+        
+        // ซ้อนทับ
+        if (leaveTypes.green + leaveTypes.yellow > 1) {
+            if (leaveTypes.yellow > 0) {
+                return 'overlap-no-delegation';  // ส้ม
+            } else {
+                return 'overlap';  // แดง
+            }
+        }
+        
+        // เดี่ยว
+        if (leaveTypes.green === 1) return 'on-leave';  // เขียว
+        if (leaveTypes.yellow === 1) return 'no-delegation';  // เหลือง
+        
+        return null;
     }
 
     function previousMonth() {
@@ -509,27 +596,110 @@
         renderCalendar();
     }
 
-    // โหลดรายการรออนุมัติ (ยังไม่มี API)
+    // โหลดรายการรออนุมัติ
     async function loadPendingApprovals() {
         const container = document.getElementById('approvalItems');
         const countSpan = document.getElementById('pendingCount');
+        const departmentId = document.getElementById('departmentSelect').value;
         
-        // TODO: เรียก API จริง
-        // ตอนนี้แสดงข้อความว่างก่อน
-        container.innerHTML = '<div class="empty-message">ไม่มีรายการรออนุมัติ</div>';
-        countSpan.textContent = '0';
+        try {
+            let url = `${API_URL}/api/leaves/pending`;
+            if (departmentId) {
+                url += `?department_id=${departmentId}`;
+            }
+            
+            const response = await fetch(url);
+            const data = await response.json();
+            
+            if (response.ok && data.success && data.data.length > 0) {
+                countSpan.textContent = data.data.length;
+                
+                let html = '';
+                data.data.forEach(leave => {
+                    const startDate = formatDateThai(leave.start_date);
+                    const endDate = formatDateThai(leave.end_date);
+                    const days = Math.ceil((new Date(leave.end_date) - new Date(leave.start_date)) / (1000 * 60 * 60 * 24)) + 1;
+                    
+                    html += `
+                        <div class="approval-item">
+                            <div class="approval-item-header">
+                                <div class="approval-item-info">
+                                    <h3>${leave.doctor_name} (${leave.department_name})</h3>
+                                    <p>📅 ${startDate} - ${endDate} (${days} วัน)</p>
+                                    <p>💬 เหตุผล: ${leave.no_delegation_reason || '-'}</p>
+                                </div>
+                                <div class="approval-buttons">
+                                    <button class="btn-approve" onclick="approveLeave(${leave.id})">✓ อนุมัติ</button>
+                                    <button class="btn-reject" onclick="rejectLeave(${leave.id})">✗ ไม่อนุมัติ</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                container.innerHTML = html;
+            } else {
+                container.innerHTML = '<div class="empty-message">ไม่มีรายการรออนุมัติ</div>';
+                countSpan.textContent = '0';
+            }
+        } catch (error) {
+            console.error('Load pending approvals error:', error);
+            container.innerHTML = '<div class="empty-message">เกิดข้อผิดพลาดในการโหลดข้อมูล</div>';
+            countSpan.textContent = '0';
+        }
     }
 
-    // อนุมัติ (ยังไม่มี API)
-    function approveLeave(leaveId) {
-        alert(`อนุมัติ ID: ${leaveId}`);
-        // TODO: เรียก API อนุมัติ
+    // Format วันที่เป็นภาษาไทย
+    function formatDateThai(dateStr) {
+        const date = new Date(dateStr);
+        const day = date.getDate();
+        const month = date.getMonth() + 1;
+        const year = date.getFullYear() + 543;
+        return `${day}/${month}/${year}`;
     }
 
-    // ไม่อนุมัติ (ยังไม่มี API)
-    function rejectLeave(leaveId) {
-        alert(`ไม่อนุมัติ ID: ${leaveId}`);
-        // TODO: เรียก API ไม่อนุมัติ
+    // อนุมัติ
+    async function approveLeave(leaveId) {
+        if (!confirm('ยืนยันการอนุมัติ?')) return;
+        
+        try {
+            const response = await fetch(`${API_URL}/api/leaves/${leaveId}/approve`, {
+                method: 'POST'
+            });
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                alert('✓ อนุมัติสำเร็จ');
+                await loadDepartmentData();  // โหลดข้อมูลใหม่
+            } else {
+                alert('เกิดข้อผิดพลาด: ' + data.message);
+            }
+        } catch (error) {
+            console.error('Approve error:', error);
+            alert('เกิดข้อผิดพลาดในการอนุมัติ');
+        }
+    }
+
+    // ไม่อนุมัติ
+    async function rejectLeave(leaveId) {
+        if (!confirm('ยืนยันการไม่อนุมัติ?')) return;
+        
+        try {
+            const response = await fetch(`${API_URL}/api/leaves/${leaveId}/reject`, {
+                method: 'POST'
+            });
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                alert('✓ ไม่อนุมัติสำเร็จ');
+                await loadDepartmentData();  // โหลดข้อมูลใหม่
+            } else {
+                alert('เกิดข้อผิดพลาด: ' + data.message);
+            }
+        } catch (error) {
+            console.error('Reject error:', error);
+            alert('เกิดข้อผิดพลาดในการไม่อนุมัติ');
+        }
     }
 </script>
 ```
