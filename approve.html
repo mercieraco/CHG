@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>อนุมัติการลา</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+```
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 20px;
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    .header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+    .header h1 {
+        color: #333;
+        font-size: 32px;
+        margin-bottom: 10px;
+    }
+
+    .header p {
+        color: #666;
+        font-size: 16px;
+    }
+
+    /* Dropdown แผนก */
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .form-group select {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        font-size: 16px;
+        cursor: pointer;
+    }
+
+    .form-group select:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+
+    /* ปฏิทิน */
+    .calendar-container {
+        margin: 30px 0;
+        background: #f9f9f9;
+        padding: 20px;
+        border-radius: 10px;
+    }
+
+    .calendar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .month-nav button {
+        background: #667eea;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+    }
+
+    .month-nav button:hover {
+        background: #5568d3;
+    }
+
+    .month-nav span {
+        font-size: 20px;
+        font-weight: 600;
+        color: #333;
+        margin: 0 20px;
+    }
+
+    .calendar {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 8px;
+    }
+
+    .calendar-day {
+        aspect-ratio: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        background: white;
+        font-size: 16px;
+        font-weight: 500;
+        color: #333;
+        cursor: default;
+    }
+
+    .calendar-day.empty {
+        background: #fafafa;
+        border-color: #f0f0f0;
+    }
+
+    .calendar-day.weekend {
+        border-color: #ffcdd2;
+    }
+
+    .calendar-day.today {
+        outline: 8px solid #2196f3;
+        outline-offset: -8px;
+        position: relative;
+        z-index: 100;
+        font-weight: 700;
+    }
+
+    /* สีตามประเภทการลา */
+    .calendar-day.on-leave {
+        background: #c8e6c9 !important;
+        border-color: #66bb6a !important;
+        color: #2e7d32;
+        font-weight: 700;
+    }
+
+    .calendar-day.on-leave-no-duty {
+        background: #e3f2e4 !important;
+        border-color: #81c784 !important;
+        color: #2e7d32;
+        font-weight: 700;
+    }
+
+    .calendar-day.no-delegation {
+        background: #fff9c4 !important;
+        border-color: #fdd835 !important;
+        color: #f57f17;
+        font-weight: 700;
+    }
+
+    .calendar-day.no-delegation-no-duty {
+        background: #fffce8 !important;
+        border-color: #ffecb3 !important;
+        color: #f57f17;
+        font-weight: 700;
+    }
+
+    .calendar-day.overlap {
+        background: #ffcdd2 !important;
+        border-color: #e57373 !important;
+        color: #c62828;
+        font-weight: 700;
+    }
+
+    .calendar-day.overlap-no-delegation {
+        background: #ffe0b2 !important;
+        border-color: #ffb74d !important;
+        color: #e65100;
+        font-weight: 700;
+    }
+
+    /* วันที่ผ่านมา */
+    .calendar-day.past-date {
+        background: #e0e0e0 !important;
+        color: #757575;
+    }
+
+    /* สีอนุมัติแล้ว - ดำ */
+    .calendar-day.approved {
+        background: #000000 !important;
+        border-color: #000000 !important;
+        color: #ffffff !important;
+        font-weight: 700;
+    }
+
+    /* สีไม่อนุมัติ - ขาว กรอบดำ */
+    .calendar-day.rejected {
+        background: #ffffff !important;
+        border-color: #000000 !important;
+        color: #000000 !important;
+        font-weight: 700;
+        border-width: 3px;
+    }
+
+    /* รายการรออนุมัติ */
+    .approval-list {
+        margin-top: 30px;
+    }
+
+    .approval-list h2 {
+        color: #333;
+        margin-bottom: 20px;
+        font-size: 24px;
+    }
+
+    .approval-item {
+        background: white;
+        padding: 20px;
+        margin-bottom: 15px;
+        border-radius: 10px;
+        border-left: 5px solid #ff9800;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .approval-item-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+
+    .approval-item-info {
+        flex: 1;
+    }
+
+    .approval-item-info h3 {
+        color: #333;
+        font-size: 18px;
+        margin-bottom: 5px;
+    }
+
+    .approval-item-info p {
+        color: #666;
+        font-size: 14px;
+    }
+
+    .approval-buttons {
+        display: flex;
+        gap: 10px;
+    }
+
+    .btn-approve {
+        background: #4caf50;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .btn-approve:hover {
+        background: #45a049;
+    }
+
+    .btn-reject {
+        background: #f44336;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .btn-reject:hover {
+        background: #da190b;
+    }
+
+    .btn-back {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 600;
+        margin-top: 20px;
+    }
+
+    .btn-back:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .empty-message {
+        text-align: center;
+        color: #999;
+        padding: 40px;
+        font-size: 16px;
+    }
+</style>
+```
+
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>✅ อนุมัติการลา</h1>
+            <p>จัดการคำขออนุมัติการลา</p>
+        </div>
+
+```
+    <!-- เลือกแผนก -->
+    <div class="form-group">
+        <label>เลือกแผนก</label>
+        <select id="departmentSelect" onchange="loadDepartmentData()">
+            <option value="">-- ทุกแผนก --</option>
+        </select>
+    </div>
+
+    <!-- ปฏิทิน -->
+    <div class="calendar-container">
+        <div class="calendar-header">
+            <div class="month-nav">
+                <button onclick="previousMonth()">◀ เดือนก่อน</button>
+                <span id="currentMonth"></span>
+                <button onclick="nextMonth()">เดือนถัดไป ▶</button>
+            </div>
+        </div>
+        <div class="calendar" id="calendar"></div>
+    </div>
+
+    <!-- รายการรออนุมัติ -->
+    <div class="approval-list">
+        <h2>รายการรออนุมัติ (<span id="pendingCount">0</span>)</h2>
+        <div id="approvalItems">
+            <div class="empty-message">ไม่มีรายการรออนุมัติ</div>
+        </div>
+    </div>
+
+    <button onclick="window.location.href='dev.html'" class="btn-back">← กลับหน้าหลัก</button>
+</div>
+
+<script>
+    // ตรวจสอบ login
+    window.onload = function() {
+        const loggedIn = sessionStorage.getItem('loggedIn');
+        const role = sessionStorage.getItem('role');
+
+        if (!loggedIn || role !== 'admin') {
+            window.location.href = 'index.html';
+            return;
+        }
+
+        loadDepartments();
+        renderCalendar();
+        loadPendingApprovals();
+    };
+
+    const API_URL = 'https://dep-rest-worker.9vk92zm5z2.workers.dev';
+    let currentYear = new Date().getFullYear();
+    let currentMonth = new Date().getMonth();
+
+    // โหลดรายการแผนก
+    async function loadDepartments() {
+        try {
+            const response = await fetch(`${API_URL}/api/departments`);
+            const data = await response.json();
+            
+            const select = document.getElementById('departmentSelect');
+            data.data.forEach(dept => {
+                const option = document.createElement('option');
+                option.value = dept.id;
+                option.textContent = dept.name;
+                select.appendChild(option);
+            });
+        } catch (error) {
+            console.error('Load departments error:', error);
+        }
+    }
+
+    // โหลดข้อมูลตามแผนก
+    function loadDepartmentData() {
+        renderCalendar();
+        loadPendingApprovals();
+    }
+
+    // แสดงปฏิทิน (read-only)
+    function renderCalendar() {
+        const calendar = document.getElementById('calendar');
+        const monthDisplay = document.getElementById('currentMonth');
+        
+        const firstDay = new Date(currentYear, currentMonth, 1);
+        const lastDay = new Date(currentYear, currentMonth + 1, 0);
+        const daysInMonth = lastDay.getDate();
+        const startDay = firstDay.getDay();
+        
+        const thaiMonths = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+                           'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+        
+        monthDisplay.textContent = `${thaiMonths[currentMonth]} ${currentYear + 543}`;
+        
+        let html = '';
+        
+        // ช่องว่าง
+        for (let i = 0; i < startDay; i++) {
+            html += '<div class="calendar-day empty"></div>';
+        }
+        
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        // วันในเดือน
+        for (let day = 1; day <= daysInMonth; day++) {
+            const date = new Date(currentYear, currentMonth, day);
+            const dayOfWeek = date.getDay();
+            
+            let classes = ['calendar-day'];
+            
+            if (dayOfWeek === 0 || dayOfWeek === 6) {
+                classes.push('weekend');
+            }
+            
+            if (date.toDateString() === today.toDateString()) {
+                classes.push('today');
+            }
+            
+            if (date < today) {
+                classes.push('past-date');
+            }
+            
+            html += `<div class="${classes.join(' ')}">${day}</div>`;
+        }
+        
+        calendar.innerHTML = html;
+    }
+
+    function previousMonth() {
+        currentMonth--;
+        if (currentMonth < 0) {
+            currentMonth = 11;
+            currentYear--;
+        }
+        renderCalendar();
+    }
+
+    function nextMonth() {
+        currentMonth++;
+        if (currentMonth > 11) {
+            currentMonth = 0;
+            currentYear++;
+        }
+        renderCalendar();
+    }
+
+    // โหลดรายการรออนุมัติ (ยังไม่มี API)
+    async function loadPendingApprovals() {
+        const container = document.getElementById('approvalItems');
+        const countSpan = document.getElementById('pendingCount');
+        
+        // TODO: เรียก API จริง
+        // ตอนนี้แสดงข้อความว่างก่อน
+        container.innerHTML = '<div class="empty-message">ไม่มีรายการรออนุมัติ</div>';
+        countSpan.textContent = '0';
+    }
+
+    // อนุมัติ (ยังไม่มี API)
+    function approveLeave(leaveId) {
+        alert(`อนุมัติ ID: ${leaveId}`);
+        // TODO: เรียก API อนุมัติ
+    }
+
+    // ไม่อนุมัติ (ยังไม่มี API)
+    function rejectLeave(leaveId) {
+        alert(`ไม่อนุมัติ ID: ${leaveId}`);
+        // TODO: เรียก API ไม่อนุมัติ
+    }
+</script>
+```
+
+</body>
+</html>
