@@ -125,9 +125,13 @@
     .calendar-weekday {
         text-align: center;
         font-weight: 700;
-        color: #667eea;
+        color: #000000;  /* สีดำ (จ-ศ) */
         font-size: 14px;
         padding: 10px 0;
+    }
+
+    .calendar-weekday.weekend {
+        color: #ffcdd2;  /* สีแดงอ่อน (ส อา) */
     }
 
     .calendar {
@@ -369,8 +373,8 @@
             <div class="calendar-weekday">พ</div>
             <div class="calendar-weekday">พฤ</div>
             <div class="calendar-weekday">ศ</div>
-            <div class="calendar-weekday">ส</div>
-            <div class="calendar-weekday">อา</div>
+            <div class="calendar-weekday weekend">ส</div>
+            <div class="calendar-weekday weekend">อา</div>
         </div>
         <div class="calendar" id="calendar"></div>
     </div>
