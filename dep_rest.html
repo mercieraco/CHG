@@ -526,8 +526,8 @@
         background: #f5f5f5;
     }
 
+    /* ไม่ใส่ strikethrough ใน CSS */
     .leave-record.no-delegation.rejected .leave-record-info {
-        text-decoration: line-through;  /* Strikethrough */
         color: #666;
     }
 
@@ -836,7 +836,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 17/2/69 20:10</span>
+        <span id="versionInfo">Version 17/2/69 20:32</span>
     </div>
 </div>
 
@@ -1356,8 +1356,9 @@
                     fullText += ` | ไม่ฝากงาน อนุมัติ <span style="color: #4caf50;">✓</span>`;
                 } else if (leave.approval_status === 'rejected') {
                     recordDiv.classList.add('rejected');
-                    shortText = `<span style="text-decoration: line-through;">${startDate} - ${endDate} (${days} วัน) | ${doctorFirstName} (${doctorLastInitial}) | ไม่ฝากงาน</span> <span style="text-decoration: none; color: #333;">ไม่อนุมัติ</span> <span style="color: #f44336;">✗</span>`;
-                    fullText = `<span style="text-decoration: line-through;">${startDate} - ${endDate} (${days} วัน) | ${doctorFullName} | ไม่ฝากงาน</span> <span style="text-decoration: none; color: #333;">ไม่อนุมัติ</span> <span style="color: #f44336;">✗</span>`;
+                    // Strikethrough เฉพาะวันที่และชื่อ, ไม่ strike "ไม่อนุมัติ ✗"
+                    shortText = `<span style="text-decoration: line-through;">${startDate} - ${endDate} (${days} วัน) | ${doctorFirstName} (${doctorLastInitial}) | ไม่ฝากงาน</span> <span style="text-decoration: none;">ไม่อนุมัติ <span style="color: #f44336;">✗</span></span>`;
+                    fullText = `<span style="text-decoration: line-through;">${startDate} - ${endDate} (${days} วัน) | ${doctorFullName} | ไม่ฝากงาน</span> <span style="text-decoration: none;">ไม่อนุมัติ <span style="color: #f44336;">✗</span></span>`;
                 } else {
                     // pending
                     shortText += ` | ไม่ฝากงาน ⏳ รออนุมัติ`;
