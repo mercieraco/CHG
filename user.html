@@ -709,7 +709,7 @@
     <div class="container">
         <div class="header">
             <h1>📅 จัดการการลา</h1>
-            <a href="dep_doc.html" class="btn-back">← กลับ</a>
+            <button onclick="logout()" class="btn-back">🚪 ออกจากระบบ</button>
         </div>
 
 ```
@@ -841,7 +841,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 18/2/69 14:59 (User)</span>
+        <span id="versionInfo">Version 18/2/69 16:25 (User)</span>
     </div>
 </div>
 
@@ -2494,6 +2494,17 @@
                     }
                 });
             });
+        }
+    }
+
+    // ฟังก์ชัน Logout
+    function logout() {
+        if (confirm('ต้องการออกจากระบบหรือไม่?')) {
+            // ลบข้อมูล session ทั้งหมด
+            sessionStorage.clear();
+            
+            // กลับไปหน้า login
+            window.location.href = 'index.html';
         }
     }
 </script>
