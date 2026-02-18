@@ -30,7 +30,9 @@
     }
 
     .header {
-        text-align: center;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
         margin-bottom: 30px;
     }
 
@@ -43,6 +45,23 @@
     .header p {
         color: #666;
         font-size: 16px;
+    }
+
+    .btn-back {
+        padding: 10px 20px;
+        background: #ff6b6b;
+        color: white;
+        text-decoration: none;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s;
+        white-space: nowrap;
+    }
+
+    .btn-back:hover {
+        background: #ee5a52;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
     }
 
     /* Dropdown แผนก */
@@ -361,8 +380,11 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>✅ อนุมัติการลา</h1>
-            <p>จัดการคำขออนุมัติการลา</p>
+            <div>
+                <h1>✅ อนุมัติการลา</h1>
+                <p>จัดการคำขออนุมัติการลา</p>
+            </div>
+            <a href="dev.html" class="btn-back">← กลับ</a>
         </div>
 
 ```
