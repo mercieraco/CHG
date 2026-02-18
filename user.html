@@ -841,7 +841,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 18/2/69 07:11 (User)</span>
+        <span id="versionInfo">Version 18/2/69 08:03 (User)</span>
     </div>
 </div>
 
@@ -865,11 +865,10 @@
     // โหลดเมื่อเปิดหน้า
     window.onload = async function() {
         const loggedIn = sessionStorage.getItem('loggedIn');
-        const role = sessionStorage.getItem('role');
-        const doctorId = sessionStorage.getItem('doctor_id');  // ← เพิ่ม
+        const doctorId = sessionStorage.getItem('doctor_id');  
 
-        // User ต้อง login และมี doctor_id
-        if (!loggedIn || role !== 'user' || !doctorId) {
+        // ต้อง login และมี doctor_id เท่านั้น (ไม่เช็ค role)
+        if (!loggedIn || !doctorId) {
             window.location.href = 'index.html';
             return;
         }
