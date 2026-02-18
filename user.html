@@ -867,11 +867,21 @@
         const loggedIn = sessionStorage.getItem('loggedIn');
         const doctorId = sessionStorage.getItem('doctor_id');  
 
+        // Debug
+        console.log('=== User.html Debug ===');
+        console.log('loggedIn:', loggedIn);
+        console.log('doctor_id:', doctorId);
+        console.log('Check result:', !loggedIn || !doctorId);
+
         // ต้อง login และมี doctor_id เท่านั้น (ไม่เช็ค role)
         if (!loggedIn || !doctorId) {
+            console.log('❌ Redirect to index.html');
+            alert('ไม่พบข้อมูล doctor_id\nกรุณา login ใหม่');
             window.location.href = 'index.html';
             return;
         }
+
+        console.log('✅ Pass - Loading doctor data...');
 
         // โหลดข้อมูลแพทย์และ auto-select
         await loadDoctorData(doctorId);
@@ -882,9 +892,13 @@
     // โหลดข้อมูลแพทย์และ auto-select
     async function loadDoctorData(doctorId) {
         try {
+            console.log('🔍 Loading doctor data for ID:', doctorId);
+            
             // 1. โหลดแผนกทั้งหมด
+            console.log('📍 Fetching departments...');
             const deptResponse = await fetch(`${API_URL}/api/departments`);
             const deptData = await deptResponse.json();
+            console.log('📍 Departments response:', deptData);
             
             if (deptResponse.ok && deptData.success) {
                 const departments = deptData.data;
@@ -895,37 +909,60 @@
                     departmentSelect.innerHTML += `<option value="${dept.id}">${dept.name}</option>`;
                     filterDepartment.innerHTML += `<option value="${dept.id}">${dept.name}</option>`;
                 });
+                console.log('✅ Departments loaded');
             }
 
-            // 2. โหลดข้อมูลแพทย์
-            const docResponse = await fetch(`${API_URL}/api/doctors/${doctorId}`);
-            const docData = await docResponse.json();
+            // 2. โหลดข้อมูลแพทย์ - ใช้รายการทั้งหมดแทน
+            console.log('👨‍⚕️ Fetching all doctors...');
+            const allDocsResponse = await fetch(`${API_URL}/api/doctors`);
+            const allDocsData = await allDocsResponse.json();
+            console.log('👨‍⚕️ All doctors response:', allDocsData);
             
-            if (docResponse.ok && docData.success) {
-                const doctor = docData.data;
+            if (allDocsResponse.ok && allDocsData.success) {
+                // หาแพทย์จาก ID
+                const doctor = allDocsData.data.find(d => d.id == doctorId);
+                console.log('🔍 Looking for doctor ID:', doctorId);
+                console.log('🔍 Found doctor:', doctor);
+                
+                if (!doctor) {
+                    console.error('❌ Doctor not found!');
+                    alert('ไม่พบข้อมูลแพทย์ ID: ' + doctorId + '\n\nกรุณาดู Console (F12) เพื่อดูรายละเอียด');
+                    // ชั่วคราว: ไม่เด้งออก
+                    // window.location.href = 'index.html';
+                    return;
+                }
+                
+                console.log('✅ Found doctor:', doctor);
                 
                 // 3. Auto-select
+                console.log('⚙️ Auto-selecting department:', doctor.department_id);
                 document.getElementById('departmentSelect').value = doctor.department_id;
                 document.getElementById('workTypeSelect').value = doctor.work_type || 'full';
                 
                 // 4. โหลดแพทย์ในแผนก
+                console.log('📋 Loading doctors in department...');
                 await loadDoctors();
                 
                 // 5. เลือกตัวเอง
+                console.log('✅ Selecting self:', doctor.id);
                 document.getElementById('doctorSelect').value = doctor.id;
                 
                 // 6. แสดงชื่อ
                 document.getElementById('doctorNameDisplay').textContent = `👨‍⚕️ ${doctor.name}`;
+                console.log('✅ Display name set');
                 
                 // 7. โหลด duties
+                console.log('📅 Loading duties...');
                 await onDoctorChange();
+                console.log('✅ All done!');
             } else {
-                alert('ไม่พบข้อมูลแพทย์');
-                window.location.href = 'index.html';
+                console.error('❌ Failed to load doctors:', allDocsData);
+                alert('ไม่สามารถโหลดรายการแพทย์ได้\n\nกรุณาดู Console (F12)');
+                // window.location.href = 'index.html';
             }
         } catch (error) {
-            console.error('Load doctor data error:', error);
-            alert('เกิดข้อผิดพลาดในการโหลดข้อมูล');
+            console.error('💥 Load doctor data error:', error);
+            alert('เกิดข้อผิดพลาดในการโหลดข้อมูล: ' + error.message + '\n\nกรุณาดู Console (F12)');
         }
     }
 
