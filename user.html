@@ -949,7 +949,7 @@
                 document.getElementById('doctorSelect').value = doctor.id;
                 
                 // 7. แสดงชื่อ
-                document.getElementById('doctorNameDisplay').textContent = `👨‍⚕️ ${doctor.name}`;
+                document.getElementById('doctorNameDisplay').textContent = doctor.name;
                 
                 // 8. แสดง UI ตามจำนวนแผนก (NEW!)
                 if (doctorDepartments.length > 1) {
