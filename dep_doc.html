@@ -1677,7 +1677,7 @@
                 departments.sort((a, b) => a.name.localeCompare(b.name, ['en', 'th']));
                 
                 const select = document.getElementById('filterDepartment');
-                select.innerHTML = '<option value="">ทั้งหมด</option>';
+                select.innerHTML = '<option value="">-- เลือกแผนก --</option>';
                 
                 departments.forEach(dept => {
                     const option = document.createElement('option');
