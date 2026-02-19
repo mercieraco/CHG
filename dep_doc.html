@@ -1808,10 +1808,12 @@
         for (const doctor of filteredDoctors) {
             const safeName = doctor.name.replace(/'/g, "\\'");
             
-            // โหลด Duties ของแพทย์
+            // โหลด Duties ของแพทย์ (แผนกหลักเท่านั้น)
             const dutiesResponse = await fetch(`${API_URL}/api/doctor-duties/doctor/${doctor.id}`);
             const dutiesData = await dutiesResponse.json();
-            const duties = dutiesData.success ? dutiesData.data : [];
+            const duties = dutiesData.success 
+                ? dutiesData.data.filter(d => d.department_id === doctor.department_id)  // ← Filter!
+                : [];
             
             html += `
                 <div class="doctor-item">
