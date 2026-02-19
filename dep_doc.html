@@ -877,6 +877,34 @@
     </div>
 </div>
 
+<!-- Modal เพิ่มแผนกเสริม -->
+<div id="addDepartmentModal" class="modal">
+    <div class="modal-content">
+        <h3>➕ เพิ่มแผนกเสริม</h3>
+        <p>แพทย์: <strong id="addDepartmentDoctorName"></strong></p>
+        
+        <div style="margin: 20px 0;">
+            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">
+                เลือกแผนกเสริม:
+            </label>
+            <select id="addDepartmentSelect" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;">
+                <option value="">-- เลือกแผนก --</option>
+            </select>
+        </div>
+
+        <div style="padding: 12px; background: #e3f2fd; border-radius: 6px; border-left: 4px solid #2196f3; margin: 15px 0;">
+            <p style="color: #1565c0; font-size: 13px; margin: 0;">
+                ℹ️ <strong>หมายเหตุ:</strong> แผนกเสริมจะถูกเพิ่มเป็นแผนกรอง แพทย์สามารถลางานในแผนกนี้ได้
+            </p>
+        </div>
+
+        <div class="modal-actions">
+            <button onclick="closeAddDepartmentModal()" class="btn btn-secondary">ยกเลิก</button>
+            <button onclick="confirmAddDepartment()" class="btn btn-primary" style="background: #48dbfb;">เพิ่มแผนก</button>
+        </div>
+    </div>
+</div>
+
 <!-- Modal เพิ่ม Duty ให้แพทย์ -->
 <div id="doctorDutyModal" class="modal">
     <div class="modal-content">
@@ -1829,6 +1857,89 @@
         } catch (error) {
             alert('❌ ' + error.message);
             closeDeleteDoctorModal();
+        }
+    }
+
+    // ========================================
+    // Modal เพิ่มแผนกเสริม
+    // ========================================
+    let addDepartmentDoctorId = null;
+
+    async function showAddDepartmentModal(doctorId, doctorName) {
+        addDepartmentDoctorId = doctorId;
+        document.getElementById('addDepartmentDoctorName').textContent = doctorName;
+        
+        // โหลดแผนกทั้งหมด
+        try {
+            const response = await fetch(`${API_URL}/api/departments`);
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                const select = document.getElementById('addDepartmentSelect');
+                select.innerHTML = '<option value="">-- เลือกแผนก --</option>';
+                
+                // โหลดแผนกที่แพทย์มีอยู่แล้ว
+                const doctorDeptsResponse = await fetch(`${API_URL}/api/doctors/${doctorId}/departments`);
+                const doctorDeptsData = await doctorDeptsResponse.json();
+                const existingDeptIds = doctorDeptsData.success 
+                    ? doctorDeptsData.data.map(d => d.department_id) 
+                    : [];
+                
+                // แสดงเฉพาะแผนกที่ยังไม่มี
+                data.data.forEach(dept => {
+                    if (!existingDeptIds.includes(dept.id)) {
+                        select.innerHTML += `<option value="${dept.id}">${dept.name}</option>`;
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Load departments error:', error);
+        }
+        
+        document.getElementById('addDepartmentModal').classList.add('show');
+    }
+
+    function closeAddDepartmentModal() {
+        document.getElementById('addDepartmentModal').classList.remove('show');
+        addDepartmentDoctorId = null;
+    }
+
+    async function confirmAddDepartment() {
+        if (!addDepartmentDoctorId) return;
+        
+        const departmentId = document.getElementById('addDepartmentSelect').value;
+        
+        if (!departmentId) {
+            alert('กรุณาเลือกแผนก');
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_URL}/api/doctor-departments`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    doctorId: addDepartmentDoctorId,
+                    departmentId: parseInt(departmentId),
+                    isPrimary: false
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                const doctorListMessage = document.getElementById('doctorListMessage');
+                doctorListMessage.className = 'message success show';
+                doctorListMessage.textContent = '✅ เพิ่มแผนกเสริมสำเร็จ';
+                setTimeout(() => doctorListMessage.classList.remove('show'), 3000);
+                closeAddDepartmentModal();
+                loadDoctors();
+            } else {
+                throw new Error(data.message || 'ไม่สามารถเพิ่มแผนกได้');
+            }
+        } catch (error) {
+            alert('❌ ' + error.message);
+            closeAddDepartmentModal();
         }
     }
 
