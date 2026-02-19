@@ -780,7 +780,7 @@
                 <div class="filter-group" style="flex: 1; min-width: 200px;">
                     <label for="filterDepartment">แผนก:</label>
                     <select id="filterDepartment" onchange="filterDoctors()">
-                        <option value="">ทั้งหมด</option>
+                        <option value="">-- เลือกแผนก --</option>
                     </select>
                 </div>
                 
@@ -1777,6 +1777,17 @@
         const filterGender = document.getElementById('filterGender').value;
         const doctorsList = document.getElementById('doctorsList');
         
+        // ต้องเลือกแผนกก่อน!
+        if (!filterDept) {
+            doctorsList.innerHTML = `
+                <div class="empty-state">
+                    <div class="icon">📋</div>
+                    <p style="color: #666;">กรุณาเลือกแผนกเพื่อดูรายการแพทย์</p>
+                </div>
+            `;
+            return;
+        }
+        
         let filteredDoctors = allDoctors;
         
         // Filter แผนก
@@ -1798,7 +1809,7 @@
             doctorsList.innerHTML = `
                 <div class="empty-state">
                     <div class="icon">👤</div>
-                    <p>ไม่พบแพทย์ที่ตรงกับเงื่อนไข</p>
+                    <p>ไม่พบแพทย์ในแผนกนี้</p>
                 </div>
             `;
             return;
