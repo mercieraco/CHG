@@ -1819,36 +1819,86 @@
         for (const doctor of filteredDoctors) {
             const safeName = doctor.name.replace(/'/g, "\\'");
             
-            // โหลด Duties ของแพทย์ (แผนกหลักเท่านั้น)
-            const dutiesResponse = await fetch(`${API_URL}/api/doctor-duties/doctor/${doctor.id}`);
-            const dutiesData = await dutiesResponse.json();
-            const duties = dutiesData.success 
-                ? dutiesData.data.filter(d => d.department_id === doctor.department_id)  // ← Filter!
-                : [];
-            
+            // ไม่โหลด Duties ตอนเริ่มต้น (เพื่อความเร็ว)
             html += `
-                <div class="doctor-item">
-                    <div class="doctor-header">
-                        <div class="doctor-info">
+                <div class="doctor-item" id="doctor-${doctor.id}">
+                    <div class="doctor-header" onclick="toggleDoctorDetails(${doctor.id}, '${safeName}', ${doctor.department_id}, '${doctor.work_type || 'full'}')" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span class="toggle-icon" id="toggle-${doctor.id}">▶</span>
                             <div class="doctor-name">${doctor.name}</div>
-                            <div class="doctor-details">
+                        </div>
+                    </div>
+                    
+                    <!-- รายละเอียด (ซ่อนไว้) -->
+                    <div class="doctor-details-container" id="details-${doctor.id}" style="display: none;">
+                        <div style="padding: 15px; padding-top: 10px;">
+                            <div class="doctor-info-text" style="color: #666; font-size: 14px; margin-bottom: 12px;">
                                 แผนก: ${doctor.department_name || 'ไม่ระบุ'} | 
                                 เลข ว: ${doctor.license_number} | 
                                 ${doctor.work_type === 'part' ? '⏰ Part time' : '🕐 Full time'}
                             </div>
-                        </div>
-                        <div class="doctor-actions">
-                            <button onclick="showAddDepartmentModal(${doctor.id}, '${safeName}')" class="btn-add-department">+แผนก</button>
-                            <button onclick="showDeleteDoctorModal(${doctor.id}, '${safeName}')" class="btn-delete-doctor">ลบ</button>
-                            <button onclick="showEditDoctorModal(${doctor.id}, '${safeName}', ${doctor.department_id}, '${doctor.work_type || 'full'}')" class="btn-edit-doctor">แก้ไข</button>
-                            <button onclick="showDoctorDutyModal(${doctor.id}, ${doctor.department_id}, '${safeName}')" class="btn-duty-doctor">Duty</button>
+                            <div class="doctor-actions" style="display: flex; gap: 8px; margin-bottom: 15px;">
+                                <button onclick="event.stopPropagation(); showAddDepartmentModal(${doctor.id}, '${safeName}')" class="btn-add-department">+แผนก</button>
+                                <button onclick="event.stopPropagation(); showDeleteDoctorModal(${doctor.id}, '${safeName}')" class="btn-delete-doctor">ลบ</button>
+                                <button onclick="event.stopPropagation(); showEditDoctorModal(${doctor.id}, '${safeName}', ${doctor.department_id}, '${doctor.work_type || 'full'}')" class="btn-edit-doctor">แก้ไข</button>
+                                <button onclick="event.stopPropagation(); showDoctorDutyModal(${doctor.id}, ${doctor.department_id}, '${safeName}')" class="btn-duty-doctor">Duty</button>
+                            </div>
+                            
+                            <!-- Duties จะโหลดตอนคลิก -->
+                            <div id="duties-${doctor.id}"></div>
                         </div>
                     </div>
             `;
+            html += '</div>';  // ปิด doctor-item
+        }
+        
+        doctorsList.innerHTML = html;
+    }
+
+    // ========================================
+    // Toggle Doctor Details (Collapsible)
+    // ========================================
+    let loadedDoctors = new Set();  // เก็บว่าแพทย์คนไหนโหลดแล้ว
+
+    async function toggleDoctorDetails(doctorId, doctorName, departmentId, workType) {
+        const detailsContainer = document.getElementById(`details-${doctorId}`);
+        const toggleIcon = document.getElementById(`toggle-${doctorId}`);
+        
+        // Toggle แสดง/ซ่อน
+        if (detailsContainer.style.display === 'none') {
+            // เปิด
+            detailsContainer.style.display = 'block';
+            toggleIcon.textContent = '▼';
             
-            // แสดง Duties ของแพทย์
+            // โหลด Duties (ถ้ายังไม่เคยโหลด)
+            if (!loadedDoctors.has(doctorId)) {
+                await loadDoctorDuties(doctorId, departmentId);
+                loadedDoctors.add(doctorId);
+            }
+        } else {
+            // ปิด
+            detailsContainer.style.display = 'none';
+            toggleIcon.textContent = '▶';
+        }
+    }
+
+    async function loadDoctorDuties(doctorId, primaryDepartmentId) {
+        const dutiesContainer = document.getElementById(`duties-${doctorId}`);
+        dutiesContainer.innerHTML = '<div style="text-align: center; padding: 10px; color: #999;">กำลังโหลด Duties...</div>';
+        
+        try {
+            // โหลด Duties
+            const dutiesResponse = await fetch(`${API_URL}/api/doctor-duties/doctor/${doctorId}`);
+            const dutiesData = await dutiesResponse.json();
+            const allDuties = dutiesData.success ? dutiesData.data : [];
+            
+            // Filter ตามแผนกหลัก
+            const duties = allDuties.filter(d => d.department_id === primaryDepartmentId);
+            
+            let html = '';
+            
+            // แสดง Duties ของแผนกหลัก
             if (duties.length > 0) {
-                // เรียง Duty: A-Z ก่อน, ก-ฮ หลัง
                 duties.sort((a, b) => {
                     const aIsEng = /^[a-zA-Z]/.test(a.duty_name);
                     const bIsEng = /^[a-zA-Z]/.test(b.duty_name);
@@ -1872,97 +1922,79 @@
                         <div class="doctor-duty-item">
                             <span class="doctor-duty-name">${duty.duty_name}</span>
                             <span class="doctor-duty-days">${days.join(', ')}</span>
-                            <button onclick="showDeleteDoctorDutyModal(${duty.id}, '${duty.duty_name.replace(/'/g, "\\'")}')" class="btn-delete-doctor-duty">ลบ</button>
+                            <button onclick="event.stopPropagation(); showDeleteDoctorDutyModal(${duty.id}, '${duty.duty_name.replace(/'/g, "\\'")}')" class="btn-delete-doctor-duty">ลบ</button>
                         </div>
                     `;
                 });
                 html += '</div>';
             }
             
-            // ========================================
-            // แสดงแผนกเสริม (ถ้ามี)
-            // ========================================
-            try {
-                const deptResponse = await fetch(`${API_URL}/api/doctors/${doctor.id}/departments`);
-                const deptData = await deptResponse.json();
+            // โหลดแผนกเสริม
+            const deptResponse = await fetch(`${API_URL}/api/doctors/${doctorId}/departments`);
+            const deptData = await deptResponse.json();
+            
+            if (deptResponse.ok && deptData.success) {
+                const secondaryDepts = deptData.data.filter(d => !d.is_primary);
+                const doctor = allDoctors.find(d => d.id === doctorId);
+                const safeName = doctor.name.replace(/'/g, "\\'");
                 
-                if (deptResponse.ok && deptData.success) {
-                    const secondaryDepts = deptData.data.filter(d => !d.is_primary);
+                for (const dept of secondaryDepts) {
+                    const secDuties = allDuties.filter(d => d.department_id === dept.department_id);
                     
-                    for (const dept of secondaryDepts) {
-                        console.log(`📍 Loading duties for secondary dept: ${dept.department_name} (ID: ${dept.department_id})`);
-                        
-                        // โหลด Duties ของแผนกเสริม
-                        const secDutiesResponse = await fetch(`${API_URL}/api/doctor-duties/doctor/${doctor.id}`);
-                        const secDutiesData = await secDutiesResponse.json();
-                        
-                        console.log('All duties:', secDutiesData.data);
-                        
-                        const secDuties = secDutiesData.success 
-                            ? secDutiesData.data.filter(d => {
-                                console.log(`Checking duty: ${d.duty_name}, dept_id: ${d.department_id} === ${dept.department_id}?`, d.department_id === dept.department_id);
-                                return d.department_id === dept.department_id;
-                            }) 
-                            : [];
-                        
-                        console.log('Filtered duties for', dept.department_name, ':', secDuties);
-                        
-                        html += `
-                            <div style="margin-top: 15px; padding-top: 15px; border-top: 2px solid #e0e0e0;">
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                    <div style="font-weight: 600; color: #667eea; font-size: 15px;">
-                                        แผนก: ${dept.department_name}
-                                    </div>
-                                    <div style="display: flex; gap: 8px;">
-                                        <button onclick="showDeleteDepartmentModal(${dept.id}, '${dept.department_name}', '${safeName}')" class="btn-delete-doctor-duty" style="background: #ff4757;">ลบแผนก</button>
-                                        <button onclick="showDoctorDutyModal(${doctor.id}, ${dept.department_id}, '${safeName}')" class="btn-delete-doctor-duty" style="background: #5352ed;">Duty</button>
-                                    </div>
+                    html += `
+                        <div style="margin-top: 15px; padding-top: 15px; border-top: 2px solid #e0e0e0;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <div style="font-weight: 600; color: #667eea; font-size: 15px;">
+                                    แผนก: ${dept.department_name}
                                 </div>
-                        `;
+                                <div style="display: flex; gap: 8px;">
+                                    <button onclick="event.stopPropagation(); showDeleteDepartmentModal(${dept.id}, '${dept.department_name}', '${safeName}')" class="btn-delete-doctor-duty" style="background: #ff4757;">ลบแผนก</button>
+                                    <button onclick="event.stopPropagation(); showDoctorDutyModal(${doctorId}, ${dept.department_id}, '${safeName}')" class="btn-delete-doctor-duty" style="background: #5352ed;">Duty</button>
+                                </div>
+                            </div>
+                    `;
+                    
+                    if (secDuties.length > 0) {
+                        secDuties.sort((a, b) => {
+                            const aIsEng = /^[a-zA-Z]/.test(a.duty_name);
+                            const bIsEng = /^[a-zA-Z]/.test(b.duty_name);
+                            if (aIsEng && !bIsEng) return -1;
+                            if (!aIsEng && bIsEng) return 1;
+                            return a.duty_name.localeCompare(b.duty_name, ['en', 'th']);
+                        });
                         
-                        // แสดง Duties ของแผนกเสริม
-                        if (secDuties.length > 0) {
-                            secDuties.sort((a, b) => {
-                                const aIsEng = /^[a-zA-Z]/.test(a.duty_name);
-                                const bIsEng = /^[a-zA-Z]/.test(b.duty_name);
-                                if (aIsEng && !bIsEng) return -1;
-                                if (!aIsEng && bIsEng) return 1;
-                                return a.duty_name.localeCompare(b.duty_name, ['en', 'th']);
-                            });
+                        html += '<div class="doctor-duties-list">';
+                        secDuties.forEach(duty => {
+                            const days = [];
+                            if (duty.monday) days.push('จ');
+                            if (duty.tuesday) days.push('อ');
+                            if (duty.wednesday) days.push('พ');
+                            if (duty.thursday) days.push('พฤ');
+                            if (duty.friday) days.push('ศ');
+                            if (duty.saturday) days.push('ส');
+                            if (duty.sunday) days.push('อา');
                             
-                            html += '<div class="doctor-duties-list">';
-                            secDuties.forEach(duty => {
-                                const days = [];
-                                if (duty.monday) days.push('จ');
-                                if (duty.tuesday) days.push('อ');
-                                if (duty.wednesday) days.push('พ');
-                                if (duty.thursday) days.push('พฤ');
-                                if (duty.friday) days.push('ศ');
-                                if (duty.saturday) days.push('ส');
-                                if (duty.sunday) days.push('อา');
-                                
-                                html += `
-                                    <div class="doctor-duty-item">
-                                        <span class="doctor-duty-name">${duty.duty_name}</span>
-                                        <span class="doctor-duty-days">${days.join(', ')}</span>
-                                        <button onclick="showDeleteDoctorDutyModal(${duty.id}, '${duty.duty_name.replace(/'/g, "\\'")}')" class="btn-delete-doctor-duty">ลบ</button>
-                                    </div>
-                                `;
-                            });
-                            html += '</div>';
-                        }
-                        
+                            html += `
+                                <div class="doctor-duty-item">
+                                    <span class="doctor-duty-name">${duty.duty_name}</span>
+                                    <span class="doctor-duty-days">${days.join(', ')}</span>
+                                    <button onclick="event.stopPropagation(); showDeleteDoctorDutyModal(${duty.id}, '${duty.duty_name.replace(/'/g, "\\'")}')" class="btn-delete-doctor-duty">ลบ</button>
+                                </div>
+                            `;
+                        });
                         html += '</div>';
                     }
+                    
+                    html += '</div>';
                 }
-            } catch (error) {
-                console.error('Load secondary departments error:', error);
             }
             
-            html += '</div>';
+            dutiesContainer.innerHTML = html || '<div style="color: #999; font-size: 13px;">ไม่มี Duty</div>';
+            
+        } catch (error) {
+            console.error('Load duties error:', error);
+            dutiesContainer.innerHTML = '<div style="color: #ff4757;">โหลด Duties ไม่สำเร็จ</div>';
         }
-        
-        doctorsList.innerHTML = html;
     }
 
     // Modal ลบแพทย์
