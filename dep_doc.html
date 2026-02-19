@@ -1877,12 +1877,22 @@
                     const secondaryDepts = deptData.data.filter(d => !d.is_primary);
                     
                     for (const dept of secondaryDepts) {
+                        console.log(`📍 Loading duties for secondary dept: ${dept.department_name} (ID: ${dept.department_id})`);
+                        
                         // โหลด Duties ของแผนกเสริม
                         const secDutiesResponse = await fetch(`${API_URL}/api/doctor-duties/doctor/${doctor.id}`);
                         const secDutiesData = await secDutiesResponse.json();
+                        
+                        console.log('All duties:', secDutiesData.data);
+                        
                         const secDuties = secDutiesData.success 
-                            ? secDutiesData.data.filter(d => d.department_id === dept.department_id) 
+                            ? secDutiesData.data.filter(d => {
+                                console.log(`Checking duty: ${d.duty_name}, dept_id: ${d.department_id} === ${dept.department_id}?`, d.department_id === dept.department_id);
+                                return d.department_id === dept.department_id;
+                            }) 
                             : [];
+                        
+                        console.log('Filtered duties for', dept.department_name, ':', secDuties);
                         
                         html += `
                             <div style="margin-top: 15px; padding-top: 15px; border-top: 2px solid #e0e0e0;">
@@ -2081,11 +2091,17 @@
         if (!deleteDeptId) return;
 
         try {
+            console.log('🗑️ Deleting department:', deleteDeptId);
+            console.log('API URL:', `${API_URL}/api/doctor-departments/${deleteDeptId}`);
+            
             const response = await fetch(`${API_URL}/api/doctor-departments/${deleteDeptId}`, {
                 method: 'DELETE'
             });
             
+            console.log('Response status:', response.status);
+            
             const data = await response.json();
+            console.log('Response data:', data);
             
             if (response.ok && data.success) {
                 const doctorListMessage = document.getElementById('doctorListMessage');
@@ -2098,6 +2114,7 @@
                 throw new Error(data.message || 'ไม่สามารถลบแผนกได้');
             }
         } catch (error) {
+            console.error('Delete department error:', error);
             alert('❌ ' + error.message);
             closeDeleteDepartmentModal();
         }
