@@ -924,6 +924,20 @@
     </div>
 </div>
 
+<!-- Modal ลบแผนกเสริม -->
+<div id="deleteDepartmentModal" class="modal">
+    <div class="modal-content">
+        <h3>⚠️ ยืนยันการลบแผนกเสริม</h3>
+        <p>แพทย์: <strong id="deleteDeptDoctorName"></strong></p>
+        <p>แผนก: <strong id="deleteDeptName"></strong></p>
+        <p style="color: #ff4757; font-size: 13px;">การลบแผนกจะไม่สามารถย้อนกลับได้</p>
+        <div class="modal-actions">
+            <button onclick="closeDeleteDepartmentModal()" class="btn btn-secondary">ยกเลิก</button>
+            <button onclick="confirmDeleteDepartment()" class="btn btn-primary" style="background: #ff4757;">ลบแผนก</button>
+        </div>
+    </div>
+</div>
+
 <!-- Modal เพิ่ม Duty ให้แพทย์ -->
 <div id="doctorDutyModal" class="modal">
     <div class="modal-content">
@@ -1852,6 +1866,76 @@
                 html += '</div>';
             }
             
+            // ========================================
+            // แสดงแผนกเสริม (ถ้ามี)
+            // ========================================
+            try {
+                const deptResponse = await fetch(`${API_URL}/api/doctors/${doctor.id}/departments`);
+                const deptData = await deptResponse.json();
+                
+                if (deptResponse.ok && deptData.success) {
+                    const secondaryDepts = deptData.data.filter(d => !d.is_primary);
+                    
+                    for (const dept of secondaryDepts) {
+                        // โหลด Duties ของแผนกเสริม
+                        const secDutiesResponse = await fetch(`${API_URL}/api/doctor-duties/doctor/${doctor.id}`);
+                        const secDutiesData = await secDutiesResponse.json();
+                        const secDuties = secDutiesData.success 
+                            ? secDutiesData.data.filter(d => d.department_id === dept.department_id) 
+                            : [];
+                        
+                        html += `
+                            <div style="margin-top: 15px; padding-top: 15px; border-top: 2px solid #e0e0e0;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                    <div style="font-weight: 600; color: #667eea; font-size: 15px;">
+                                        แผนก: ${dept.department_name}
+                                    </div>
+                                    <div style="display: flex; gap: 8px;">
+                                        <button onclick="showDeleteDepartmentModal(${dept.id}, '${dept.department_name}', '${safeName}')" class="btn-delete-doctor-duty" style="background: #ff4757;">ลบแผนก</button>
+                                        <button onclick="showDoctorDutyModal(${doctor.id}, ${dept.department_id}, '${safeName}')" class="btn-delete-doctor-duty" style="background: #5352ed;">Duty</button>
+                                    </div>
+                                </div>
+                        `;
+                        
+                        // แสดง Duties ของแผนกเสริม
+                        if (secDuties.length > 0) {
+                            secDuties.sort((a, b) => {
+                                const aIsEng = /^[a-zA-Z]/.test(a.duty_name);
+                                const bIsEng = /^[a-zA-Z]/.test(b.duty_name);
+                                if (aIsEng && !bIsEng) return -1;
+                                if (!aIsEng && bIsEng) return 1;
+                                return a.duty_name.localeCompare(b.duty_name, ['en', 'th']);
+                            });
+                            
+                            html += '<div class="doctor-duties-list">';
+                            secDuties.forEach(duty => {
+                                const days = [];
+                                if (duty.monday) days.push('จ');
+                                if (duty.tuesday) days.push('อ');
+                                if (duty.wednesday) days.push('พ');
+                                if (duty.thursday) days.push('พฤ');
+                                if (duty.friday) days.push('ศ');
+                                if (duty.saturday) days.push('ส');
+                                if (duty.sunday) days.push('อา');
+                                
+                                html += `
+                                    <div class="doctor-duty-item">
+                                        <span class="doctor-duty-name">${duty.duty_name}</span>
+                                        <span class="doctor-duty-days">${days.join(', ')}</span>
+                                        <button onclick="showDeleteDoctorDutyModal(${duty.id}, '${duty.duty_name.replace(/'/g, "\\'")}')" class="btn-delete-doctor-duty">ลบ</button>
+                                    </div>
+                                `;
+                            });
+                            html += '</div>';
+                        }
+                        
+                        html += '</div>';
+                    }
+                }
+            } catch (error) {
+                console.error('Load secondary departments error:', error);
+            }
+            
             html += '</div>';
         }
         
@@ -1973,6 +2057,49 @@
         } catch (error) {
             alert('❌ ' + error.message);
             closeAddDepartmentModal();
+        }
+    }
+
+    // ========================================
+    // Modal ลบแผนกเสริม
+    // ========================================
+    let deleteDeptId = null;
+
+    function showDeleteDepartmentModal(deptId, deptName, doctorName) {
+        deleteDeptId = deptId;
+        document.getElementById('deleteDeptDoctorName').textContent = doctorName;
+        document.getElementById('deleteDeptName').textContent = deptName;
+        document.getElementById('deleteDepartmentModal').classList.add('show');
+    }
+
+    function closeDeleteDepartmentModal() {
+        document.getElementById('deleteDepartmentModal').classList.remove('show');
+        deleteDeptId = null;
+    }
+
+    async function confirmDeleteDepartment() {
+        if (!deleteDeptId) return;
+
+        try {
+            const response = await fetch(`${API_URL}/api/doctor-departments/${deleteDeptId}`, {
+                method: 'DELETE'
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                const doctorListMessage = document.getElementById('doctorListMessage');
+                doctorListMessage.className = 'message success show';
+                doctorListMessage.textContent = '✅ ลบแผนกเสริมสำเร็จ';
+                setTimeout(() => doctorListMessage.classList.remove('show'), 3000);
+                closeDeleteDepartmentModal();
+                loadDoctors();
+            } else {
+                throw new Error(data.message || 'ไม่สามารถลบแผนกได้');
+            }
+        } catch (error) {
+            alert('❌ ' + error.message);
+            closeDeleteDepartmentModal();
         }
     }
 
