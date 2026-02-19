@@ -653,19 +653,56 @@
             if (response.ok && data.success && data.data.length > 0) {
                 countSpan.textContent = data.data.length;
                 
-                let html = '';
+                // จัดกลุ่มตาม group_id
+                const grouped = {};
                 data.data.forEach(leave => {
+                    if (leave.group_id) {
+                        if (!grouped[leave.group_id]) {
+                            grouped[leave.group_id] = [];
+                        }
+                        grouped[leave.group_id].push(leave);
+                    }
+                });
+                
+                let html = '';
+                data.data.forEach((leave, index) => {
                     const startDate = formatDateThai(leave.start_date);
                     const endDate = formatDateThai(leave.end_date);
                     const days = Math.ceil((new Date(leave.end_date) - new Date(leave.start_date)) / (1000 * 60 * 60 * 24)) + 1;
                     
+                    // Badge และ Warning สำหรับรายการที่เชื่อมโยง
+                    let badge = '';
+                    let warning = '';
+                    let borderColor = '#e0e0e0';
+                    
+                    if (leave.group_id && grouped[leave.group_id]) {
+                        const group = grouped[leave.group_id];
+                        if (group.length > 1) {
+                            const position = group.findIndex(l => l.id === leave.id) + 1;
+                            badge = `<span style="background: #667eea; color: white; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; margin-right: 8px;">🔗 ${position}/${group.length}</span>`;
+                            
+                            // หาแผนกอื่นที่เชื่อมโยง
+                            const otherDepts = group
+                                .filter(l => l.id !== leave.id)
+                                .map(l => l.department_name)
+                                .join(', ');
+                            
+                            if (otherDepts) {
+                                warning = `<p style="color: #ff9800; font-size: 13px; margin: 5px 0;">⚠️ เชื่อมโยงกับการลาแผนก: ${otherDepts}</p>`;
+                            }
+                            
+                            borderColor = '#667eea';
+                        }
+                    }
+                    
                     html += `
-                        <div class="approval-item">
+                        <div class="approval-item" style="border-left: 4px solid ${borderColor};">
                             <div class="approval-item-header">
                                 <div class="approval-item-top" onclick="viewDepartment(${leave.department_id})">
                                     <div class="approval-item-info">
-                                        <h3>${leave.doctor_name} (${leave.department_name})</h3>
+                                        <h3>${badge}${leave.doctor_name} (${leave.department_name})</h3>
                                         <p>📅 ${startDate} - ${endDate} (${days} วัน)</p>
+                                        ${warning}
                                         <p>💬 เหตุผล: ${leave.no_delegation_reason || '-'}</p>
                                     </div>
                                 </div>
