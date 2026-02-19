@@ -653,19 +653,43 @@
             if (response.ok && data.success && data.data.length > 0) {
                 countSpan.textContent = data.data.length;
                 
-                // จัดกลุ่มตาม group_id
+                // จัดกลุ่มตาม group_id และเรียงลำดับ
                 const grouped = {};
+                const ungrouped = [];
+                
                 data.data.forEach(leave => {
                     if (leave.group_id) {
                         if (!grouped[leave.group_id]) {
                             grouped[leave.group_id] = [];
                         }
                         grouped[leave.group_id].push(leave);
+                    } else {
+                        ungrouped.push(leave);
                     }
                 });
                 
+                // สร้างรายการที่เรียงแล้ว: กลุ่มก่อน แล้วตามด้วยรายการเดี่ยว
+                const sortedLeaves = [];
+                
+                // เพิ่มรายการที่เป็นกลุ่ม (มี group_id และมากกว่า 1 รายการ)
+                Object.keys(grouped).forEach(groupId => {
+                    if (grouped[groupId].length > 1) {
+                        // เรียงตาม department_name ภายในกลุ่ม
+                        grouped[groupId].sort((a, b) => a.department_name.localeCompare(b.department_name));
+                        sortedLeaves.push(...grouped[groupId]);
+                    } else {
+                        // ถ้ามี group_id แต่มีแค่ 1 รายการ ให้เอาไปรวมกับ ungrouped
+                        ungrouped.push(grouped[groupId][0]);
+                    }
+                });
+                
+                // เพิ่มรายการเดี่ยวตามหลัง
+                sortedLeaves.push(...ungrouped);
+                
                 let html = '';
-                data.data.forEach((leave, index) => {
+                let lastGroupId = null;
+                
+                sortedLeaves.forEach((leave, index) => {
                     const startDate = formatDateThai(leave.start_date);
                     const endDate = formatDateThai(leave.end_date);
                     const days = Math.ceil((new Date(leave.end_date) - new Date(leave.start_date)) / (1000 * 60 * 60 * 24)) + 1;
@@ -695,6 +719,12 @@
                         }
                     }
                     
+                    // เพิ่มเส้นแบ่งระหว่างกลุ่ม
+                    if (lastGroupId && leave.group_id !== lastGroupId && grouped[lastGroupId] && grouped[lastGroupId].length > 1) {
+                        html += `<div style="height: 20px; border-bottom: 2px dashed #ccc; margin: 15px 0;"></div>`;
+                    }
+                    lastGroupId = leave.group_id;
+                    
                     html += `
                         <div class="approval-item" style="border-left: 4px solid ${borderColor};">
                             <div class="approval-item-header">
@@ -716,6 +746,12 @@
                 });
                 
                 container.innerHTML = html;
+                
+                // แสดง Pop-up แจ้งเตือนถ้ามีรายการข้ามแผนก
+                const groupCount = Object.keys(grouped).filter(groupId => grouped[groupId].length > 1).length;
+                if (groupCount > 0) {
+                    showMultiDeptAlert(groupCount);
+                }
             } else {
                 container.innerHTML = '<div class="empty-message">ไม่มีรายการรออนุมัติ</div>';
                 countSpan.textContent = '0';
@@ -797,7 +833,43 @@
         // โหลดข้อมูลแผนกนั้น
         loadDepartmentData();
     }
+
+    // ========================================
+    // Pop-up แจ้งเตือนรายการข้ามแผนก
+    // ========================================
+    function showMultiDeptAlert(groupCount) {
+        const modal = document.getElementById('multiDeptAlertModal');
+        const countSpan = document.getElementById('multiDeptCount');
+        countSpan.textContent = groupCount;
+        modal.style.display = 'flex';
+    }
+
+    function closeMultiDeptAlert() {
+        const modal = document.getElementById('multiDeptAlertModal');
+        modal.style.display = 'none';
+    }
 </script>
+
+<!-- Modal แจ้งเตือนรายการข้ามแผนก -->
+<div id="multiDeptAlertModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
+    <div style="background: white; padding: 30px; border-radius: 12px; max-width: 500px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); text-align: center;">
+        <div style="font-size: 48px; margin-bottom: 15px;">⚠️</div>
+        <h2 style="color: #ff9800; margin: 0 0 15px 0; font-size: 24px;">แจ้งเตือน</h2>
+        <p style="color: #666; font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
+            มีรายการลาข้ามแผนก <strong id="multiDeptCount" style="color: #667eea; font-size: 20px;">0</strong> กลุ่ม<br>
+            กรุณาตรวจสอบและอนุมัติแยกกันสำหรับแต่ละแผนก
+        </p>
+        <div style="padding: 12px; background: #e3f2fd; border-radius: 6px; border-left: 4px solid #667eea; margin-bottom: 20px; text-align: left;">
+            <p style="color: #1565c0; font-size: 13px; margin: 0;">
+                💡 <strong>คำแนะนำ:</strong> รายการที่มี Badge 🔗 คือการลาข้ามแผนก<br>
+                ต้องอนุมัติแยกกันสำหรับแต่ละแผนก
+            </p>
+        </div>
+        <button onclick="closeMultiDeptAlert()" style="background: #667eea; color: white; border: none; padding: 12px 30px; border-radius: 6px; font-size: 16px; cursor: pointer; font-weight: 600;">
+            รับทราบ
+        </button>
+    </div>
+</div>
 ```
 
 </body>
