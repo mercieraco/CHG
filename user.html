@@ -859,7 +859,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 18/2/69 16:25 (User)</span>
+        <span id="versionInfo">Version 19/2/69 08:50 (User + Multi-Dept)</span>
     </div>
 </div>
 
@@ -2324,6 +2324,16 @@
             return;
         }
 
+        // ========================================
+        // Multi-Department: เช็คแผนกที่เลือก
+        // ========================================
+        const selectedDepartments = getSelectedDepartments();
+        
+        if (selectedDepartments.length === 0) {
+            showMessage('กรุณาเลือกอย่างน้อย 1 แผนก', 'error');
+            return;
+        }
+
         const startDateStr = selectedDates[0];
         const endDateStr = selectedDates[selectedDates.length - 1];
         
@@ -2341,6 +2351,12 @@
             `แพทย์ที่ลา: ${doctorName}\n` +
             `วันที่: ${formatDateThai(startDateStr)} - ${formatDateThai(endDateStr)}\n` +
             `จำนวน: ${selectedDates.length} วัน\n`;
+
+        // แสดงแผนกที่เลือก (ถ้ามีหลายแผนก)
+        if (selectedDepartments.length > 1) {
+            confirmMessage += `แผนก: ${selectedDepartments.map(d => d.department_name).join(', ')}\n`;
+            confirmMessage += `⚠️ จะบันทึกแยกกัน ${selectedDepartments.length} ครั้ง\n`;
+        }
 
         if (delegationType === 'single') {
             // Single Delegation
@@ -2432,25 +2448,46 @@
         }
 
         try {
-            console.log('=== DEBUG: Sending POST request ===');
-            console.log('URL:', `${LEAVE_API_URL}/api/leaves`);
-            console.log('Body:', requestBody);
+            // ========================================
+            // Multi-Department: วนลาทีละแผนก
+            // ========================================
+            const groupId = `grp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            let successCount = 0;
 
-            const response = await fetch(`${LEAVE_API_URL}/api/leaves`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(requestBody)
-            });
+            for (const dept of selectedDepartments) {
+                const deptRequestBody = {
+                    ...requestBody,
+                    departmentId: dept.department_id,
+                    groupId: selectedDepartments.length > 1 ? groupId : null
+                };
 
-            console.log('=== DEBUG: Response ===');
-            console.log('Status:', response.status);
-            console.log('OK:', response.ok);
+                console.log(`=== บันทึกการลาแผนก: ${dept.department_name} ===`);
+                console.log('Body:', deptRequestBody);
 
-            const data = await response.json();
-            console.log('Data:', data);
+                const response = await fetch(`${LEAVE_API_URL}/api/leaves`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(deptRequestBody)
+                });
 
-            if (response.ok && data.success) {
-                showMessage('✅ บันทึกการลาสำเร็จ', 'success');
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    successCount++;
+                    console.log(`✅ บันทึกแผนก ${dept.department_name} สำเร็จ`);
+                } else {
+                    throw new Error(`แผนก ${dept.department_name}: ${data.message || 'ไม่สามารถบันทึกได้'}`);
+                }
+            }
+
+            // สำเร็จทั้งหมด
+            if (successCount === selectedDepartments.length) {
+                const message = selectedDepartments.length > 1
+                    ? `✅ บันทึกการลาสำเร็จทั้ง ${successCount} แผนก`
+                    : '✅ บันทึกการลาสำเร็จ';
+                
+                showMessage(message, 'success');
+                
                 // รีเซ็ตสถานะ
                 selectedDates = [];
                 selectionStep = 0;
@@ -2463,8 +2500,6 @@
                 loadDoctorLeaves();
                 updateSelectedRange();
                 renderCalendar();
-            } else {
-                throw new Error(data.message || 'ไม่สามารถบันทึกได้');
             }
         } catch (error) {
             showMessage('❌ ' + error.message, 'error');
