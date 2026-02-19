@@ -774,12 +774,35 @@
         <div>
             <h3 style="color: #333; margin-bottom: 15px;">📋 รายการแพทย์</h3>
             
-            <!-- Filter แผนก -->
-            <div class="filter-group">
-                <label for="filterDepartment">Filter แผนก:</label>
-                <select id="filterDepartment" onchange="filterDoctors()">
-                    <option value="">ทั้งหมด</option>
-                </select>
+            <!-- Filters -->
+            <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
+                <!-- Filter แผนก -->
+                <div class="filter-group" style="flex: 1; min-width: 200px;">
+                    <label for="filterDepartment">Filter แผนก:</label>
+                    <select id="filterDepartment" onchange="filterDoctors()">
+                        <option value="">ทั้งหมด</option>
+                    </select>
+                </div>
+                
+                <!-- Filter Full/Part time -->
+                <div class="filter-group" style="flex: 1; min-width: 200px;">
+                    <label for="filterWorkType">Filter Work Type:</label>
+                    <select id="filterWorkType" onchange="filterDoctors()">
+                        <option value="">ทั้งหมด</option>
+                        <option value="full">Full time</option>
+                        <option value="part">Part time</option>
+                    </select>
+                </div>
+                
+                <!-- Filter นพ./พญ. -->
+                <div class="filter-group" style="flex: 1; min-width: 200px;">
+                    <label for="filterGender">Filter เพศ:</label>
+                    <select id="filterGender" onchange="filterDoctors()">
+                        <option value="">ทั้งหมด</option>
+                        <option value="นพ">นพ.</option>
+                        <option value="พญ">พญ.</option>
+                    </select>
+                </div>
             </div>
             
             <div id="doctorListMessage" class="message"></div>
@@ -1733,21 +1756,35 @@
         }
     }
 
-    // Filter แพทย์ตามแผนก
+    // Filter แพทย์ (แผนก, Work Type, เพศ)
     async function filterDoctors() {
-        const filterValue = document.getElementById('filterDepartment').value;
+        const filterDept = document.getElementById('filterDepartment').value;
+        const filterWorkType = document.getElementById('filterWorkType').value;
+        const filterGender = document.getElementById('filterGender').value;
         const doctorsList = document.getElementById('doctorsList');
         
         let filteredDoctors = allDoctors;
-        if (filterValue) {
-            filteredDoctors = allDoctors.filter(doc => doc.department_id == filterValue);
+        
+        // Filter แผนก
+        if (filterDept) {
+            filteredDoctors = filteredDoctors.filter(doc => doc.department_id == filterDept);
+        }
+        
+        // Filter Work Type
+        if (filterWorkType) {
+            filteredDoctors = filteredDoctors.filter(doc => doc.work_type === filterWorkType);
+        }
+        
+        // Filter เพศ (นพ./พญ.)
+        if (filterGender) {
+            filteredDoctors = filteredDoctors.filter(doc => doc.name.startsWith(filterGender));
         }
 
         if (filteredDoctors.length === 0) {
             doctorsList.innerHTML = `
                 <div class="empty-state">
                     <div class="icon">👤</div>
-                    <p>ไม่พบแพทย์</p>
+                    <p>ไม่พบแพทย์ที่ตรงกับเงื่อนไข</p>
                 </div>
             `;
             return;
