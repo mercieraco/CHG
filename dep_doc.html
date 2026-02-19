@@ -375,7 +375,7 @@
         color: #666;
     }
 
-    .btn-delete-doctor, .btn-duty-doctor, .btn-edit-doctor {
+    .btn-delete-doctor, .btn-duty-doctor, .btn-edit-doctor, .btn-add-department {
         padding: 8px 16px;
         font-size: 13px;
         border: none;
@@ -383,6 +383,16 @@
         cursor: pointer;
         transition: all 0.3s;
         font-weight: 600;
+    }
+
+    .btn-add-department {
+        background: #48dbfb;
+        color: white;
+    }
+
+    .btn-add-department:hover {
+        background: #0abde3;
+        transform: translateY(-2px);
     }
 
     .btn-delete-doctor {
@@ -666,8 +676,8 @@
         </button>
     </div>
 
-    <!-- ปุ่มเมนู 2 ปุ่ม (ซ้าย-ขวา) -->
-    <div class="menu-grid">
+    <!-- ปุ่มเมนู 3 ปุ่ม -->
+    <div class="menu-grid" style="grid-template-columns: repeat(3, 1fr);">
         <div class="menu-card" onclick="showDepartmentForm()">
             <div class="icon">🏥</div>
             <h3>เพิ่มแผนก</h3>
@@ -675,6 +685,10 @@
         <div class="menu-card" onclick="showDoctorForm()">
             <div class="icon">👤</div>
             <h3>เพิ่มแพทย์</h3>
+        </div>
+        <div class="menu-card" onclick="window.location.href='dep_rest.html'">
+            <div class="icon">📅</div>
+            <h3>จัดการการลา</h3>
         </div>
     </div>
 
@@ -1736,9 +1750,10 @@
                             </div>
                         </div>
                         <div class="doctor-actions">
-                            <button onclick="showDeleteDoctorModal(${doctor.id}, '${safeName}')" class="btn-delete-doctor">🗑️ ลบ</button>
-                            <button onclick="showEditDoctorModal(${doctor.id}, '${safeName}', ${doctor.department_id}, '${doctor.work_type || 'full'}')" class="btn-edit-doctor">🔧 แก้ไข</button>
-                            <button onclick="showDoctorDutyModal(${doctor.id}, ${doctor.department_id}, '${safeName}')" class="btn-duty-doctor">📅 Duty</button>
+                            <button onclick="showAddDepartmentModal(${doctor.id}, '${safeName}')" class="btn-add-department">+แผนก</button>
+                            <button onclick="showDeleteDoctorModal(${doctor.id}, '${safeName}')" class="btn-delete-doctor">ลบ</button>
+                            <button onclick="showEditDoctorModal(${doctor.id}, '${safeName}', ${doctor.department_id}, '${doctor.work_type || 'full'}')" class="btn-edit-doctor">แก้ไข</button>
+                            <button onclick="showDoctorDutyModal(${doctor.id}, ${doctor.department_id}, '${safeName}')" class="btn-duty-doctor">Duty</button>
                         </div>
                     </div>
             `;
