@@ -2707,15 +2707,15 @@
                 <label>ฝากงาน</label>
                 <div class="radio-group">
                     <label>
-                        <input type="radio" name="delegationType_${deptId}" value="single" checked onchange="toggleDelegationType_${deptId}()">
+                        <input type="radio" name="delegationType_${deptId}" value="single" checked onchange="toggleDelegationType(${deptId})">
                         แพทย์ 1 คน
                     </label>
                     <label>
-                        <input type="radio" name="delegationType_${deptId}" value="custom" onchange="toggleDelegationType_${deptId}()">
+                        <input type="radio" name="delegationType_${deptId}" value="custom" onchange="toggleDelegationType(${deptId})">
                         กำหนดเอง
                     </label>
                     <label>
-                        <input type="radio" name="delegationType_${deptId}" value="none" onchange="toggleDelegationType_${deptId}()">
+                        <input type="radio" name="delegationType_${deptId}" value="none" onchange="toggleDelegationType(${deptId})">
                         ไม่ฝาก
                     </label>
                 </div>
@@ -2755,16 +2755,21 @@
                     <textarea id="noDelegationReason_${deptId}" rows="3" placeholder="กรุณาระบุเหตุผล..."></textarea>
                 </div>
             </div>
-
-            <script>
-            function toggleDelegationType_${deptId}() {
-                const type = document.querySelector('input[name="delegationType_${deptId}"]:checked').value;
-                document.getElementById('singleDelegationSection_${deptId}').style.display = type === 'single' ? 'block' : 'none';
-                document.getElementById('customDelegationSection_${deptId}').style.display = type === 'custom' ? 'block' : 'none';
-                document.getElementById('noDelegationSection_${deptId}').style.display = type === 'none' ? 'block' : 'none';
-            }
-            </script>
         `;
+    }
+
+    // Toggle Delegation Type (Global function)
+    window.toggleDelegationType = function(deptId) {
+        const type = document.querySelector(`input[name="delegationType_${deptId}"]:checked`)?.value;
+        if (!type) return;
+        
+        const singleSection = document.getElementById(`singleDelegationSection_${deptId}`);
+        const customSection = document.getElementById(`customDelegationSection_${deptId}`);
+        const noneSection = document.getElementById(`noDelegationSection_${deptId}`);
+        
+        if (singleSection) singleSection.style.display = type === 'single' ? 'block' : 'none';
+        if (customSection) customSection.style.display = type === 'custom' ? 'block' : 'none';
+        if (noneSection) noneSection.style.display = type === 'none' ? 'block' : 'none';
     }
 
     // Render Custom Delegation
