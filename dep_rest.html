@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>จัดการการลา - Doctor Leave Management</title>
+    <title>ระบบลางาน - ผู้ดูแลระบบ</title>
     <style>
         * {
             margin: 0;
@@ -708,13 +708,13 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>📅 จัดการการลา</h1>
-            <a href="dev.html" class="btn-back">← กลับ</a>
+            <h1>จัดการการลา</h1>
+            <a href="dep_doc.html" class="btn-back">← กลับ</a>
         </div>
 
 ```
-    <!-- แผนกและแพทย์ -->
-    <div class="form-row">
+    <!-- แผนกและแพทย์ (ซ่อนไว้ - Auto-select จาก login) -->
+    <div class="form-row" style="display: none;">
         <div class="form-group">
             <select id="departmentSelect" onchange="loadDoctors()">
                 <option value="">-- เลือกแผนก --</option>
@@ -728,12 +728,11 @@
         </div>
     </div>
     
-    <div class="form-group">
+    <div class="form-group" style="display: none;">
         <select id="doctorSelect" onchange="onDoctorChange()">
             <option value="">-- เลือกแพทย์ที่จะลา --</option>
         </select>
     </div>
-
 
     <!-- ปฏิทิน -->
     <div class="calendar-container">
@@ -757,74 +756,29 @@
         </button>
     </div>
 
-    <!-- แสดง Duty ของแต่ละวัน -->
-    <div id="dutySection" style="display: none; margin-bottom: 20px;">
-        <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-            <h3 style="margin: 0 0 10px 0; color: #1976d2;">📋 รายละเอียดงานที่ลา</h3>
-            <div id="dutyList"></div>
+    <!-- เลือกแผนกที่ต้องการลา (แสดงเฉพาะกรณีมีหลายแผนก) -->
+    <div id="departmentSelectionContainer" style="display: none; margin-bottom: 20px; padding: 20px; background: #f8f9fa; border-radius: 8px; border: 2px solid #667eea;">
+        <div style="text-align: center; margin-bottom: 15px;">
+            <h3 style="color: #667eea; font-size: 18px; margin-bottom: 5px;">📍 เลือกแผนกที่ต้องการลา</h3>
+            <p style="color: #666; font-size: 14px;">กรุณาเลือกแผนกที่คุณต้องการลางาน</p>
+        </div>
+        
+        <div id="departmentCheckboxes" style="display: flex; flex-direction: column; gap: 10px;">
+            <!-- Checkboxes will be inserted here by JavaScript -->
+        </div>
+        
+        <div style="margin-top: 15px; padding: 10px; background: #fff3cd; border-radius: 6px; border-left: 4px solid #ffc107;">
+            <p style="color: #856404; font-size: 13px; margin: 0;">
+                ⚠️ <strong>หมายเหตุ:</strong> การลาจะถูกบันทึกแยกตามแผนกและต้องได้รับการอนุมัติแยกกัน
+            </p>
         </div>
     </div>
 
-    <!-- ประเภทการฝากงาน -->
-    <div id="delegationSection" style="display: none; margin-bottom: 20px;">
-        <div class="form-group">
-            <label>ฝากงาน</label>
-            <div class="radio-group">
-                <label>
-                    <input type="radio" name="delegationType" value="single" checked onchange="toggleDelegationType()">
-                    แพทย์ 1 คน
-                </label>
-                <label>
-                    <input type="radio" name="delegationType" value="custom" onchange="toggleDelegationType()">
-                    กำหนดเอง
-                </label>
-                <label>
-                    <input type="radio" name="delegationType" value="none" onchange="toggleDelegationType()">
-                    ไม่ฝาก
-                </label>
-            </div>
-        </div>
-
-        <!-- Single Delegation: เลือกแพทย์หนึ่งท่าน -->
-        <div id="singleDelegationSection">
-            <div class="filter-row">
-                <div class="form-group">
-                    <select id="filterDepartment" onchange="loadReplacementDoctors()">
-                        <option value="">-- เลือกแผนก --</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <select id="filterWorkType" onchange="loadReplacementDoctors()">
-                        <option value="full" selected>Full time</option>
-                        <option value="part">Part time</option>
-                    </select>
-                </div>
-            </div>
-            <div class="form-group">
-                <select id="replacementDoctorSelect">
-                    <option value="">-- เลือกแพทย์ที่จะมาแทน --</option>
-                </select>
-            </div>
-        </div>
-
-        <!-- Custom Delegation: ฝากงานแบบกำหนดเอง (เดิมคือ Multiple) -->
-        <div id="customDelegationSection" style="display: none;">
-            <div id="dutyAssignmentList"></div>
-        </div>
-
-        <!-- No Delegation: ไม่ฝากงาน -->
-        <div id="noDelegationSection" style="display: none;">
-            <div class="form-group">
-                <label>เหตุผลที่ไม่ฝากงาน <span style="color: red;">*</span></label>
-                <textarea 
-                    id="noDelegationReason" 
-                    rows="4" 
-                    placeholder="กรุณาระบุเหตุผล (บังคับ)"
-                    style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; resize: vertical;"
-                ></textarea>
-            </div>
-        </div>
-    </div>
+    <!-- แสดง Duty และ Delegation ของแต่ละแผนก (Dynamic) -->
+    <div id="departmentDetailsContainer"></div>
+    
+    <!-- Dummy element เพื่อไม่ให้ code เก่า error -->
+    <select id="filterDepartment" style="display: none;"></select>
 
     <!-- แสดงข้อมูลการลาที่บันทึกแล้ว -->
     <div id="leaveRecords" class="leave-records"></div>
@@ -836,7 +790,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 18/2/69 16:54</span>
+        <span id="versionInfo">Version 1 (Admin + Multi-Dept)</span>
     </div>
 </div>
 
@@ -858,18 +812,101 @@
     let endDate = null;
 
     // โหลดเมื่อเปิดหน้า
-    window.onload = function() {
+    window.onload = async function() {
         const loggedIn = sessionStorage.getItem('loggedIn');
         const role = sessionStorage.getItem('role');
 
+        // Admin เท่านั้น
         if (!loggedIn || role !== 'admin') {
             window.location.href = 'index.html';
             return;
         }
 
-        loadDepartments();
+        // โหลดแผนกเท่านั้น (ไม่ auto-select แพทย์)
+        await loadDepartments();
+        
         renderCalendar();
     };
+
+    // โหลดแผนก (สำหรับ Admin)
+    async function loadDepartments() {
+        try {
+            const response = await fetch(`${API_URL}/api/departments`);
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                const departments = data.data;
+                const departmentSelect = document.getElementById('departmentSelect');
+                
+                departments.forEach(dept => {
+                    departmentSelect.innerHTML += `<option value="${dept.id}">${dept.name}</option>`;
+                });
+            }
+        } catch (error) {
+            console.error('Load departments error:', error);
+        }
+    }
+
+    // โหลดข้อมูลแพทย์เมื่อ Admin เลือก (แทน loadDoctorData เดิม)
+    async function loadDoctorDataForAdmin(doctorId) {
+        try {
+            // 2. โหลดแผนกของแพทย์คนนี้
+            const doctorDeptsResponse = await fetch(`${API_URL}/api/doctors/${doctorId}/departments`);
+            const doctorDeptsData = await doctorDeptsResponse.json();
+            
+            let doctorDepartments = [];
+            if (doctorDeptsResponse.ok && doctorDeptsData.success) {
+                doctorDepartments = doctorDeptsData.data;
+            }
+
+            // 3. โหลดข้อมูลแพทย์ทั้งหมด
+            const allDocsResponse = await fetch(`${API_URL}/api/doctors`);
+            const allDocsData = await allDocsResponse.json();
+            
+            if (allDocsResponse.ok && allDocsData.success) {
+                // หาแพทย์จาก ID
+                const doctor = allDocsData.data.find(d => d.id == doctorId);
+                
+                if (!doctor) {
+                    alert('ไม่พบข้อมูลแพทย์ ID: ' + doctorId);
+                    return;
+                }
+                
+                // ถ้าไม่มีข้อมูลแผนก (แพทย์ 1 แผนก) → สร้างจาก doctor
+                if (doctorDepartments.length === 0) {
+                    console.log('📍 แพทย์มี 1 แผนก → สร้างจาก doctor');
+                    doctorDepartments = [{
+                        department_id: doctor.department_id,
+                        department_name: doctor.department_name,
+                        is_primary: true
+                    }];
+                }
+                
+                console.log('📍 doctorDepartments:', doctorDepartments);
+                
+                // เก็บข้อมูลแผนก (ไม่แสดงทันที)
+                userDepartments = doctorDepartments;
+                console.log('✅ userDepartments กำหนดแล้ว:', userDepartments);
+                
+                // โหลด duties
+                await onDoctorChange();
+                
+                // 8. เก็บข้อมูลแผนก (ไม่แสดงทันที)
+                userDepartments = doctorDepartments;
+                console.log('✅ userDepartments กำหนดแล้ว:', userDepartments);
+                
+                // 9. โหลด duties
+                await onDoctorChange();
+            } else {
+                alert('ไม่สามารถโหลดรายการแพทย์ได้');
+                window.location.href = 'index.html';
+            }
+        } catch (error) {
+            console.error('Load doctor data error:', error);
+            alert('เกิดข้อผิดพลาดในการโหลดข้อมูล: ' + error.message);
+            window.location.href = 'index.html';
+        }
+    }
 
     // โหลดแผนก
     async function loadDepartments() {
@@ -881,11 +918,9 @@
                 const departments = data.data.sort((a, b) => a.name.localeCompare(b.name));
                 
                 const departmentSelect = document.getElementById('departmentSelect');
-                const filterDepartment = document.getElementById('filterDepartment');
                 
                 departments.forEach(dept => {
                     departmentSelect.innerHTML += `<option value="${dept.id}">${dept.name}</option>`;
-                    filterDepartment.innerHTML += `<option value="${dept.id}">${dept.name}</option>`;
                 });
             }
         } catch (error) {
@@ -937,20 +972,25 @@
     }
 
     // เมื่อเลือกแพทย์ที่ลา
-    function onDoctorChange() {
-        // ถ้าเลือก "มีคนมาแทน" อยู่แล้ว → โหลดแพทย์มาแทนใหม่
-        const hasReplacementRadio = document.querySelector('input[name="hasReplacement"]:checked');
+    async function onDoctorChange() {
+        const doctorId = document.getElementById('doctorSelect').value;
         
-        // ถ้ายังไม่มี radio (ยังไม่ได้ยืนยันวันที่) → ไม่ต้องทำอะไร
-        if (!hasReplacementRadio) return;
-        
-        const hasReplacement = hasReplacementRadio.value;
-        if (hasReplacement === 'yes') {
-            const filterDept = document.getElementById('filterDepartment').value;
-            if (filterDept) {
-                loadReplacementDoctors();
-            }
+        if (!doctorId) {
+            // ถ้ายังไม่เลือกแพทย์ → ซ่อนทุกอย่าง
+            selectedDates = [];
+            document.getElementById('confirmDatesBtn').style.display = 'none';
+            document.getElementById('departmentDetailsContainer').innerHTML = '';
+            userDepartments = [];
+            renderCalendar();
+            return;
         }
+        
+        // โหลดข้อมูลแพทย์ที่เลือก
+        await loadDoctorDataForAdmin(doctorId);
+        
+        // Reset วันที่
+        selectedDates = [];
+        renderCalendar();
     }
 
     // โหลดแพทย์ที่มาแทน
@@ -1833,7 +1873,13 @@
         const doctorId = document.getElementById('doctorSelect').value;
         
         if (!doctorId) {
-            alert('⚠️ กรุณาเลือกแพทย์ที่จะลาก่อน');
+            alert('⚠️ กรุณาเลือกแพทย์ที่จะลา เป็นอันดับแรก\n(เลือก แผนก >> แพทย์)');
+            const deptSelect = document.getElementById('departmentSelect');
+            if (!deptSelect.value) {
+                deptSelect.focus();
+            } else {
+                document.getElementById('doctorSelect').focus();
+            }
             return;
         }
         
@@ -1853,15 +1899,25 @@
             const data = await response.json();
             
             if (data.success) {
-                displayDuties(data.data);
+                currentDutyData = data.data;
+                
                 // ซ่อนปุ่มยืนยัน
                 document.getElementById('confirmDatesBtn').style.display = 'none';
+                
+                // แสดง Checkbox เลือกแผนก (ถ้ามีหลายแผนก)
+                if (userDepartments.length > 1) {
+                    showDepartmentSelection(userDepartments);
+                } else {
+                    // มี 1 แผนก → ไม่แสดง Checkbox แต่โหลดรายละเอียดเลย
+                    hideDepartmentSelection();
+                    await handleDepartmentSelectionChange();
+                }
             } else {
                 alert('❌ ไม่สามารถดึงข้อมูล Duty ได้');
             }
         } catch (error) {
             console.error('Error:', error);
-            alert('❌ เกิดข้อผิดพลาด');
+            alert('❌ เกิดข้อผิดพลาด: ' + error.message);
         }
     }
 
@@ -2222,87 +2278,130 @@
             return;
         }
 
+        // ========================================
+        // Multi-Department: เช็คแผนกที่เลือก
+        // ========================================
+        const selectedDepartments = getSelectedDepartments();
+        
+        if (selectedDepartments.length === 0) {
+            showMessage('กรุณาเลือกอย่างน้อย 1 แผนก', 'error');
+            return;
+        }
+
         const startDateStr = selectedDates[0];
         const endDateStr = selectedDates[selectedDates.length - 1];
-        
-        // ดึง delegation type
-        const delegationType = document.querySelector('input[name="delegationType"]:checked').value;
-        
-        let requestBody = {
-            doctorId: parseInt(doctorId),
-            startDate: startDateStr,
-            endDate: endDateStr,
-            delegationType: delegationType
-        };
 
         let confirmMessage = `📋 ยืนยันการบันทึก\n\n` +
             `แพทย์ที่ลา: ${doctorName}\n` +
             `วันที่: ${formatDateThai(startDateStr)} - ${formatDateThai(endDateStr)}\n` +
             `จำนวน: ${selectedDates.length} วัน\n`;
 
-        if (delegationType === 'single') {
-            // Single Delegation
-            const replacementDoctorId = document.getElementById('replacementDoctorSelect').value;
-            const replacementDoctorName = replacementDoctorId 
-                ? document.getElementById('replacementDoctorSelect').selectedOptions[0]?.text || '' 
-                : '';
+        // แสดงแผนกที่เลือก (ถ้ามีหลายแผนก)
+        if (selectedDepartments.length > 1) {
+            confirmMessage += `แผนก: ${selectedDepartments.map(d => d.department_name).join(', ')}\n`;
+            confirmMessage += `⚠️ จะบันทึกแยกกัน ${selectedDepartments.length} ครั้ง\n`;
+        }
 
-            if (!replacementDoctorId) {
-                showMessage('กรุณาเลือกแพทย์ที่มาแทน', 'error');
-                return;
-            }
-
-            requestBody.hasReplacement = true;
-            requestBody.replacementDoctorId = parseInt(replacementDoctorId);
+        // ========================================
+        // เก็บข้อมูล Delegation ของแต่ละแผนก
+        // ========================================
+        const departmentData = [];
+        
+        for (const dept of selectedDepartments) {
+            const deptId = dept.department_id;
+            const delegationType = document.querySelector(`input[name="delegationType_${deptId}"]:checked`)?.value || 'none';
             
-            confirmMessage += `แพทย์ที่มาแทน: ${replacementDoctorName}\n`;
+            let deptRequestBody = {
+                doctorId: parseInt(doctorId),
+                startDate: startDateStr,
+                endDate: endDateStr,
+                delegationType: delegationType,
+                departmentId: deptId
+            };
 
-        } else if (delegationType === 'custom') {
-            // Custom Delegation (เดิมคือ Multiple)
-            const dutyAssignments = [];
-            const selects = document.querySelectorAll('.duty-assignment-select');
-            
-            for (const select of selects) {
-                const replacementDoctorId = select.value;
+            if (delegationType === 'single') {
+                // Single Delegation
+                const replacementSelect = document.getElementById(`replacementDoctorSelect_${deptId}`);
+                const replacementDoctorId = replacementSelect?.value;
+                const replacementDoctorName = replacementDoctorId 
+                    ? replacementSelect.selectedOptions[0]?.text || '' 
+                    : '';
+
                 if (!replacementDoctorId) {
-                    showMessage('กรุณาเลือกแพทย์ที่มาแทนให้ครบทุก Duty', 'error');
+                    showMessage(`กรุณาเลือกแพทย์ที่มาแทนสำหรับแผนก ${dept.department_name}`, 'error');
+                    return;
+                }
+
+                deptRequestBody.hasReplacement = true;
+                deptRequestBody.replacementDoctorId = parseInt(replacementDoctorId);
+                
+                confirmMessage += `\n📍 ${dept.department_name}: แพทย์ ${replacementDoctorName}`;
+
+            } else if (delegationType === 'custom') {
+                // Custom Delegation
+                const dutyAssignments = [];
+                const selects = document.querySelectorAll(`.custom-delegation-select[data-dept-id="${deptId}"]`);
+                
+                for (const select of selects) {
+                    const replacementDoctorId = select.value;
+                    if (!replacementDoctorId) {
+                        showMessage(`กรุณาเลือกแพทย์ที่มาแทนให้ครบทุก Duty ในแผนก ${dept.department_name}`, 'error');
+                        return;
+                    }
+                    
+                    dutyAssignments.push({
+                        dutyId: parseInt(select.dataset.dutyId),
+                        dutyDate: select.dataset.date,
+                        replacementDoctorId: parseInt(replacementDoctorId)
+                    });
+                }
+                
+                deptRequestBody.dutyAssignments = dutyAssignments;
+                confirmMessage += `\n📍 ${dept.department_name}: กำหนดเอง (${dutyAssignments.length} งาน)`;
+                
+            } else if (delegationType === 'none') {
+                // No Delegation
+                const reasonTextarea = document.getElementById(`noDelegationReason_${deptId}`);
+                const reason = reasonTextarea?.value.trim() || '';
+                
+                if (!reason) {
+                    showMessage(`กรุณาระบุเหตุผลที่ไม่ฝากงานสำหรับแผนก ${dept.department_name}`, 'error');
+                    reasonTextarea?.focus();
                     return;
                 }
                 
-                dutyAssignments.push({
-                    dutyId: parseInt(select.dataset.dutyId),
-                    dutyDate: select.dataset.date,
-                    replacementDoctorId: parseInt(replacementDoctorId)
-                });
+                deptRequestBody.hasReplacement = false;
+                deptRequestBody.noDelegationReason = reason;
+                confirmMessage += `\n📍 ${dept.department_name}: ไม่ฝากงาน`;
             }
-            
-            requestBody.dutyAssignments = dutyAssignments;
-            confirmMessage += `ฝากงานแบบกำหนดเอง (${dutyAssignments.length} งาน)\n`;
-            
-        } else if (delegationType === 'none') {
-            // No Delegation - ไม่ฝากงาน
-            const reason = document.getElementById('noDelegationReason').value.trim();
-            
-            if (!reason) {
-                showMessage('กรุณาระบุเหตุผลที่ไม่ฝากงาน', 'error');
-                document.getElementById('noDelegationReason').focus();
-                return;
-            }
-            
-            // Pop-up ครั้งที่ 1
+
+            departmentData.push({
+                department: dept,
+                requestBody: deptRequestBody
+            });
+        }
+
+        confirmMessage += `\n\nต้องการบันทึกหรือไม่?`;
+        
+        // Confirm
+        if (!confirm(confirmMessage)) {
+            return;
+        }
+
+        // แจ้งเตือนเพิ่มถ้ามีแผนกที่ไม่ฝากงาน
+        const noDelegationDepts = departmentData.filter(d => d.requestBody.delegationType === 'none');
+        if (noDelegationDepts.length > 0) {
             const confirm1 = confirm(
                 '⚠️ ยืนยันการลางานโดยไม่มอบหมายงานแทน\n\n' +
+                `แผนก: ${noDelegationDepts.map(d => d.department.department_name).join(', ')}\n\n` +
                 '  •  ไม่มีการมอบหมายงานแทน\n' +
                 '  •  อาจส่งผลกระทบต่อการดำเนินงาน\n' +
                 '  •  ท่านยินดีรับผิดชอบต่อผลที่เกิดขึ้น\n\n' +
                 'ดำเนินการต่อหรือไม่?'
             );
             
-            if (!confirm1) {
-                return;
-            }
+            if (!confirm1) return;
             
-            // Pop-up ครั้งที่ 2
             const confirm2 = confirm(
                 '📌 แจ้งเตือน\n\n' +
                 '  •  ต้องรอการอนุมัติ\n' +
@@ -2310,59 +2409,63 @@
                 'ยืนยันการบันทึกหรือไม่?'
             );
             
-            if (!confirm2) {
-                return;
-            }
-            
-            requestBody.hasReplacement = false;
-            requestBody.noDelegationReason = reason;
-            confirmMessage += `ไม่ฝากงาน (รอการอนุมัติ)\n`;
-            confirmMessage += `เหตุผล: ${reason}\n`;
-        }
-
-        confirmMessage += `\nต้องการบันทึกหรือไม่?`;
-        
-        // ถ้าไม่ใช่ none ให้ confirm ปกติ
-        if (delegationType !== 'none') {
-            if (!confirm(confirmMessage)) {
-                return;
-            }
+            if (!confirm2) return;
         }
 
         try {
-            console.log('=== DEBUG: Sending POST request ===');
-            console.log('URL:', `${LEAVE_API_URL}/api/leaves`);
-            console.log('Body:', requestBody);
+            // ========================================
+            // Multi-Department: วนลาทีละแผนก
+            // ========================================
+            const groupId = selectedDepartments.length > 1 
+                ? `grp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+                : null;
+                
+            let successCount = 0;
 
-            const response = await fetch(`${LEAVE_API_URL}/api/leaves`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(requestBody)
-            });
+            for (const item of departmentData) {
+                const deptRequestBody = {
+                    ...item.requestBody,
+                    groupId: groupId
+                };
 
-            console.log('=== DEBUG: Response ===');
-            console.log('Status:', response.status);
-            console.log('OK:', response.ok);
+                console.log(`=== บันทึกการลาแผนก: ${item.department.department_name} ===`);
+                console.log('Body:', deptRequestBody);
 
-            const data = await response.json();
-            console.log('Data:', data);
+                const response = await fetch(`${LEAVE_API_URL}/api/leaves`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(deptRequestBody)
+                });
 
-            if (response.ok && data.success) {
-                showMessage('✅ บันทึกการลาสำเร็จ', 'success');
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    successCount++;
+                    console.log(`✅ บันทึกแผนก ${item.department.department_name} สำเร็จ`);
+                } else {
+                    throw new Error(`แผนก ${item.department.department_name}: ${data.message || 'ไม่สามารถบันทึกได้'}`);
+                }
+            }
+
+            // สำเร็จทั้งหมด
+            if (successCount === selectedDepartments.length) {
+                const message = selectedDepartments.length > 1
+                    ? `✅ บันทึกการลาสำเร็จทั้ง ${successCount} แผนก`
+                    : '✅ บันทึกการลาสำเร็จ';
+                
+                showMessage(message, 'success');
+                
                 // รีเซ็ตสถานะ
                 selectedDates = [];
                 selectionStep = 0;
                 startDate = null;
                 endDate = null;
                 currentDutyData = [];
-                document.getElementById('dutySection').style.display = 'none';
-                document.getElementById('delegationSection').style.display = 'none';
+                document.getElementById('departmentDetailsContainer').innerHTML = '';
                 document.getElementById('confirmDatesBtn').style.display = 'none';
                 loadDoctorLeaves();
                 updateSelectedRange();
                 renderCalendar();
-            } else {
-                throw new Error(data.message || 'ไม่สามารถบันทึกได้');
             }
         } catch (error) {
             showMessage('❌ ' + error.message, 'error');
@@ -2429,6 +2532,472 @@
                 });
             });
         }
+    }
+
+    // ฟังก์ชัน Logout
+    function logout() {
+        if (confirm('ต้องการออกจากระบบหรือไม่?')) {
+            // ลบข้อมูล session ทั้งหมด
+            sessionStorage.clear();
+            
+            // กลับไปหน้า login
+            window.location.href = 'index.html';
+        }
+    }
+
+    // ========================================
+    // ฟังก์ชันจัดการ Multi-Department
+    // ========================================
+    let userDepartments = []; // เก็บแผนกของแพทย์
+
+    function showDepartmentSelection(departments) {
+        userDepartments = departments;
+        const container = document.getElementById('departmentSelectionContainer');
+        const checkboxContainer = document.getElementById('departmentCheckboxes');
+        
+        // สร้าง Checkbox พร้อม event handler
+        let html = '';
+        departments.forEach(dept => {
+            const primaryLabel = dept.is_primary ? ' (แผนกหลัก)' : ' (แผนกเสริม)';
+            html += `
+                <label style="display: flex; align-items: center; padding: 12px; background: white; border-radius: 6px; border: 2px solid #e0e0e0; cursor: pointer;">
+                    <input type="checkbox" 
+                           value="${dept.department_id}" 
+                           data-name="${dept.department_name}"
+                           data-is-primary="${dept.is_primary}"
+                           checked
+                           onchange="handleDepartmentSelectionChange()"
+                           style="width: 20px; height: 20px; margin-right: 12px; cursor: pointer;">
+                    <span style="font-size: 16px; color: #333;">
+                        <strong>${dept.department_name}</strong>${primaryLabel}
+                    </span>
+                </label>
+            `;
+        });
+        
+        checkboxContainer.innerHTML = html;
+        container.style.display = 'block';
+        
+        // โหลดข้อมูลครั้งแรก
+        handleDepartmentSelectionChange();
+    }
+
+    function hideDepartmentSelection() {
+        // ไม่รีเซ็ต userDepartments (เก็บไว้ใช้ต่อ!)
+        document.getElementById('departmentSelectionContainer').style.display = 'none';
+    }
+
+    function getSelectedDepartments() {
+        console.log('🔍 getSelectedDepartments called, userDepartments:', userDepartments);
+        
+        // ถ้ามี 1 แผนก → ใช้ userDepartments โดยตรง (ไม่มี Checkbox)
+        if (userDepartments.length === 1) {
+            console.log('✅ มี 1 แผนก → คืน userDepartments:', userDepartments);
+            return userDepartments;
+        }
+        
+        // ถ้ามีหลายแผนก → อ่านจาก Checkbox
+        const checkboxes = document.querySelectorAll('#departmentCheckboxes input[type="checkbox"]:checked');
+        const result = Array.from(checkboxes).map(cb => ({
+            department_id: parseInt(cb.value),
+            department_name: cb.getAttribute('data-name'),
+            is_primary: cb.getAttribute('data-is-primary') === 'true'
+        }));
+        console.log('✅ หลายแผนก → คืนจาก Checkbox:', result);
+        return result;
+    }
+
+    // Event handler เมื่อ Checkbox เปลี่ยน
+    async function handleDepartmentSelectionChange() {
+        const selectedDepts = getSelectedDepartments();
+        
+        if (selectedDepts.length === 0) {
+            // ไม่เลือกแผนกเลย → ซ่อนทุกอย่าง
+            document.getElementById('departmentDetailsContainer').innerHTML = '';
+            return;
+        }
+        
+        // แสดงรายละเอียดของแผนกที่เลือก
+        await loadDepartmentDetails(selectedDepts);
+    }
+
+    // โหลดและแสดงรายละเอียดของแต่ละแผนก
+    async function loadDepartmentDetails(selectedDepts) {
+        const container = document.getElementById('departmentDetailsContainer');
+        let html = '';
+        
+        for (const dept of selectedDepts) {
+            // โหลด Duties ของแผนกนี้
+            const duties = await loadDutiesForDepartment(dept.department_id);
+            
+            html += `
+                <div class="department-section" data-dept-id="${dept.department_id}" style="margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #667eea;">
+                    <h3 style="color: #667eea; margin: 0 0 15px 0;">📍 ${dept.department_name}</h3>
+                    
+                    <!-- รายละเอียดงานที่ลา -->
+                    <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                        <h4 style="margin: 0 0 10px 0; color: #1976d2;">📋 รายละเอียดงานที่ลา</h4>
+                        <div class="duty-list-${dept.department_id}">
+                            ${renderDutyList(duties)}
+                        </div>
+                    </div>
+                    
+                    <!-- ฝากงาน -->
+                    <div class="delegation-section-${dept.department_id}">
+                        ${renderDelegationSection(dept.department_id, dept.department_name, duties)}
+                    </div>
+                </div>
+            `;
+        }
+        
+        container.innerHTML = html;
+        
+        // โหลด Dropdown แพทย์สำหรับแต่ละแผนก
+        for (const dept of selectedDepts) {
+            await loadReplacementDoctorsForDept(dept.department_id);
+        }
+    }
+
+    // โหลด Duties ของแผนก
+    async function loadDutiesForDepartment(departmentId) {
+        if (!selectedDates || selectedDates.length === 0) {
+            return [];
+        }
+
+        try {
+            const doctorId = sessionStorage.getItem('doctor_id');
+            const response = await fetch(`${API_URL}/api/doctor-duties/doctor/${doctorId}`);
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                // Filter เฉพาะ Duties ของแผนกนี้
+                const allDuties = data.data.filter(d => d.department_id === departmentId);
+                
+                // จับคู่กับวันที่เลือก
+                const result = [];
+                selectedDates.forEach(date => {
+                    const dayName = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][new Date(date).getDay()];
+                    const dutiesOnThisDay = allDuties.filter(duty => duty[dayName] === 1);
+                    
+                    result.push({
+                        date: date,
+                        duties: dutiesOnThisDay
+                    });
+                });
+                
+                return result;
+            }
+        } catch (error) {
+            console.error('Load duties error:', error);
+        }
+        
+        return [];
+    }
+
+    // Render Duty List
+    function renderDutyList(duties) {
+        if (!duties || duties.length === 0) {
+            return '<p style="color: #999;">ไม่มีข้อมูล</p>';
+        }
+        
+        let html = '';
+        duties.forEach(item => {
+            const dateStr = formatDateThai(item.date);
+            const dutyNames = item.duties.length > 0 
+                ? item.duties.map(d => d.duty_name).join(', ')
+                : 'ไม่มีงาน';
+            
+            html += `<p style="margin: 5px 0;">วันที่ ${dateStr}: <strong>${dutyNames}</strong></p>`;
+        });
+        
+        return html;
+    }
+
+    // Render Delegation Section
+    function renderDelegationSection(deptId, deptName, duties) {
+        // หา Duties ที่ต้องฝาก
+        const dutiesWithWork = duties.filter(d => d.duties && d.duties.length > 0);
+        
+        return `
+            <div class="form-group">
+                <label>ฝากงาน</label>
+                <div class="radio-group">
+                    <label>
+                        <input type="radio" name="delegationType_${deptId}" value="single" checked onchange="toggleDelegationType(${deptId})">
+                        แพทย์ 1 คน
+                    </label>
+                    <label>
+                        <input type="radio" name="delegationType_${deptId}" value="custom" onchange="toggleDelegationType(${deptId})">
+                        กำหนดเอง
+                    </label>
+                    <label>
+                        <input type="radio" name="delegationType_${deptId}" value="none" onchange="toggleDelegationType(${deptId})">
+                        ไม่ฝาก
+                    </label>
+                </div>
+            </div>
+
+            <!-- Single Delegation -->
+            <div id="singleDelegationSection_${deptId}">
+                <div class="filter-row">
+                    <div class="form-group">
+                        <select id="filterDepartment_${deptId}" onchange="loadReplacementDoctorsForDept(${deptId})">
+                            <option value="">-- เลือกแผนก --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <select id="filterWorkType_${deptId}" onchange="loadReplacementDoctorsForDept(${deptId})">
+                            <option value="full" selected>Full time</option>
+                            <option value="part">Part time</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <select id="replacementDoctorSelect_${deptId}">
+                        <option value="">-- เลือกแพทย์ที่จะมาแทน --</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Custom Delegation -->
+            <div id="customDelegationSection_${deptId}" style="display: none;">
+                ${renderCustomDelegation(deptId, dutiesWithWork)}
+            </div>
+
+            <!-- No Delegation -->
+            <div id="noDelegationSection_${deptId}" style="display: none;">
+                <div class="form-group">
+                    <label>เหตุผลที่ไม่ฝากงาน</label>
+                    <textarea 
+                        id="noDelegationReason_${deptId}" 
+                        rows="4" 
+                        placeholder="กรุณาระบุเหตุผล..."
+                        style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 16px; font-family: inherit; resize: vertical; box-sizing: border-box;"
+                    ></textarea>
+                </div>
+            </div>
+        `;
+    }
+
+    // Toggle Delegation Type (Global function)
+    window.toggleDelegationType = function(deptId) {
+        const type = document.querySelector(`input[name="delegationType_${deptId}"]:checked`)?.value;
+        if (!type) return;
+        
+        const singleSection = document.getElementById(`singleDelegationSection_${deptId}`);
+        const customSection = document.getElementById(`customDelegationSection_${deptId}`);
+        const noneSection = document.getElementById(`noDelegationSection_${deptId}`);
+        
+        if (singleSection) singleSection.style.display = type === 'single' ? 'block' : 'none';
+        if (customSection) customSection.style.display = type === 'custom' ? 'block' : 'none';
+        if (noneSection) noneSection.style.display = type === 'none' ? 'block' : 'none';
+        
+        // เมื่อเปลี่ยนเป็น custom → โหลดแพทย์
+        if (type === 'custom' && window.loadCustomReplacementDoctors) {
+            window.loadCustomReplacementDoctors(deptId);
+        }
+    }
+
+    // Render Custom Delegation
+    function renderCustomDelegation(deptId, dutiesWithWork) {
+        if (dutiesWithWork.length === 0) {
+            return '<p style="color: #999;">ไม่มีงานที่ต้องฝาก</p>';
+        }
+        
+        let html = '';
+        
+        dutiesWithWork.forEach(item => {
+            item.duties.forEach(duty => {
+                const dateStr = formatDateThai(item.date);
+                const uniqueId = `${deptId}_${duty.id}_${item.date}`;
+                
+                html += `
+                    <div style="margin-bottom: 15px; padding: 15px; background: white; border-radius: 6px; border: 1px solid #e0e0e0;">
+                        <p style="font-weight: 600; margin-bottom: 10px;">วันที่ ${dateStr}: ${duty.duty_name}</p>
+                        
+                        <!-- Filter แผนก + Work Type สำหรับ Duty นี้ -->
+                        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                            <select 
+                                id="customFilterDept_${uniqueId}" 
+                                onchange="loadDoctorsForCustomDuty('${uniqueId}', ${deptId})"
+                                style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                                <option value="">-- เลือกแผนก --</option>
+                            </select>
+                            <select 
+                                id="customFilterWorkType_${uniqueId}" 
+                                onchange="loadDoctorsForCustomDuty('${uniqueId}', ${deptId})"
+                                style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                                <option value="full" selected>Full time</option>
+                                <option value="part">Part time</option>
+                            </select>
+                        </div>
+                        
+                        <select 
+                            class="custom-delegation-select" 
+                            data-dept-id="${deptId}" 
+                            data-duty-id="${duty.id}" 
+                            data-date="${item.date}"
+                            data-unique-id="${uniqueId}"
+                            style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                            <option value="">-- เลือกแพทย์ที่จะมาแทน --</option>
+                        </select>
+                    </div>
+                `;
+            });
+        });
+        
+        return html;
+    }
+
+    // โหลดแพทย์สำหรับแต่ละ Duty (Custom Delegation)
+    window.loadDoctorsForCustomDuty = async function(uniqueId, defaultDeptId) {
+        const filterDeptSelect = document.getElementById(`customFilterDept_${uniqueId}`);
+        const filterWorkTypeSelect = document.getElementById(`customFilterWorkType_${uniqueId}`);
+        const doctorSelect = document.querySelector(`.custom-delegation-select[data-unique-id="${uniqueId}"]`);
+        
+        if (!filterDeptSelect || !doctorSelect) return;
+        
+        // โหลด Departments ถ้ายังไม่มี (ครั้งแรก)
+        if (filterDeptSelect.options.length === 1) {
+            try {
+                const response = await fetch(`${API_URL}/api/departments`);
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    data.data.forEach(dept => {
+                        const option = document.createElement('option');
+                        option.value = dept.id;
+                        option.textContent = dept.name;
+                        // Default เป็นแผนกของ Duty (defaultDeptId)
+                        if (dept.id === defaultDeptId) {
+                            option.selected = true;
+                        }
+                        filterDeptSelect.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Load departments error:', error);
+            }
+        }
+        
+        // โหลดแพทย์
+        const selectedDeptId = filterDeptSelect.value || defaultDeptId;
+        const workType = filterWorkTypeSelect.value;
+        
+        try {
+            const response = await fetch(`${API_URL}/api/doctors`);
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                const currentDoctorId = parseInt(sessionStorage.getItem('doctor_id'));
+                let doctors = data.data.filter(d => 
+                    d.id !== currentDoctorId && 
+                    d.department_id == selectedDeptId &&
+                    d.work_type === workType
+                );
+                
+                // อัพเดท Dropdown แพทย์
+                doctorSelect.innerHTML = '<option value="">-- เลือกแพทย์ที่จะมาแทน --</option>';
+                doctors.forEach(doc => {
+                    const option = document.createElement('option');
+                    option.value = doc.id;
+                    option.textContent = doc.name;
+                    doctorSelect.appendChild(option);
+                });
+            }
+        } catch (error) {
+            console.error('Load doctors error:', error);
+        }
+    }
+
+    // ลบฟังก์ชันเก่า
+    window.loadCustomReplacementDoctors = async function(deptId) {
+        // เรียก loadDoctorsForCustomDuty สำหรับทุก Duty ในแผนกนี้
+        const selects = document.querySelectorAll(`.custom-delegation-select[data-dept-id="${deptId}"]`);
+        selects.forEach(select => {
+            const uniqueId = select.getAttribute('data-unique-id');
+            if (uniqueId) {
+                window.loadDoctorsForCustomDuty(uniqueId, deptId);
+            }
+        });
+    }
+
+    // โหลดแพทย์ทดแทนสำหรับแผนก
+    async function loadReplacementDoctorsForDept(deptId) {
+        const filterDeptSelect = document.getElementById(`filterDepartment_${deptId}`);
+        const filterWorkTypeSelect = document.getElementById(`filterWorkType_${deptId}`);
+        const replacementSelect = document.getElementById(`replacementDoctorSelect_${deptId}`);
+        
+        if (!filterDeptSelect || !replacementSelect) return;
+        
+        // โหลด Departments ถ้ายังไม่มี
+        if (filterDeptSelect.options.length === 1) {
+            try {
+                const response = await fetch(`${API_URL}/api/departments`);
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    data.data.forEach(dept => {
+                        const option = document.createElement('option');
+                        option.value = dept.id;
+                        option.textContent = dept.name;
+                        if (dept.id === deptId) {
+                            option.selected = true;
+                        }
+                        filterDeptSelect.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Load departments error:', error);
+            }
+        }
+        
+        // โหลดแพทย์
+        const selectedDeptId = filterDeptSelect.value || deptId;
+        const workType = filterWorkTypeSelect.value;
+        
+        try {
+            const response = await fetch(`${API_URL}/api/doctors`);
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                const currentDoctorId = parseInt(sessionStorage.getItem('doctor_id'));
+                let doctors = data.data.filter(d => 
+                    d.id !== currentDoctorId && 
+                    d.department_id == selectedDeptId &&
+                    d.work_type === workType
+                );
+                
+                replacementSelect.innerHTML = '<option value="">-- เลือกแพทย์ที่จะมาแทน --</option>';
+                doctors.forEach(doc => {
+                    const option = document.createElement('option');
+                    option.value = doc.id;
+                    option.textContent = doc.name;
+                    replacementSelect.appendChild(option);
+                });
+                
+                // โหลดสำหรับ Custom Delegation ด้วย
+                const customSelects = document.querySelectorAll(`.custom-delegation-select[data-dept-id="${deptId}"]`);
+                customSelects.forEach(select => {
+                    select.innerHTML = '<option value="">-- เลือกแพทย์ที่จะมาแทน --</option>';
+                    doctors.forEach(doc => {
+                        const option = document.createElement('option');
+                        option.value = doc.id;
+                        option.textContent = doc.name;
+                        select.appendChild(option);
+                    });
+                });
+            }
+        } catch (error) {
+            console.error('Load doctors error:', error);
+        }
+    }
+    function formatDateThai(dateStr) {
+        const date = new Date(dateStr);
+        const day = date.getDate();
+        const month = date.getMonth() + 1;
+        const year = date.getFullYear() + 543;
+        return `${day}/${month}/${year}`;
     }
 </script>
 ```
