@@ -782,12 +782,9 @@
 
     <!-- แสดง Duty และ Delegation ของแต่ละแผนก (Dynamic) -->
     <div id="departmentDetailsContainer"></div>
-        </div>
-
-        <!-- No Delegation: ไม่ฝากงาน -->
-        <div id="noDelegationSection" style="display: none;">
-            <div class="form-group">
-                <label>เหตุผลที่ไม่ฝากงาน <span style="color: red;">*</span></label>
+    
+    <!-- Dummy element เพื่อไม่ให้ code เก่า error -->
+    <select id="filterDepartment" style="display: none;"></select>
                 <textarea 
                     id="noDelegationReason" 
                     rows="4" 
@@ -856,11 +853,9 @@
             if (deptResponse.ok && deptData.success) {
                 const departments = deptData.data;
                 const departmentSelect = document.getElementById('departmentSelect');
-                const filterDepartment = document.getElementById('filterDepartment');
                 
                 departments.forEach(dept => {
                     departmentSelect.innerHTML += `<option value="${dept.id}">${dept.name}</option>`;
-                    filterDepartment.innerHTML += `<option value="${dept.id}">${dept.name}</option>`;
                 });
             }
 
@@ -917,7 +912,7 @@
             }
         } catch (error) {
             console.error('Load doctor data error:', error);
-            alert('เกิดข้อผิดพลาดในการโหลดข้อมูล');
+            alert('เกิดข้อผิดพลาดในการโหลดข้อมูล: ' + error.message);
             window.location.href = 'index.html';
         }
     }
@@ -932,11 +927,9 @@
                 const departments = data.data.sort((a, b) => a.name.localeCompare(b.name));
                 
                 const departmentSelect = document.getElementById('departmentSelect');
-                const filterDepartment = document.getElementById('filterDepartment');
                 
                 departments.forEach(dept => {
                     departmentSelect.innerHTML += `<option value="${dept.id}">${dept.name}</option>`;
-                    filterDepartment.innerHTML += `<option value="${dept.id}">${dept.name}</option>`;
                 });
             }
         } catch (error) {
