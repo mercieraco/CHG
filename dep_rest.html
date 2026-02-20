@@ -713,14 +713,16 @@
         </div>
 
 ```
-    <!-- แผนกและแพทย์ (ซ่อนไว้ - Auto-select จาก login) -->
-    <div class="form-row" style="display: none;">
+    <!-- Admin: เลือกแพทย์ที่จะลา -->
+    <div class="form-row">
         <div class="form-group">
+            <label>แผนก:</label>
             <select id="departmentSelect" onchange="loadDoctors()">
                 <option value="">-- เลือกแผนก --</option>
             </select>
         </div>
         <div class="form-group">
+            <label>Work Type:</label>
             <select id="workTypeSelect" onchange="loadDoctors()">
                 <option value="full" selected>Full time</option>
                 <option value="part">Part time</option>
@@ -728,7 +730,8 @@
         </div>
     </div>
     
-    <div class="form-group" style="display: none;">
+    <div class="form-group">
+        <label>แพทย์ที่จะลา:</label>
         <select id="doctorSelect" onchange="onDoctorChange()">
             <option value="">-- เลือกแพทย์ที่จะลา --</option>
         </select>
@@ -790,7 +793,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 1 (Admin + Multi-Dept)</span>
+        <span id="versionInfo">Version 2 (Admin + Multi-Dept)</span>
     </div>
 </div>
 
@@ -2992,6 +2995,7 @@
             console.error('Load doctors error:', error);
         }
     }
+
     function formatDateThai(dateStr) {
         const date = new Date(dateStr);
         const day = date.getDate();
