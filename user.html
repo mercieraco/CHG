@@ -895,14 +895,8 @@
                 // 7. แสดงชื่อ
                 document.getElementById('doctorNameDisplay').textContent = doctor.name;
                 
-                // 8. แสดง UI ตามจำนวนแผนก (NEW!)
-                if (doctorDepartments.length > 1) {
-                    // มีหลายแผนก → แสดง Checkbox
-                    showDepartmentSelection(doctorDepartments);
-                } else {
-                    // มี 1 แผนก → ซ่อน UI
-                    hideDepartmentSelection();
-                }
+                // 8. เก็บข้อมูลแผนก (ไม่แสดงทันที)
+                userDepartments = doctorDepartments;
                 
                 // 9. โหลด duties
                 await onDoctorChange();
@@ -1897,15 +1891,25 @@
             const data = await response.json();
             
             if (data.success) {
-                displayDuties(data.data);
+                currentDutyData = data.data;
+                
                 // ซ่อนปุ่มยืนยัน
                 document.getElementById('confirmDatesBtn').style.display = 'none';
+                
+                // แสดง Checkbox เลือกแผนก (ถ้ามีหลายแผนก)
+                if (userDepartments.length > 1) {
+                    showDepartmentSelection(userDepartments);
+                } else {
+                    // มี 1 แผนก → ไม่แสดง Checkbox แต่โหลดรายละเอียดเลย
+                    hideDepartmentSelection();
+                    await handleDepartmentSelectionChange();
+                }
             } else {
                 alert('❌ ไม่สามารถดึงข้อมูล Duty ได้');
             }
         } catch (error) {
             console.error('Error:', error);
-            alert('❌ เกิดข้อผิดพลาด');
+            alert('❌ เกิดข้อผิดพลาด: ' + error.message);
         }
     }
 
