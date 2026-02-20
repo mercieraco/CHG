@@ -795,7 +795,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 8 (Debug)</span>
+        <span id="versionInfo">Version 9 (Debug++)</span>
     </div>
 </div>
 
@@ -3015,10 +3015,17 @@
             
             const currentDoctorDutiesRes = await fetch(`${API_URL}/api/doctor-duties/doctor/${currentDoctorId}`);
             const currentDoctorDutiesData = await currentDoctorDutiesRes.json();
-            const currentDoctorDuties = currentDoctorDutiesData.success ? 
-                currentDoctorDutiesData.data.filter(d => d.department_id === departmentId) : [];
             
-            console.log('  currentDoctorDuties (dept filter):', currentDoctorDuties);
+            console.log('  currentDoctorDutiesData.data (ก่อน filter):', currentDoctorDutiesData.data);
+            console.log('  กำลัง filter ด้วย department_id:', departmentId, typeof departmentId);
+            
+            const currentDoctorDuties = currentDoctorDutiesData.success ? 
+                currentDoctorDutiesData.data.filter(d => {
+                    console.log(`    duty: dept=${d.department_id} (${typeof d.department_id}) vs target=${departmentId} (${typeof departmentId}) => ${d.department_id === departmentId}`);
+                    return d.department_id === departmentId;
+                }) : [];
+            
+            console.log('  currentDoctorDuties (หลัง filter):', currentDoctorDuties);
             
             // 2. สร้างแผนที่: วันที่ → Duty IDs ที่แพทย์กำลังลา
             const dateToLeaveDutyIds = {};
