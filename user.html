@@ -872,6 +872,15 @@
                     return;
                 }
                 
+                // ถ้าไม่มีข้อมูลแผนก (แพทย์ 1 แผนก) → สร้างจาก doctor
+                if (doctorDepartments.length === 0) {
+                    doctorDepartments = [{
+                        department_id: doctor.department_id,
+                        department_name: doctor.department_name,
+                        is_primary: true
+                    }];
+                }
+                
                 // 4. Auto-select
                 document.getElementById('departmentSelect').value = doctor.department_id;
                 document.getElementById('workTypeSelect').value = doctor.work_type || 'full';
