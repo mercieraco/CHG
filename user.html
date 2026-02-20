@@ -795,7 +795,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 4</span>
+        <span id="versionInfo">Version 5</span>
     </div>
 </div>
 
@@ -2799,32 +2799,41 @@
             return '<p style="color: #999;">ไม่มีงานที่ต้องฝาก</p>';
         }
         
-        let html = `
-            <!-- Filter สำหรับ Custom Delegation -->
-            <div class="filter-row" style="margin-bottom: 15px;">
-                <div class="form-group">
-                    <label>แผนก:</label>
-                    <select id="customFilterDepartment_${deptId}" onchange="loadCustomReplacementDoctors(${deptId})">
-                        <option value="">-- เลือกแผนก --</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Work Type:</label>
-                    <select id="customFilterWorkType_${deptId}" onchange="loadCustomReplacementDoctors(${deptId})">
-                        <option value="full" selected>Full time</option>
-                        <option value="part">Part time</option>
-                    </select>
-                </div>
-            </div>
-        `;
+        let html = '';
         
         dutiesWithWork.forEach(item => {
             item.duties.forEach(duty => {
                 const dateStr = formatDateThai(item.date);
+                const uniqueId = `${deptId}_${duty.id}_${item.date}`;
+                
                 html += `
                     <div style="margin-bottom: 15px; padding: 15px; background: white; border-radius: 6px; border: 1px solid #e0e0e0;">
                         <p style="font-weight: 600; margin-bottom: 10px;">วันที่ ${dateStr}: ${duty.duty_name}</p>
-                        <select class="custom-delegation-select" data-dept-id="${deptId}" data-duty-id="${duty.id}" data-date="${item.date}">
+                        
+                        <!-- Filter แผนก + Work Type สำหรับ Duty นี้ -->
+                        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                            <select 
+                                id="customFilterDept_${uniqueId}" 
+                                onchange="loadDoctorsForCustomDuty('${uniqueId}', ${deptId})"
+                                style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                                <option value="">-- เลือกแผนก --</option>
+                            </select>
+                            <select 
+                                id="customFilterWorkType_${uniqueId}" 
+                                onchange="loadDoctorsForCustomDuty('${uniqueId}', ${deptId})"
+                                style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                                <option value="full" selected>Full time</option>
+                                <option value="part">Part time</option>
+                            </select>
+                        </div>
+                        
+                        <select 
+                            class="custom-delegation-select" 
+                            data-dept-id="${deptId}" 
+                            data-duty-id="${duty.id}" 
+                            data-date="${item.date}"
+                            data-unique-id="${uniqueId}"
+                            style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
                             <option value="">-- เลือกแพทย์ที่จะมาแทน --</option>
                         </select>
                     </div>
@@ -2835,14 +2844,15 @@
         return html;
     }
 
-    // โหลดแพทย์สำหรับ Custom Delegation
-    window.loadCustomReplacementDoctors = async function(deptId) {
-        const filterDeptSelect = document.getElementById(`customFilterDepartment_${deptId}`);
-        const filterWorkTypeSelect = document.getElementById(`customFilterWorkType_${deptId}`);
+    // โหลดแพทย์สำหรับแต่ละ Duty (Custom Delegation)
+    window.loadDoctorsForCustomDuty = async function(uniqueId, defaultDeptId) {
+        const filterDeptSelect = document.getElementById(`customFilterDept_${uniqueId}`);
+        const filterWorkTypeSelect = document.getElementById(`customFilterWorkType_${uniqueId}`);
+        const doctorSelect = document.querySelector(`.custom-delegation-select[data-unique-id="${uniqueId}"]`);
         
-        if (!filterDeptSelect) return;
+        if (!filterDeptSelect || !doctorSelect) return;
         
-        // โหลด Departments ถ้ายังไม่มี
+        // โหลด Departments ถ้ายังไม่มี (ครั้งแรก)
         if (filterDeptSelect.options.length === 1) {
             try {
                 const response = await fetch(`${API_URL}/api/departments`);
@@ -2853,7 +2863,8 @@
                         const option = document.createElement('option');
                         option.value = dept.id;
                         option.textContent = dept.name;
-                        if (dept.id === deptId) {
+                        // Default เป็นแผนกของ Duty (defaultDeptId)
+                        if (dept.id === defaultDeptId) {
                             option.selected = true;
                         }
                         filterDeptSelect.appendChild(option);
@@ -2865,7 +2876,7 @@
         }
         
         // โหลดแพทย์
-        const selectedDeptId = filterDeptSelect.value || deptId;
+        const selectedDeptId = filterDeptSelect.value || defaultDeptId;
         const workType = filterWorkTypeSelect.value;
         
         try {
@@ -2880,21 +2891,30 @@
                     d.work_type === workType
                 );
                 
-                // อัพเดท Custom Delegation Dropdowns
-                const customSelects = document.querySelectorAll(`.custom-delegation-select[data-dept-id="${deptId}"]`);
-                customSelects.forEach(select => {
-                    select.innerHTML = '<option value="">-- เลือกแพทย์ที่จะมาแทน --</option>';
-                    doctors.forEach(doc => {
-                        const option = document.createElement('option');
-                        option.value = doc.id;
-                        option.textContent = doc.name;
-                        select.appendChild(option);
-                    });
+                // อัพเดท Dropdown แพทย์
+                doctorSelect.innerHTML = '<option value="">-- เลือกแพทย์ที่จะมาแทน --</option>';
+                doctors.forEach(doc => {
+                    const option = document.createElement('option');
+                    option.value = doc.id;
+                    option.textContent = doc.name;
+                    doctorSelect.appendChild(option);
                 });
             }
         } catch (error) {
             console.error('Load doctors error:', error);
         }
+    }
+
+    // ลบฟังก์ชันเก่า
+    window.loadCustomReplacementDoctors = async function(deptId) {
+        // เรียก loadDoctorsForCustomDuty สำหรับทุก Duty ในแผนกนี้
+        const selects = document.querySelectorAll(`.custom-delegation-select[data-dept-id="${deptId}"]`);
+        selects.forEach(select => {
+            const uniqueId = select.getAttribute('data-unique-id');
+            if (uniqueId) {
+                window.loadDoctorsForCustomDuty(uniqueId, deptId);
+            }
+        });
     }
 
     // โหลดแพทย์ทดแทนสำหรับแผนก
