@@ -739,25 +739,6 @@
         <h2 id="doctorNameDisplay" style="color: #667eea; font-size: 24px;">กำลังโหลด...</h2>
     </div>
 
-    <!-- เลือกแผนกที่ต้องการลา (แสดงเฉพาะกรณีมีหลายแผนก) -->
-    <div id="departmentSelectionContainer" style="display: none; margin-bottom: 20px; padding: 20px; background: #f8f9fa; border-radius: 8px; border: 2px solid #667eea;">
-        <div style="text-align: center; margin-bottom: 15px;">
-            <h3 style="color: #667eea; font-size: 18px; margin-bottom: 5px;">📍 เลือกแผนกที่ต้องการลา</h3>
-            <p style="color: #666; font-size: 14px;">กรุณาเลือกแผนกที่คุณต้องการลางาน</p>
-        </div>
-        
-        <div id="departmentCheckboxes" style="display: flex; flex-direction: column; gap: 10px;">
-            <!-- Checkboxes will be inserted here by JavaScript -->
-        </div>
-        
-        <div style="margin-top: 15px; padding: 10px; background: #fff3cd; border-radius: 6px; border-left: 4px solid #ffc107;">
-            <p style="color: #856404; font-size: 13px; margin: 0;">
-                ⚠️ <strong>หมายเหตุ:</strong> การลาจะถูกบันทึกแยกตามแผนกและต้องได้รับการอนุมัติแยกกัน
-            </p>
-        </div>
-    </div>
-
-
     <!-- ปฏิทิน -->
     <div class="calendar-container">
         <div class="calendar-header">
@@ -778,6 +759,24 @@
         <button id="confirmDatesBtn" class="btn-confirm-dates" onclick="confirmSelectedDates()" style="display: none;">
             ✅ ยืนยันเลือกวันที่ลา
         </button>
+    </div>
+
+    <!-- เลือกแผนกที่ต้องการลา (แสดงเฉพาะกรณีมีหลายแผนก) -->
+    <div id="departmentSelectionContainer" style="display: none; margin-bottom: 20px; padding: 20px; background: #f8f9fa; border-radius: 8px; border: 2px solid #667eea;">
+        <div style="text-align: center; margin-bottom: 15px;">
+            <h3 style="color: #667eea; font-size: 18px; margin-bottom: 5px;">📍 เลือกแผนกที่ต้องการลา</h3>
+            <p style="color: #666; font-size: 14px;">กรุณาเลือกแผนกที่คุณต้องการลางาน</p>
+        </div>
+        
+        <div id="departmentCheckboxes" style="display: flex; flex-direction: column; gap: 10px;">
+            <!-- Checkboxes will be inserted here by JavaScript -->
+        </div>
+        
+        <div style="margin-top: 15px; padding: 10px; background: #fff3cd; border-radius: 6px; border-left: 4px solid #ffc107;">
+            <p style="color: #856404; font-size: 13px; margin: 0;">
+                ⚠️ <strong>หมายเหตุ:</strong> การลาจะถูกบันทึกแยกตามแผนกและต้องได้รับการอนุมัติแยกกัน
+            </p>
+        </div>
     </div>
 
     <!-- แสดง Duty และ Delegation ของแต่ละแผนก (Dynamic) -->
