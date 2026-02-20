@@ -795,7 +795,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 6</span>
+        <span id="versionInfo">Version 7</span>
     </div>
 </div>
 
@@ -2893,7 +2893,7 @@
                 
                 // กรองแพทย์ที่มี Duty ซ้ำในวันนี้เท่านั้น
                 const dutyDate = doctorSelect.getAttribute('data-date');
-                const availableDoctors = await filterDoctorsWithoutConflicts(doctors, [dutyDate]);
+                const availableDoctors = await filterDoctorsWithoutConflicts(doctors, [dutyDate], selectedDeptId);
                 
                 // อัพเดท Dropdown แพทย์
                 doctorSelect.innerHTML = '<option value="">-- เลือกแพทย์ที่จะมาแทน --</option>';
@@ -2969,7 +2969,7 @@
                 );
                 
                 // กรองแพทย์ที่มี Duty ซ้ำกับวันที่ลา
-                const availableDoctors = await filterDoctorsWithoutConflicts(doctors, selectedDates);
+                const availableDoctors = await filterDoctorsWithoutConflicts(doctors, selectedDates, selectedDeptId);
                 
                 replacementSelect.innerHTML = '<option value="">-- เลือกแพทย์ที่จะมาแทน --</option>';
                 availableDoctors.forEach(doc => {
@@ -2996,35 +2996,61 @@
         }
     }
 
-    // กรองแพทย์ที่มี Duty ซ้ำกับวันที่ลา
-    async function filterDoctorsWithoutConflicts(doctors, dates) {
+    // กรองแพทย์ที่มี Duty ซ้ำกับวันที่ลา (ต้องเป็น Duty ID เดียวกัน)
+    async function filterDoctorsWithoutConflicts(doctors, dates, departmentId) {
         if (!doctors || doctors.length === 0 || !dates || dates.length === 0) {
             return doctors;
         }
         
         try {
-            // โหลด Duties ของแพทย์ทั้งหมด
+            // 1. หา Duties ของแพทย์ที่กำลังลา (ในแผนกนี้)
+            const currentDoctorId = parseInt(sessionStorage.getItem('doctor_id'));
+            const currentDoctorDutiesRes = await fetch(`${API_URL}/api/doctor-duties/doctor/${currentDoctorId}`);
+            const currentDoctorDutiesData = await currentDoctorDutiesRes.json();
+            const currentDoctorDuties = currentDoctorDutiesData.success ? 
+                currentDoctorDutiesData.data.filter(d => d.department_id === departmentId) : [];
+            
+            // 2. สร้างแผนที่: วันที่ → Duty IDs ที่แพทย์กำลังลา
+            const dateToLeaveDutyIds = {};
+            dates.forEach(date => {
+                const dayName = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][new Date(date).getDay()];
+                const dutiesOnThisDay = currentDoctorDuties.filter(duty => duty[dayName] === 1);
+                dateToLeaveDutyIds[date] = dutiesOnThisDay.map(d => d.duty_id);
+            });
+            
+            console.log('📋 Duties ที่กำลังลา:', dateToLeaveDutyIds);
+            
+            // 3. โหลด Duties ของแพทย์ทดแทนทั้งหมด
             const doctorIds = doctors.map(d => d.id);
             const dutiesPromises = doctorIds.map(id => 
                 fetch(`${API_URL}/api/doctor-duties/doctor/${id}`)
                     .then(res => res.json())
-                    .then(data => ({ doctorId: id, duties: data.success ? data.data : [] }))
+                    .then(data => ({ 
+                        doctorId: id, 
+                        duties: data.success ? data.data.filter(d => d.department_id === departmentId) : [] 
+                    }))
             );
             
             const allDutiesData = await Promise.all(dutiesPromises);
             
-            // เช็คแต่ละแพทย์ว่ามี Duty ซ้ำหรือไม่
+            // 4. เช็คแต่ละแพทย์ว่ามี Duty ID ชนกันหรือไม่
             const availableDoctors = doctors.filter(doctor => {
                 const doctorDuties = allDutiesData.find(d => d.doctorId === doctor.id)?.duties || [];
                 
                 // เช็คทุกวันที่ลา
                 for (const date of dates) {
-                    const dayName = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][new Date(date).getDay()];
+                    const leaveDutyIds = dateToLeaveDutyIds[date] || [];
+                    if (leaveDutyIds.length === 0) continue; // ไม่มี Duty ในวันนี้ → ข้าม
                     
-                    // ถ้าแพทย์คนนี้มี Duty ในวันนี้ → ไม่ available
-                    const hasDutyOnThisDay = doctorDuties.some(duty => duty[dayName] === 1);
-                    if (hasDutyOnThisDay) {
-                        console.log(`❌ ${doctor.name} มี Duty ในวันที่ ${date} → ไม่สามารถเลือกได้`);
+                    const dayName = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][new Date(date).getDay()];
+                    const replacementDutiesOnThisDay = doctorDuties.filter(duty => duty[dayName] === 1);
+                    const replacementDutyIds = replacementDutiesOnThisDay.map(d => d.duty_id);
+                    
+                    // เช็คว่า Duty ID ชนกันหรือไม่
+                    const hasConflict = leaveDutyIds.some(id => replacementDutyIds.includes(id));
+                    if (hasConflict) {
+                        const conflictDuty = currentDoctorDuties.find(d => leaveDutyIds.includes(d.duty_id));
+                        console.log(`❌ ${doctor.name} มี Duty "${conflictDuty?.duty_name}" ในวันที่ ${date} → ไม่สามารถเลือกได้`);
                         return false;
                     }
                 }
