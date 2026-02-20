@@ -2285,16 +2285,6 @@
 
         const startDateStr = selectedDates[0];
         const endDateStr = selectedDates[selectedDates.length - 1];
-        
-        // ดึง delegation type
-        const delegationType = document.querySelector('input[name="delegationType"]:checked').value;
-        
-        let requestBody = {
-            doctorId: parseInt(doctorId),
-            startDate: startDateStr,
-            endDate: endDateStr,
-            delegationType: delegationType
-        };
 
         let confirmMessage = `📋 ยืนยันการบันทึก\n\n` +
             `แพทย์ที่ลา: ${doctorName}\n` +
@@ -2307,69 +2297,106 @@
             confirmMessage += `⚠️ จะบันทึกแยกกัน ${selectedDepartments.length} ครั้ง\n`;
         }
 
-        if (delegationType === 'single') {
-            // Single Delegation
-            const replacementDoctorId = document.getElementById('replacementDoctorSelect').value;
-            const replacementDoctorName = replacementDoctorId 
-                ? document.getElementById('replacementDoctorSelect').selectedOptions[0]?.text || '' 
-                : '';
-
-            if (!replacementDoctorId) {
-                showMessage('กรุณาเลือกแพทย์ที่มาแทน', 'error');
-                return;
-            }
-
-            requestBody.hasReplacement = true;
-            requestBody.replacementDoctorId = parseInt(replacementDoctorId);
+        // ========================================
+        // เก็บข้อมูล Delegation ของแต่ละแผนก
+        // ========================================
+        const departmentData = [];
+        
+        for (const dept of selectedDepartments) {
+            const deptId = dept.department_id;
+            const delegationType = document.querySelector(`input[name="delegationType_${deptId}"]:checked`)?.value || 'none';
             
-            confirmMessage += `แพทย์ที่มาแทน: ${replacementDoctorName}\n`;
+            let deptRequestBody = {
+                doctorId: parseInt(doctorId),
+                startDate: startDateStr,
+                endDate: endDateStr,
+                delegationType: delegationType,
+                departmentId: deptId
+            };
 
-        } else if (delegationType === 'custom') {
-            // Custom Delegation (เดิมคือ Multiple)
-            const dutyAssignments = [];
-            const selects = document.querySelectorAll('.duty-assignment-select');
-            
-            for (const select of selects) {
-                const replacementDoctorId = select.value;
+            if (delegationType === 'single') {
+                // Single Delegation
+                const replacementSelect = document.getElementById(`replacementDoctorSelect_${deptId}`);
+                const replacementDoctorId = replacementSelect?.value;
+                const replacementDoctorName = replacementDoctorId 
+                    ? replacementSelect.selectedOptions[0]?.text || '' 
+                    : '';
+
                 if (!replacementDoctorId) {
-                    showMessage('กรุณาเลือกแพทย์ที่มาแทนให้ครบทุก Duty', 'error');
+                    showMessage(`กรุณาเลือกแพทย์ที่มาแทนสำหรับแผนก ${dept.department_name}`, 'error');
+                    return;
+                }
+
+                deptRequestBody.hasReplacement = true;
+                deptRequestBody.replacementDoctorId = parseInt(replacementDoctorId);
+                
+                confirmMessage += `\n📍 ${dept.department_name}: แพทย์ ${replacementDoctorName}`;
+
+            } else if (delegationType === 'custom') {
+                // Custom Delegation
+                const dutyAssignments = [];
+                const selects = document.querySelectorAll(`.custom-delegation-select[data-dept-id="${deptId}"]`);
+                
+                for (const select of selects) {
+                    const replacementDoctorId = select.value;
+                    if (!replacementDoctorId) {
+                        showMessage(`กรุณาเลือกแพทย์ที่มาแทนให้ครบทุก Duty ในแผนก ${dept.department_name}`, 'error');
+                        return;
+                    }
+                    
+                    dutyAssignments.push({
+                        dutyId: parseInt(select.dataset.dutyId),
+                        dutyDate: select.dataset.date,
+                        replacementDoctorId: parseInt(replacementDoctorId)
+                    });
+                }
+                
+                deptRequestBody.dutyAssignments = dutyAssignments;
+                confirmMessage += `\n📍 ${dept.department_name}: กำหนดเอง (${dutyAssignments.length} งาน)`;
+                
+            } else if (delegationType === 'none') {
+                // No Delegation
+                const reasonTextarea = document.getElementById(`noDelegationReason_${deptId}`);
+                const reason = reasonTextarea?.value.trim() || '';
+                
+                if (!reason) {
+                    showMessage(`กรุณาระบุเหตุผลที่ไม่ฝากงานสำหรับแผนก ${dept.department_name}`, 'error');
+                    reasonTextarea?.focus();
                     return;
                 }
                 
-                dutyAssignments.push({
-                    dutyId: parseInt(select.dataset.dutyId),
-                    dutyDate: select.dataset.date,
-                    replacementDoctorId: parseInt(replacementDoctorId)
-                });
+                deptRequestBody.hasReplacement = false;
+                deptRequestBody.noDelegationReason = reason;
+                confirmMessage += `\n📍 ${dept.department_name}: ไม่ฝากงาน`;
             }
-            
-            requestBody.dutyAssignments = dutyAssignments;
-            confirmMessage += `ฝากงานแบบกำหนดเอง (${dutyAssignments.length} งาน)\n`;
-            
-        } else if (delegationType === 'none') {
-            // No Delegation - ไม่ฝากงาน
-            const reason = document.getElementById('noDelegationReason').value.trim();
-            
-            if (!reason) {
-                showMessage('กรุณาระบุเหตุผลที่ไม่ฝากงาน', 'error');
-                document.getElementById('noDelegationReason').focus();
-                return;
-            }
-            
-            // Pop-up ครั้งที่ 1
+
+            departmentData.push({
+                department: dept,
+                requestBody: deptRequestBody
+            });
+        }
+
+        confirmMessage += `\n\nต้องการบันทึกหรือไม่?`;
+        
+        // Confirm
+        if (!confirm(confirmMessage)) {
+            return;
+        }
+
+        // แจ้งเตือนเพิ่มถ้ามีแผนกที่ไม่ฝากงาน
+        const noDelegationDepts = departmentData.filter(d => d.requestBody.delegationType === 'none');
+        if (noDelegationDepts.length > 0) {
             const confirm1 = confirm(
                 '⚠️ ยืนยันการลางานโดยไม่มอบหมายงานแทน\n\n' +
+                `แผนก: ${noDelegationDepts.map(d => d.department.department_name).join(', ')}\n\n` +
                 '  •  ไม่มีการมอบหมายงานแทน\n' +
                 '  •  อาจส่งผลกระทบต่อการดำเนินงาน\n' +
                 '  •  ท่านยินดีรับผิดชอบต่อผลที่เกิดขึ้น\n\n' +
                 'ดำเนินการต่อหรือไม่?'
             );
             
-            if (!confirm1) {
-                return;
-            }
+            if (!confirm1) return;
             
-            // Pop-up ครั้งที่ 2
             const confirm2 = confirm(
                 '📌 แจ้งเตือน\n\n' +
                 '  •  ต้องรอการอนุมัติ\n' +
@@ -2377,40 +2404,26 @@
                 'ยืนยันการบันทึกหรือไม่?'
             );
             
-            if (!confirm2) {
-                return;
-            }
-            
-            requestBody.hasReplacement = false;
-            requestBody.noDelegationReason = reason;
-            confirmMessage += `ไม่ฝากงาน (รอการอนุมัติ)\n`;
-            confirmMessage += `เหตุผล: ${reason}\n`;
-        }
-
-        confirmMessage += `\nต้องการบันทึกหรือไม่?`;
-        
-        // ถ้าไม่ใช่ none ให้ confirm ปกติ
-        if (delegationType !== 'none') {
-            if (!confirm(confirmMessage)) {
-                return;
-            }
+            if (!confirm2) return;
         }
 
         try {
             // ========================================
             // Multi-Department: วนลาทีละแผนก
             // ========================================
-            const groupId = `grp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            const groupId = selectedDepartments.length > 1 
+                ? `grp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+                : null;
+                
             let successCount = 0;
 
-            for (const dept of selectedDepartments) {
+            for (const item of departmentData) {
                 const deptRequestBody = {
-                    ...requestBody,
-                    departmentId: dept.department_id,
-                    groupId: selectedDepartments.length > 1 ? groupId : null
+                    ...item.requestBody,
+                    groupId: groupId
                 };
 
-                console.log(`=== บันทึกการลาแผนก: ${dept.department_name} ===`);
+                console.log(`=== บันทึกการลาแผนก: ${item.department.department_name} ===`);
                 console.log('Body:', deptRequestBody);
 
                 const response = await fetch(`${LEAVE_API_URL}/api/leaves`, {
@@ -2423,9 +2436,9 @@
 
                 if (response.ok && data.success) {
                     successCount++;
-                    console.log(`✅ บันทึกแผนก ${dept.department_name} สำเร็จ`);
+                    console.log(`✅ บันทึกแผนก ${item.department.department_name} สำเร็จ`);
                 } else {
-                    throw new Error(`แผนก ${dept.department_name}: ${data.message || 'ไม่สามารถบันทึกได้'}`);
+                    throw new Error(`แผนก ${item.department.department_name}: ${data.message || 'ไม่สามารถบันทึกได้'}`);
                 }
             }
 
@@ -2443,8 +2456,7 @@
                 startDate = null;
                 endDate = null;
                 currentDutyData = [];
-                document.getElementById('dutySection').style.display = 'none';
-                document.getElementById('delegationSection').style.display = 'none';
+                document.getElementById('departmentDetailsContainer').innerHTML = '';
                 document.getElementById('confirmDatesBtn').style.display = 'none';
                 loadDoctorLeaves();
                 updateSelectedRange();
