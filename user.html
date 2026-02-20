@@ -795,7 +795,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 3</span>
+        <span id="versionInfo">Version 4</span>
     </div>
 </div>
 
@@ -2786,6 +2786,11 @@
         if (singleSection) singleSection.style.display = type === 'single' ? 'block' : 'none';
         if (customSection) customSection.style.display = type === 'custom' ? 'block' : 'none';
         if (noneSection) noneSection.style.display = type === 'none' ? 'block' : 'none';
+        
+        // เมื่อเปลี่ยนเป็น custom → โหลดแพทย์
+        if (type === 'custom' && window.loadCustomReplacementDoctors) {
+            window.loadCustomReplacementDoctors(deptId);
+        }
     }
 
     // Render Custom Delegation
@@ -2794,7 +2799,25 @@
             return '<p style="color: #999;">ไม่มีงานที่ต้องฝาก</p>';
         }
         
-        let html = '';
+        let html = `
+            <!-- Filter สำหรับ Custom Delegation -->
+            <div class="filter-row" style="margin-bottom: 15px;">
+                <div class="form-group">
+                    <label>แผนก:</label>
+                    <select id="customFilterDepartment_${deptId}" onchange="loadCustomReplacementDoctors(${deptId})">
+                        <option value="">-- เลือกแผนก --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Work Type:</label>
+                    <select id="customFilterWorkType_${deptId}" onchange="loadCustomReplacementDoctors(${deptId})">
+                        <option value="full" selected>Full time</option>
+                        <option value="part">Part time</option>
+                    </select>
+                </div>
+            </div>
+        `;
+        
         dutiesWithWork.forEach(item => {
             item.duties.forEach(duty => {
                 const dateStr = formatDateThai(item.date);
@@ -2810,6 +2833,68 @@
         });
         
         return html;
+    }
+
+    // โหลดแพทย์สำหรับ Custom Delegation
+    window.loadCustomReplacementDoctors = async function(deptId) {
+        const filterDeptSelect = document.getElementById(`customFilterDepartment_${deptId}`);
+        const filterWorkTypeSelect = document.getElementById(`customFilterWorkType_${deptId}`);
+        
+        if (!filterDeptSelect) return;
+        
+        // โหลด Departments ถ้ายังไม่มี
+        if (filterDeptSelect.options.length === 1) {
+            try {
+                const response = await fetch(`${API_URL}/api/departments`);
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    data.data.forEach(dept => {
+                        const option = document.createElement('option');
+                        option.value = dept.id;
+                        option.textContent = dept.name;
+                        if (dept.id === deptId) {
+                            option.selected = true;
+                        }
+                        filterDeptSelect.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Load departments error:', error);
+            }
+        }
+        
+        // โหลดแพทย์
+        const selectedDeptId = filterDeptSelect.value || deptId;
+        const workType = filterWorkTypeSelect.value;
+        
+        try {
+            const response = await fetch(`${API_URL}/api/doctors`);
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                const currentDoctorId = parseInt(sessionStorage.getItem('doctor_id'));
+                let doctors = data.data.filter(d => 
+                    d.id !== currentDoctorId && 
+                    d.department_id == selectedDeptId &&
+                    d.work_type === workType
+                );
+                
+                // อัพเดท Custom Delegation Dropdowns
+                const customSelects = document.querySelectorAll(`.custom-delegation-select[data-dept-id="${deptId}"]`);
+                customSelects.forEach(select => {
+                    select.innerHTML = '<option value="">-- เลือกแพทย์ที่จะมาแทน --</option>';
+                    doctors.forEach(doc => {
+                        const option = document.createElement('option');
+                        option.value = doc.id;
+                        option.textContent = doc.name;
+                        select.appendChild(option);
+                    });
+                });
+            }
+        } catch (error) {
+            console.error('Load doctors error:', error);
+        }
     }
 
     // โหลดแพทย์ทดแทนสำหรับแผนก
