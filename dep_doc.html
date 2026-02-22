@@ -655,7 +655,7 @@
 
 </head>
 <body>
-    <button onclick="window.location.href='dev.html'" class="btn-back-top">← Admin</button>
+    <button onclick="window.location.href='dev.html'" class="btn-back-top">← กลับ</button>
 
 ```
 <div class="container">
@@ -1886,14 +1886,20 @@
         const dutiesContainer = document.getElementById(`duties-${doctorId}`);
         dutiesContainer.innerHTML = '<div style="text-align: center; padding: 10px; color: #999;">กำลังโหลด Duties...</div>';
         
+        console.log('🔍 Loading duties for doctor:', doctorId, 'primary dept:', primaryDepartmentId);
+        
         try {
             // โหลด Duties
             const dutiesResponse = await fetch(`${API_URL}/api/doctor-duties/doctor/${doctorId}`);
             const dutiesData = await dutiesResponse.json();
             const allDuties = dutiesData.success ? dutiesData.data : [];
             
+            console.log('📦 All duties:', allDuties);
+            
             // Filter ตามแผนกหลัก
             const duties = allDuties.filter(d => d.department_id === primaryDepartmentId);
+            
+            console.log('✅ Filtered duties (primary dept):', duties);
             
             let html = '';
             
@@ -1989,10 +1995,15 @@
                 }
             }
             
+            console.log('📝 Generated HTML length:', html.length);
+            console.log('📝 HTML preview:', html.substring(0, 200));
+            
             dutiesContainer.innerHTML = html || '<div style="color: #999; font-size: 13px;">ไม่มี Duty</div>';
             
+            console.log('✅ Duties loaded successfully!');
+            
         } catch (error) {
-            console.error('Load duties error:', error);
+            console.error('❌ Load duties error:', error);
             dutiesContainer.innerHTML = '<div style="color: #ff4757;">โหลด Duties ไม่สำเร็จ</div>';
         }
     }
