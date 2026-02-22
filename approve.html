@@ -737,7 +737,7 @@
                     html += `
                         <div class="approval-item" style="border-left: 4px solid ${borderColor};">
                             <div class="approval-item-header">
-                                <div class="approval-item-top" onclick="viewDepartment(${leave.department_id})">
+                                <div class="approval-item-top" onclick="viewDepartment(${leave.department_id}, '${leave.start_date}')">
                                     <div class="approval-item-info">
                                         <h3>${badge}${leave.doctor_name} (${leave.department_name})</h3>
                                         <p>📅 ${startDate} - ${endDate} (${days} วัน)</p>
@@ -826,9 +826,17 @@
     }
 
     // ดูแผนก - เลือก dropdown อัตโนมัติ
-    function viewDepartment(departmentId) {
+    function viewDepartment(departmentId, startDate) {
         const select = document.getElementById('departmentSelect');
         select.value = departmentId;
+        
+        // เปลี่ยนเดือนไปที่วันที่เริ่มลา
+        if (startDate) {
+            const date = new Date(startDate);
+            currentYear = date.getFullYear();
+            currentMonth = date.getMonth();
+            renderCalendar();
+        }
         
         // Scroll ขึ้นไปดู dropdown
         select.scrollIntoView({ behavior: 'smooth', block: 'center' });
