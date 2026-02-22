@@ -52,16 +52,26 @@
         background: #ff6b6b;
         color: white;
         text-decoration: none;
-        border-radius: 8px;
+        border-radius: 20px;  /* เพิ่มความมน จาก 8px → 20px */
         font-weight: 600;
         transition: all 0.3s;
         white-space: nowrap;
+        
+        /* ทำให้ลอยติดหน้าจอ */
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 500;
+        box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+        border: none;
+        cursor: pointer;
+        font-size: 16px;
     }
 
     .btn-back:hover {
         background: #ee5a52;
         transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+        box-shadow: 0 6px 16px rgba(255, 107, 107, 0.4);
     }
 
     /* Dropdown แผนก */
@@ -359,23 +369,6 @@
         background: #da190b;
     }
 
-    .btn-back {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: none;
-        padding: 12px 30px;
-        border-radius: 8px;
-        cursor: pointer;
-        font-size: 16px;
-        font-weight: 600;
-        margin-top: 20px;
-    }
-
-    .btn-back:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
-    }
-
     .empty-message {
         text-align: center;
         color: #999;
@@ -435,7 +428,6 @@
         </div>
     </div>
 
-    <button onclick="window.location.href='dev.html'" class="btn-back">← กลับหน้าหลัก</button>
 </div>
 
 <script>
