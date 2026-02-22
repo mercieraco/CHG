@@ -1870,15 +1870,125 @@
             detailsContainer.style.display = 'block';
             toggleIcon.textContent = '▼';
             
-            // โหลด Duties (ถ้ายังไม่เคยโหลด)
+            // โหลด Departments และ Duties (ถ้ายังไม่เคยโหลด)
             if (!loadedDoctors.has(doctorId)) {
-                await loadDoctorDuties(doctorId, departmentId);
+                await loadDoctorDepartmentsAndDuties(doctorId, departmentId);
                 loadedDoctors.add(doctorId);
             }
         } else {
             // ปิด
             detailsContainer.style.display = 'none';
             toggleIcon.textContent = '▶';
+        }
+    }
+
+    async function loadDoctorDepartmentsAndDuties(doctorId, primaryDepartmentId) {
+        const dutiesContainer = document.getElementById(`duties-${doctorId}`);
+        dutiesContainer.innerHTML = '<div style="text-align: center; padding: 10px; color: #999;">กำลังโหลดข้อมูล...</div>';
+        
+        try {
+            // 1. โหลดแผนกทั้งหมดของแพทย์
+            const deptsResponse = await fetch(`${API_URL}/api/doctors/${doctorId}/departments`);
+            const deptsData = await deptsResponse.json();
+            let departments = deptsData.success ? deptsData.data : [];
+            
+            // ถ้าไม่มีข้อมูล (แพทย์ 1 แผนก) → ใช้แผนกหลักอย่างเดียว
+            if (departments.length === 0) {
+                // ดึงชื่อแผนกจาก doctor info
+                const doctorInfo = document.querySelector(`#doctor-${doctorId} .doctor-info-text`).textContent;
+                const deptName = doctorInfo.match(/แผนก: ([^|]+)/)?.[1]?.trim() || 'ไม่ระบุ';
+                departments = [{
+                    department_id: primaryDepartmentId,
+                    department_name: deptName,
+                    is_primary: true
+                }];
+            }
+            
+            // 2. โหลด Duties ทั้งหมด
+            const dutiesResponse = await fetch(`${API_URL}/api/doctor-duties/doctor/${doctorId}`);
+            const dutiesData = await dutiesResponse.json();
+            const allDuties = dutiesData.success ? dutiesData.data : [];
+            
+            // 3. แสดงแยกตามแผนก
+            let html = '';
+            
+            departments.forEach(dept => {
+                const isPrimary = dept.is_primary;
+                const deptDuties = allDuties.filter(d => d.department_id === dept.department_id);
+                
+                html += `
+                    <div style="margin-bottom: 20px; padding: 15px; background: ${isPrimary ? '#f0f7ff' : '#fff9f0'}; border-radius: 8px; border: 1px solid ${isPrimary ? '#d0e7ff' : '#ffe0b0'};">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <h4 style="margin: 0; color: #333;">
+                                ${isPrimary ? '🏥' : '➕'} ${dept.department_name} 
+                                ${isPrimary ? '<span style="background: #667eea; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-left: 8px;">แผนกหลัก</span>' : '<span style="background: #ffa726; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-left: 8px;">แผนกเสริม</span>'}
+                            </h4>
+                            <div style="display: flex; gap: 5px;">
+                                <button onclick="event.stopPropagation(); showDoctorDutyModal(${doctorId}, ${dept.department_id}, '${dept.department_name}')" class="btn-duty-doctor" style="font-size: 12px; padding: 4px 10px;">Duty</button>
+                                ${!isPrimary ? `<button onclick="event.stopPropagation(); removeDepartment(${doctorId}, ${dept.department_id})" class="btn-delete-doctor" style="font-size: 12px; padding: 4px 10px;">ลบแผนก</button>` : ''}
+                            </div>
+                        </div>
+                `;
+                
+                if (deptDuties.length > 0) {
+                    deptDuties.sort((a, b) => a.duty_name.localeCompare(b.duty_name, ['en', 'th']));
+                    
+                    html += '<div class="doctor-duties-list">';
+                    deptDuties.forEach(duty => {
+                        const days = [];
+                        if (duty.monday) days.push('จ');
+                        if (duty.tuesday) days.push('อ');
+                        if (duty.wednesday) days.push('พ');
+                        if (duty.thursday) days.push('พฤ');
+                        if (duty.friday) days.push('ศ');
+                        if (duty.saturday) days.push('ส');
+                        if (duty.sunday) days.push('อา');
+                        
+                        html += `
+                            <div class="duty-item">
+                                <strong>${duty.duty_name}</strong>
+                                <span class="duty-days">${days.join(', ')}</span>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                } else {
+                    html += '<div style="color: #999; font-size: 13px; padding: 10px 0;">ไม่มี Duty ในแผนกนี้</div>';
+                }
+                
+                html += '</div>';
+            });
+            
+            dutiesContainer.innerHTML = html;
+            
+        } catch (error) {
+            console.error('Load departments error:', error);
+            dutiesContainer.innerHTML = '<div style="color: #f44336; padding: 10px;">❌ เกิดข้อผิดพลาดในการโหลดข้อมูล</div>';
+        }
+    }
+
+    // ลบแผนกเสริม
+    async function removeDepartment(doctorId, departmentId) {
+        if (!confirm('ต้องการลบแผนกนี้ออกจากแพทย์หรือไม่?')) return;
+        
+        try {
+            const response = await fetch(`${API_URL}/api/doctors/${doctorId}/departments/${departmentId}`, {
+                method: 'DELETE'
+            });
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                alert('✅ ลบแผนกสำเร็จ');
+                // Reload duties
+                loadedDoctors.delete(doctorId);
+                const primaryDeptId = parseInt(document.querySelector(`#doctor-${doctorId} .doctor-info-text`).textContent.match(/แผนก: [^|]+/)?.[0]?.split(':')?.[1]?.trim()) || 0;
+                await loadDoctorDepartmentsAndDuties(doctorId, primaryDeptId);
+            } else {
+                alert('❌ ลบแผนกไม่สำเร็จ: ' + (data.message || 'เกิดข้อผิดพลาด'));
+            }
+        } catch (error) {
+            console.error('Remove department error:', error);
+            alert('❌ เกิดข้อผิดพลาด: ' + error.message);
         }
     }
 
