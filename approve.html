@@ -180,6 +180,8 @@
 
     .calendar-day.weekend {
         border-color: #ffcdd2;
+        position: relative;
+        z-index: 50;  /* สูงกว่าวันปกติ แต่ต่ำกว่า popup (1000) */
     }
 
     .calendar-day.today {
@@ -191,6 +193,13 @@
     }
 
     /* สีตามประเภทการลา */
+    .calendar-day.pending {
+        /* ไม่มีสี - เหมือนวันปกติ */
+        background: inherit !important;
+        border-color: inherit !important;
+        color: inherit;
+    }
+    
     .calendar-day.on-leave {
         background: #c8e6c9 !important;
         border-color: #66bb6a !important;
@@ -611,7 +620,7 @@
         }
         
         // เดี่ยว
-        if (leaveTypes.green === 1) return 'on-leave';  // เขียว
+        if (leaveTypes.green === 1) return 'pending';  // รออนุมัติ (ไม่มีสี)
         if (leaveTypes.yellow === 1) return 'no-delegation';  // เหลือง
         
         return null;
