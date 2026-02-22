@@ -232,7 +232,7 @@
     .calendar-day.weekend {
         border-color: #ffcdd2 !important;
         position: relative;
-        z-index: 50;
+        z-index: 200 !important;  /* เพิ่มเป็น 200 */
     }
 
     .calendar-day.selected {
@@ -351,8 +351,26 @@
     }
 
     .calendar-day.weekend.on-leave {
-        background: #c8e6c9 !important;
-        border-color: #c8e6c9 !important;
+        /* ลบสีเขียวออก - ให้เป็นสีปกติ */
+        background: inherit !important;
+        border-color: #ffcdd2 !important;  /* กรอบชมพูของ weekend */
+    }
+    
+    .calendar-day.weekend.approved {
+        /* อนุมัติแล้ว - ดำ */
+        background: #000000 !important;
+        border-color: #000000 !important;
+        color: #ffffff !important;
+        z-index: 250 !important;
+    }
+    
+    .calendar-day.weekend.rejected {
+        /* ไม่อนุมัติ - ขาว + กรอบดำ */
+        background: #ffffff !important;
+        border-color: #000000 !important;
+        border-width: 3px !important;
+        color: #000000 !important;
+        z-index: 250 !important;  /* สูงกว่า weekend ปกติ แต่ต่ำกว่า popup */
     }
 
     .calendar-day.weekend.no-delegation {
@@ -806,7 +824,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 11</span>
+        <span id="versionInfo">Version 12 (UI Fix Weekend)</span>
     </div>
 </div>
 
