@@ -1896,50 +1896,43 @@
         try {
             console.log('🔍 Loading departments for doctor:', doctorId);
             
-            // 1. โหลดแผนกทั้งหมดของแพทย์
+            // 1. โหลดข้อมูลแพทย์ (สำหรับแผนกหลัก)
+            const doctorResponse = await fetch(`${API_URL}/api/doctors/${doctorId}`);
+            const doctorData = await doctorResponse.json();
+            
+            if (!doctorData.success) {
+                throw new Error('ไม่สามารถโหลดข้อมูลแพทย์ได้');
+            }
+            
+            const doctor = doctorData.data;
+            console.log('👤 Doctor data:', doctor);
+            
+            // 2. โหลดชื่อแผนกหลัก
+            const primaryDeptResponse = await fetch(`${API_URL}/api/departments/${doctor.department_id}`);
+            const primaryDeptData = await primaryDeptResponse.json();
+            const primaryDeptName = primaryDeptData.success ? primaryDeptData.data.name : 'ไม่ระบุ';
+            
+            // 3. โหลดแผนกเสริม
             const deptsResponse = await fetch(`${API_URL}/api/doctors/${doctorId}/departments`);
             const deptsData = await deptsResponse.json();
-            let departments = deptsData.success ? deptsData.data : [];
+            const secondaryDepartments = deptsData.success ? deptsData.data : [];
             
-            console.log('📦 Departments from API:', departments);
+            console.log('📦 Secondary departments from API:', secondaryDepartments);
             
-            // ถ้าไม่มีข้อมูล (แพทย์ 1 แผนก) → ใช้แผนกหลักอย่างเดียว
-            if (departments.length === 0) {
-                console.log('⚠️ No departments from API, loading doctor info...');
-                
-                // ดึงจาก API doctor
-                const doctorResponse = await fetch(`${API_URL}/api/doctors/${doctorId}`);
-                const doctorData = await doctorResponse.json();
-                
-                console.log('👤 Doctor data:', doctorData);
-                
-                if (doctorData.success) {
-                    const doctor = doctorData.data;
-                    
-                    // ดึงชื่อแผนกจาก API departments
-                    const deptResponse = await fetch(`${API_URL}/api/departments/${doctor.department_id}`);
-                    const deptInfo = await deptResponse.json();
-                    const deptName = deptInfo.success ? deptInfo.data.name : (doctor.department_name || 'ไม่ระบุ');
-                    
-                    departments = [{
-                        department_id: doctor.department_id || primaryDepartmentId,
-                        department_name: deptName,
-                        is_primary: true
-                    }];
-                    
-                    console.log('✅ Created departments array:', departments);
-                }
-            }
-            
-            // ถ้ายังไม่มี departments → ใช้ค่า default
-            if (departments.length === 0) {
-                console.warn('⚠️ Still no departments, using default');
-                departments = [{
-                    department_id: primaryDepartmentId,
-                    department_name: 'ไม่ระบุ',
+            // 4. รวมแผนกหลัก + แผนกเสริม
+            let departments = [
+                // แผนกหลัก (เสมอ)
+                {
+                    department_id: doctor.department_id,
+                    department_name: primaryDeptName,
                     is_primary: true
-                }];
-            }
+                },
+                // แผนกเสริม
+                ...secondaryDepartments.map(d => ({
+                    ...d,
+                    is_primary: false
+                }))
+            ];
             
             console.log('📋 Final departments:', departments);
             
