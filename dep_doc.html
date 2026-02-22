@@ -1884,6 +1884,13 @@
 
     async function loadDoctorDepartmentsAndDuties(doctorId, primaryDepartmentId) {
         const dutiesContainer = document.getElementById(`duties-${doctorId}`);
+        
+        // ถ้า element ยังไม่มี (toggle ยังไม่เคยเปิด) → ไม่ต้องทำอะไร
+        if (!dutiesContainer) {
+            console.warn('⚠️ dutiesContainer not found for doctor:', doctorId);
+            return;
+        }
+        
         dutiesContainer.innerHTML = '<div style="text-align: center; padding: 10px; color: #999;">กำลังโหลดข้อมูล...</div>';
         
         try {
@@ -1895,11 +1902,36 @@
             // ถ้าไม่มีข้อมูล (แพทย์ 1 แผนก) → ใช้แผนกหลักอย่างเดียว
             if (departments.length === 0) {
                 // ดึงชื่อแผนกจาก doctor info
-                const doctorInfo = document.querySelector(`#doctor-${doctorId} .doctor-info-text`).textContent;
-                const deptName = doctorInfo.match(/แผนก: ([^|]+)/)?.[1]?.trim() || 'ไม่ระบุ';
+                const doctorInfoElement = document.querySelector(`#doctor-${doctorId} .doctor-info-text`);
+                
+                if (doctorInfoElement) {
+                    const doctorInfo = doctorInfoElement.textContent;
+                    const deptName = doctorInfo.match(/แผนก: ([^|]+)/)?.[1]?.trim() || 'ไม่ระบุ';
+                    departments = [{
+                        department_id: primaryDepartmentId,
+                        department_name: deptName,
+                        is_primary: true
+                    }];
+                } else {
+                    // ถ้าหาไม่เจอ → ดึงจาก API
+                    const doctorResponse = await fetch(`${API_URL}/api/doctors/${doctorId}`);
+                    const doctorData = await doctorResponse.json();
+                    if (doctorData.success) {
+                        const doctor = doctorData.data;
+                        departments = [{
+                            department_id: doctor.department_id || primaryDepartmentId,
+                            department_name: doctor.department_name || 'ไม่ระบุ',
+                            is_primary: true
+                        }];
+                    }
+                }
+            }
+            
+            // ถ้ายังไม่มี departments → ใช้ค่า default
+            if (departments.length === 0) {
                 departments = [{
                     department_id: primaryDepartmentId,
-                    department_name: deptName,
+                    department_name: 'ไม่ระบุ',
                     is_primary: true
                 }];
             }
@@ -1979,10 +2011,18 @@
             
             if (response.ok && data.success) {
                 alert('✅ ลบแผนกสำเร็จ');
-                // Reload duties
+                
+                // Reload doctor ใหม่จาก API
                 loadedDoctors.delete(doctorId);
-                const primaryDeptId = parseInt(document.querySelector(`#doctor-${doctorId} .doctor-info-text`).textContent.match(/แผนก: [^|]+/)?.[0]?.split(':')?.[1]?.trim()) || 0;
-                await loadDoctorDepartmentsAndDuties(doctorId, primaryDeptId);
+                
+                // ดึง primaryDeptId จาก API
+                const doctorResponse = await fetch(`${API_URL}/api/doctors/${doctorId}`);
+                const doctorData = await doctorResponse.json();
+                
+                if (doctorData.success) {
+                    const primaryDeptId = doctorData.data.department_id;
+                    await loadDoctorDepartmentsAndDuties(doctorId, primaryDeptId);
+                }
             } else {
                 alert('❌ ลบแผนกไม่สำเร็จ: ' + (data.message || 'เกิดข้อผิดพลาด'));
             }
