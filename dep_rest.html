@@ -46,23 +46,26 @@
         background: #ff6b6b;
         color: white;
         border: none;
-        border-radius: 8px;
+        border-radius: 20px;  /* เพิ่มความมน จาก 8px → 20px */
         cursor: pointer;
         font-size: 16px;
         text-decoration: none;
         display: inline-block;
+        font-weight: 600;  /* เพิ่มความหนา */
+        transition: all 0.3s;  /* เพิ่ม transition */
         
         /* ทำให้ลอยติดหน้าจอ */
         position: fixed;
         top: 20px;
         right: 20px;
         z-index: 500;  /* สูงกว่า weekend (250) แต่ต่ำกว่า popup (1000) */
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
     }
 
     .btn-back:hover {
         background: #ee5a52;
-        box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+        transform: translateY(-2px);  /* ยกขึ้นเล็กน้อย */
+        box-shadow: 0 6px 16px rgba(255, 107, 107, 0.4);
     }
 
     .form-row {
@@ -830,7 +833,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 7 (Admin + Fixed Back Button)</span>
+        <span id="versionInfo">Version 8 (Admin + Rounded Button)</span>
     </div>
 </div>
 
