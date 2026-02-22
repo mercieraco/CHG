@@ -2365,7 +2365,10 @@
             
             if (response.ok && data.success) {
                 closeDoctorDutyModal();
-                loadDoctors();
+                
+                // Reload เฉพาะแพทย์คนนี้ (แทนที่จะ reload ทั้งหมด)
+                loadedDoctors.delete(currentDoctorId);
+                await loadDoctorDepartmentsAndDuties(currentDoctorId, currentDoctorDepartmentId);
                 
                 const doctorListMessage = document.getElementById('doctorListMessage');
                 doctorListMessage.className = 'message success show';
