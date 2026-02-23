@@ -1387,16 +1387,21 @@
                             for (const duty of dutyList) {
                                 console.log(`🔍 Counting doctors for duty: ${duty.duty_name} (ID: ${duty.id})`);
                                 
-                                // โหลด doctor-duties สำหรับ duty นี้
-                                const ddResponse = await fetch(`${API_URL}/api/doctor-duties/duty/${duty.id}`);
+                                // โหลด doctor-duties ทั้งหมด
+                                const ddResponse = await fetch(`${API_URL}/api/doctor-duties`);
                                 const ddData = await ddResponse.json();
                                 
                                 if (ddResponse.ok && ddData.success) {
-                                    // Filter เฉพาะที่ department_id ตรงกัน
-                                    const doctorDutiesForThisDuty = ddData.data.filter(dd => dd.department_id === dept.id);
+                                    // Filter: duty_id ตรง AND department_id ตรง
+                                    const doctorDutiesForThisDuty = ddData.data.filter(dd => 
+                                        dd.duty_id === duty.id && dd.department_id === dept.id
+                                    );
                                     
-                                    console.log(`  → Found ${doctorDutiesForThisDuty.length} doctor-duties for dept ${dept.id}`);
-                                    console.log(`  → Data:`, doctorDutiesForThisDuty);
+                                    console.log(`  → Found ${doctorDutiesForThisDuty.length} doctor-duties (duty_id=${duty.id}, dept_id=${dept.id})`);
+                                    
+                                    if (doctorDutiesForThisDuty.length > 0) {
+                                        console.log(`  → Sample:`, doctorDutiesForThisDuty[0]);
+                                    }
                                     
                                     duties.push({
                                         duty_id: duty.id,
@@ -1409,6 +1414,8 @@
                                         sat_count: doctorDutiesForThisDuty.filter(dd => dd.saturday).length,
                                         sun_count: doctorDutiesForThisDuty.filter(dd => dd.sunday).length
                                     });
+                                } else {
+                                    console.warn('  ❌ Failed to load doctor-duties');
                                 }
                             }
                         }
