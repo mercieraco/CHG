@@ -1370,57 +1370,23 @@
                 for (const dept of departments) {
                     const safeName = dept.name.replace(/'/g, "\\'");
                     
-                    console.log('🏥 Loading duties for department:', dept.name, 'ID:', dept.id);
-                    
                     let duties = [];
                     try {
-                        // โหลด Duties ของแผนก
-                        const dutiesResponse = await fetch(`${API_URL}/api/duties/department/${dept.id}`);
-                        const dutiesData = await dutiesResponse.json();
+                        const dutyCountResponse = await fetch(`${API_URL}/api/duty-count/department/${dept.id}`);
+                        const dutyCountData = await dutyCountResponse.json();
                         
-                        if (dutiesResponse.ok && dutiesData.success) {
-                            const dutyList = dutiesData.data;
-                            console.log('📋 Found duties:', dutyList.map(d => d.duty_name));
-                            
-                            // นับแพทย์แต่ละ Duty
-                            duties = [];
-                            for (const duty of dutyList) {
-                                console.log(`🔍 Counting doctors for duty: ${duty.duty_name} (ID: ${duty.id})`);
-                                
-                                // โหลด doctor-duties ทั้งหมด
-                                const ddResponse = await fetch(`${API_URL}/api/doctor-duties`);
-                                const ddData = await ddResponse.json();
-                                
-                                if (ddResponse.ok && ddData.success) {
-                                    // Filter: duty_id ตรง AND department_id ตรง
-                                    const doctorDutiesForThisDuty = ddData.data.filter(dd => 
-                                        dd.duty_id === duty.id && dd.department_id === dept.id
-                                    );
-                                    
-                                    console.log(`  → Found ${doctorDutiesForThisDuty.length} doctor-duties (duty_id=${duty.id}, dept_id=${dept.id})`);
-                                    
-                                    if (doctorDutiesForThisDuty.length > 0) {
-                                        console.log(`  → Sample:`, doctorDutiesForThisDuty[0]);
-                                    }
-                                    
-                                    duties.push({
-                                        duty_id: duty.id,
-                                        duty_name: duty.duty_name,
-                                        mon_count: doctorDutiesForThisDuty.filter(dd => dd.monday).length,
-                                        tue_count: doctorDutiesForThisDuty.filter(dd => dd.tuesday).length,
-                                        wed_count: doctorDutiesForThisDuty.filter(dd => dd.wednesday).length,
-                                        thu_count: doctorDutiesForThisDuty.filter(dd => dd.thursday).length,
-                                        fri_count: doctorDutiesForThisDuty.filter(dd => dd.friday).length,
-                                        sat_count: doctorDutiesForThisDuty.filter(dd => dd.saturday).length,
-                                        sun_count: doctorDutiesForThisDuty.filter(dd => dd.sunday).length
-                                    });
-                                } else {
-                                    console.warn('  ❌ Failed to load doctor-duties');
-                                }
-                            }
+                        if (dutyCountResponse.ok && dutyCountData.success && dutyCountData.data.length > 0) {
+                            duties = dutyCountData.data;
+                        } else {
+                            const dutiesResponse = await fetch(`${API_URL}/api/duties/department/${dept.id}`);
+                            const dutiesData = await dutiesResponse.json();
+                            duties = dutiesData.success ? dutiesData.data : [];
                         }
                     } catch (error) {
-                        console.error('❌ Load duties error:', error);
+                        console.error('Duty count error, using fallback:', error);
+                        const dutiesResponse = await fetch(`${API_URL}/api/duties/department/${dept.id}`);
+                        const dutiesData = await dutiesResponse.json();
+                        duties = dutiesData.success ? dutiesData.data : [];
                     }
                     
                     html += `
