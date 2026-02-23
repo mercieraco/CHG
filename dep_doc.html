@@ -2035,11 +2035,8 @@
                 setTimeout(() => doctorListMessage.classList.remove('show'), 3000);
                 closeAddDepartmentModal();
                 
-                // Reload เฉพาะแพทย์คนนี้
-                const doctor = allDoctors.find(d => d.id === addDepartmentDoctorId);
-                if (doctor) {
-                    await loadDoctorDuties(doctor.id, doctor.department_id);
-                }
+                // Reload ทั้งหมด
+                await loadDoctors();
             } else {
                 throw new Error(data.message || 'ไม่สามารถเพิ่มแผนกได้');
             }
@@ -2166,16 +2163,13 @@
             if (response.ok && data.success) {
                 closeDoctorDutyModal();
                 
-                // Reload เฉพาะแพทย์คนนี้
-                const doctor = allDoctors.find(d => d.id === currentDoctorId);
-                if (doctor) {
-                    await loadDoctorDuties(doctor.id, doctor.department_id);
-                }
-                
                 const doctorListMessage = document.getElementById('doctorListMessage');
                 doctorListMessage.className = 'message success show';
                 doctorListMessage.textContent = '✅ เพิ่ม Duty สำเร็จ';
                 setTimeout(() => doctorListMessage.classList.remove('show'), 3000);
+                
+                // Reload ทั้งหมด
+                await loadDoctors();
             } else {
                 throw new Error(data.message || 'ไม่สามารถเพิ่ม Duty ได้');
             }
@@ -2204,12 +2198,14 @@
             
             if (response.ok && data.success) {
                 closeDeleteDoctorDutyModal();
-                loadDoctors();
                 
                 const doctorListMessage = document.getElementById('doctorListMessage');
                 doctorListMessage.className = 'message success show';
                 doctorListMessage.textContent = '✅ ลบ Duty สำเร็จ';
                 setTimeout(() => doctorListMessage.classList.remove('show'), 3000);
+                
+                // Reload ทั้งหมด
+                await loadDoctors();
             } else {
                 throw new Error(data.message || 'ไม่สามารถลบ Duty ได้');
             }
