@@ -1914,12 +1914,34 @@
             const primaryDeptData = await primaryDeptResponse.json();
             const primaryDeptName = primaryDeptData.success ? primaryDeptData.data.name : 'ไม่ระบุ';
             
-            // 3. โหลดแผนกเสริม
-            const deptsResponse = await fetch(`${API_URL}/api/doctors/${doctorId}/departments`);
+            // 3. โหลดแผนกเสริมจาก doctor_departments
+            const deptsResponse = await fetch(`${API_URL}/api/doctor-departments?doctor_id=${doctorId}`);
             const deptsData = await deptsResponse.json();
-            const secondaryDepartments = deptsData.success ? deptsData.data : [];
             
-            console.log('📦 Secondary departments from API:', secondaryDepartments);
+            console.log('📦 Doctor departments from API:', deptsData);
+            
+            let secondaryDepartments = [];
+            
+            if (deptsData.success && deptsData.data && deptsData.data.length > 0) {
+                // แยกเฉพาะแผนกที่ไม่ใช่แผนกหลัก
+                const allDeptIds = [...new Set(deptsData.data.map(d => d.department_id))];
+                const secondaryDeptIds = allDeptIds.filter(id => id !== doctor.department_id);
+                
+                // โหลดชื่อแผนกเสริม
+                const deptNamesPromises = secondaryDeptIds.map(id => 
+                    fetch(`${API_URL}/api/departments/${id}`)
+                        .then(res => res.json())
+                        .then(data => ({
+                            department_id: id,
+                            department_name: data.success ? data.data.name : 'ไม่ระบุ',
+                            is_primary: false
+                        }))
+                );
+                
+                secondaryDepartments = await Promise.all(deptNamesPromises);
+            }
+            
+            console.log('📦 Secondary departments:', secondaryDepartments);
             
             // 4. รวมแผนกหลัก + แผนกเสริม
             let departments = [
@@ -1929,21 +1951,18 @@
                     department_name: primaryDeptName,
                     is_primary: true
                 },
-                // แผนกเสริม
-                ...secondaryDepartments.map(d => ({
-                    ...d,
-                    is_primary: false
-                }))
+                // แผนกเสริม (ถ้ามี)
+                ...secondaryDepartments
             ];
             
             console.log('📋 Final departments:', departments);
             
-            // 2. โหลด Duties ทั้งหมด
+            // 5. โหลด Duties ทั้งหมด
             const dutiesResponse = await fetch(`${API_URL}/api/doctor-duties/doctor/${doctorId}`);
             const dutiesData = await dutiesResponse.json();
             const allDuties = dutiesData.success ? dutiesData.data : [];
             
-            // 3. แสดงแยกตามแผนก
+            // 6. แสดงแยกตามแผนก
             let html = '';
             
             departments.forEach(dept => {
