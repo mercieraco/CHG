@@ -1372,21 +1372,43 @@
                     
                     let duties = [];
                     try {
-                        const dutyCountResponse = await fetch(`${API_URL}/api/duty-count/department/${dept.id}`);
-                        const dutyCountData = await dutyCountResponse.json();
-                        
-                        if (dutyCountResponse.ok && dutyCountData.success && dutyCountData.data.length > 0) {
-                            duties = dutyCountData.data;
-                        } else {
-                            const dutiesResponse = await fetch(`${API_URL}/api/duties/department/${dept.id}`);
-                            const dutiesData = await dutiesResponse.json();
-                            duties = dutiesData.success ? dutiesData.data : [];
-                        }
-                    } catch (error) {
-                        console.error('Duty count error, using fallback:', error);
+                        // ใช้ Fallback API ตรงๆ เพราะ duty-count ไม่นับแผนกเสริม
                         const dutiesResponse = await fetch(`${API_URL}/api/duties/department/${dept.id}`);
                         const dutiesData = await dutiesResponse.json();
-                        duties = dutiesData.success ? dutiesData.data : [];
+                        
+                        if (dutiesResponse.ok && dutiesData.success) {
+                            const dutyList = dutiesData.data;
+                            
+                            // โหลด doctor-duties ทั้งหมดของแผนกนี้
+                            const doctorDutiesResponse = await fetch(`${API_URL}/api/doctor-duties`);
+                            const doctorDutiesData = await doctorDutiesResponse.json();
+                            
+                            if (doctorDutiesResponse.ok && doctorDutiesData.success) {
+                                // นับจำนวนแพทย์แต่ละวัน
+                                duties = dutyList.map(duty => {
+                                    // Filter doctor-duties ที่มี duty_id นี้ และ department_id นี้
+                                    const doctorDutiesForThisDuty = doctorDutiesData.data.filter(dd => 
+                                        dd.duty_id === duty.id && dd.department_id === dept.id
+                                    );
+                                    
+                                    return {
+                                        duty_id: duty.id,
+                                        duty_name: duty.duty_name,
+                                        mon_count: doctorDutiesForThisDuty.filter(dd => dd.monday).length,
+                                        tue_count: doctorDutiesForThisDuty.filter(dd => dd.tuesday).length,
+                                        wed_count: doctorDutiesForThisDuty.filter(dd => dd.wednesday).length,
+                                        thu_count: doctorDutiesForThisDuty.filter(dd => dd.thursday).length,
+                                        fri_count: doctorDutiesForThisDuty.filter(dd => dd.friday).length,
+                                        sat_count: doctorDutiesForThisDuty.filter(dd => dd.saturday).length,
+                                        sun_count: doctorDutiesForThisDuty.filter(dd => dd.sunday).length
+                                    };
+                                });
+                            } else {
+                                duties = dutyList;
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Load duties error:', error);
                     }
                     
                     html += `
