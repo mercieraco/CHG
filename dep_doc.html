@@ -346,7 +346,7 @@
 
     .doctor-duties-list {
         margin-top: 10px;
-        padding-left: 20px;
+        padding-left: 0;
     }
 
     .doctor-duty-item {
@@ -810,8 +810,10 @@
         </div>
     </div>
 </div>
+```
 
-<!-- Modal ยืนยันการลบแผนก -->
+<!-- Modals เหมือนเดิม -->
+
 <div id="deleteModal" class="modal">
     <div class="modal-content">
         <h3>⚠️ ยืนยันการลบ</h3>
@@ -824,7 +826,6 @@
     </div>
 </div>
 
-<!-- Modal แก้ไขชื่อแผนก -->
 <div id="editModal" class="modal">
     <div class="modal-content">
         <h3>🔧 แก้ไขชื่อแผนก</h3>
@@ -839,7 +840,6 @@
     </div>
 </div>
 
-<!-- Modal เพิ่ม Duty ให้แผนก -->
 <div id="dutyModal" class="modal">
     <div class="modal-content">
         <h3>➕ เพิ่มภาระงาน (Duty)</h3>
@@ -870,7 +870,6 @@
     </div>
 </div>
 
-<!-- Modal ลบ Duty ของแผนก -->
 <div id="deleteDutyModal" class="modal">
     <div class="modal-content">
         <h3>⚠️ ยืนยันการลบ Duty</h3>
@@ -883,7 +882,6 @@
     </div>
 </div>
 
-<!-- Modal ลบแพทย์ -->
 <div id="deleteDoctorModal" class="modal">
     <div class="modal-content">
         <h3>⚠️ ยืนยันการลบแพทย์</h3>
@@ -896,35 +894,36 @@
     </div>
 </div>
 
-<!-- Modal เพิ่มแผนกเสริม -->
 <div id="addDepartmentModal" class="modal">
     <div class="modal-content">
         <h3>➕ เพิ่มแผนกเสริม</h3>
         <p>แพทย์: <strong id="addDepartmentDoctorName"></strong></p>
-        
-        <div style="margin: 20px 0;">
-            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">
-                เลือกแผนกเสริม:
-            </label>
-            <select id="addDepartmentSelect" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;">
-                <option value="">-- เลือกแผนก --</option>
-            </select>
-        </div>
 
-        <div style="padding: 12px; background: #e3f2fd; border-radius: 6px; border-left: 4px solid #2196f3; margin: 15px 0;">
-            <p style="color: #1565c0; font-size: 13px; margin: 0;">
-                ℹ️ <strong>หมายเหตุ:</strong> แผนกเสริมจะถูกเพิ่มเป็นแผนกรอง แพทย์สามารถลางานในแผนกนี้ได้
-            </p>
-        </div>
+```
+    <div style="margin: 20px 0;">
+        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">
+            เลือกแผนกเสริม:
+        </label>
+        <select id="addDepartmentSelect" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;">
+            <option value="">-- เลือกแผนก --</option>
+        </select>
+    </div>
 
-        <div class="modal-actions">
-            <button onclick="closeAddDepartmentModal()" class="btn btn-secondary">ยกเลิก</button>
-            <button onclick="confirmAddDepartment()" class="btn btn-primary" style="background: #48dbfb;">เพิ่มแผนก</button>
-        </div>
+    <div style="padding: 12px; background: #e3f2fd; border-radius: 6px; border-left: 4px solid #2196f3; margin: 15px 0;">
+        <p style="color: #1565c0; font-size: 13px; margin: 0;">
+            ℹ️ <strong>หมายเหตุ:</strong> แผนกเสริมจะถูกเพิ่มเป็นแผนกรอง แพทย์สามารถลางานในแผนกนี้ได้
+        </p>
+    </div>
+
+    <div class="modal-actions">
+        <button onclick="closeAddDepartmentModal()" class="btn btn-secondary">ยกเลิก</button>
+        <button onclick="confirmAddDepartment()" class="btn btn-primary" style="background: #48dbfb;">เพิ่มแผนก</button>
     </div>
 </div>
+```
 
-<!-- Modal ลบแผนกเสริม -->
+</div>
+
 <div id="deleteDepartmentModal" class="modal">
     <div class="modal-content">
         <h3>⚠️ ยืนยันการลบแผนกเสริม</h3>
@@ -938,54 +937,55 @@
     </div>
 </div>
 
-<!-- Modal เพิ่ม Duty ให้แพทย์ -->
 <div id="doctorDutyModal" class="modal">
     <div class="modal-content">
         <h3>📅 เพิ่ม Duty สำหรับแพทย์</h3>
         <p><strong id="doctorDutyDoctorName"></strong></p>
-        
-        <div class="form-group" style="text-align: left;">
-            <label for="doctorDutySelect">เลือก Duty:</label>
-            <select id="doctorDutySelect">
-                <option value="">-- เลือก Duty --</option>
-            </select>
-        </div>
 
-        <div class="form-group" style="text-align: left;">
-            <label>เลือกวันที่ทำ Duty:</label>
-            <div class="checkbox-group">
-                <label>
-                    <input type="checkbox" name="dutyDays" value="monday"> จันทร์
-                </label>
-                <label>
-                    <input type="checkbox" name="dutyDays" value="tuesday"> อังคาร
-                </label>
-                <label>
-                    <input type="checkbox" name="dutyDays" value="wednesday"> พุธ
-                </label>
-                <label>
-                    <input type="checkbox" name="dutyDays" value="thursday"> พฤหัสบดี
-                </label>
-                <label>
-                    <input type="checkbox" name="dutyDays" value="friday"> ศุกร์
-                </label>
-                <label>
-                    <input type="checkbox" name="dutyDays" value="saturday"> เสาร์
-                </label>
-                <label>
-                    <input type="checkbox" name="dutyDays" value="sunday"> อาทิตย์
-                </label>
-            </div>
-        </div>
+```
+    <div class="form-group" style="text-align: left;">
+        <label for="doctorDutySelect">เลือก Duty:</label>
+        <select id="doctorDutySelect">
+            <option value="">-- เลือก Duty --</option>
+        </select>
+    </div>
 
-        <div class="modal-actions">
-            <button onclick="closeDoctorDutyModal()" class="btn btn-secondary">ยกเลิก</button>
-            <button onclick="confirmAddDoctorDuty()" class="btn btn-primary">บันทึก</button>
+    <div class="form-group" style="text-align: left;">
+        <label>เลือกวันที่ทำ Duty:</label>
+        <div class="checkbox-group">
+            <label>
+                <input type="checkbox" name="dutyDays" value="monday"> จันทร์
+            </label>
+            <label>
+                <input type="checkbox" name="dutyDays" value="tuesday"> อังคาร
+            </label>
+            <label>
+                <input type="checkbox" name="dutyDays" value="wednesday"> พุธ
+            </label>
+            <label>
+                <input type="checkbox" name="dutyDays" value="thursday"> พฤหัสบดี
+            </label>
+            <label>
+                <input type="checkbox" name="dutyDays" value="friday"> ศุกร์
+            </label>
+            <label>
+                <input type="checkbox" name="dutyDays" value="saturday"> เสาร์
+            </label>
+            <label>
+                <input type="checkbox" name="dutyDays" value="sunday"> อาทิตย์
+            </label>
         </div>
     </div>
+
+    <div class="modal-actions">
+        <button onclick="closeDoctorDutyModal()" class="btn btn-secondary">ยกเลิก</button>
+        <button onclick="confirmAddDoctorDuty()" class="btn btn-primary">บันทึก</button>
+    </div>
+</div>
+```
+
 </div>
 
-<!-- Modal ลบ Duty ของแพทย์ -->
 <div id="deleteDoctorDutyModal" class="modal">
     <div class="modal-content">
         <h3>⚠️ ยืนยันการลบ Duty</h3>
@@ -997,21 +997,22 @@
     </div>
 </div>
 
-<!-- Modal รายการรอตรวจสอบ -->
 <div id="pendingUsersModal" class="modal">
     <div class="modal-content" style="max-width: 700px;">
         <h3>⏳ รายการรอตรวจสอบ</h3>
         <p style="color: #666; margin-bottom: 20px;">แพทย์ที่ลงทะเบียนแล้วแต่ยังไม่มีข้อมูลในระบบ</p>
-        
-        <div id="pendingUsersList" class="loading">กำลังโหลดข้อมูล...</div>
-        
-        <div class="modal-actions" style="margin-top: 20px;">
-            <button onclick="closePendingUsersModal()" class="btn btn-secondary">ปิด</button>
-        </div>
+
+```
+    <div id="pendingUsersList" class="loading">กำลังโหลดข้อมูล...</div>
+    
+    <div class="modal-actions" style="margin-top: 20px;">
+        <button onclick="closePendingUsersModal()" class="btn btn-secondary">ปิด</button>
     </div>
 </div>
+```
 
-<!-- Modal ยืนยันเพิ่มข้อมูล -->
+</div>
+
 <div id="confirmAddPendingModal" class="modal">
     <div class="modal-content">
         <h3>✅ ยืนยันการเพิ่มข้อมูล</h3>
@@ -1023,7 +1024,6 @@
     </div>
 </div>
 
-<!-- Modal ยืนยันลบ Pending User -->
 <div id="confirmDeletePendingModal" class="modal">
     <div class="modal-content">
         <h3>⚠️ ยืนยันการลบ</h3>
@@ -1036,42 +1036,44 @@
     </div>
 </div>
 
-<!-- Modal แก้ไขแพทย์ -->
 <div id="editDoctorModal" class="modal">
     <div class="modal-content">
         <h3>✏️ แก้ไขข้อมูลแพทย์</h3>
         <p><strong id="editDoctorCurrentName"></strong></p>
-        
-        <div class="form-group" style="text-align: left;">
-            <label for="editDoctorFirstName">ชื่อ</label>
-            <input type="text" id="editDoctorFirstName" required>
-        </div>
 
-        <div class="form-group" style="text-align: left;">
-            <label for="editDoctorLastName">นามสกุล</label>
-            <input type="text" id="editDoctorLastName" required>
-        </div>
-
-        <div class="form-group" style="text-align: left;">
-            <label for="editDoctorDepartment">แผนก</label>
-            <select id="editDoctorDepartment" required>
-                <option value="">-- เลือกแผนก --</option>
-            </select>
-        </div>
-
-        <div class="form-group" style="text-align: left;">
-            <label for="editDoctorWorkType">ประเภทการทำงาน</label>
-            <select id="editDoctorWorkType" required>
-                <option value="full">Full time</option>
-                <option value="part">Part time</option>
-            </select>
-        </div>
-
-        <div class="modal-actions">
-            <button onclick="closeEditDoctorModal()" class="btn btn-secondary">ยกเลิก</button>
-            <button onclick="confirmEditDoctor()" class="btn btn-primary">บันทึก</button>
-        </div>
+```
+    <div class="form-group" style="text-align: left;">
+        <label for="editDoctorFirstName">ชื่อ</label>
+        <input type="text" id="editDoctorFirstName" required>
     </div>
+
+    <div class="form-group" style="text-align: left;">
+        <label for="editDoctorLastName">นามสกุล</label>
+        <input type="text" id="editDoctorLastName" required>
+    </div>
+
+    <div class="form-group" style="text-align: left;">
+        <label for="editDoctorDepartment">แผนก</label>
+        <select id="editDoctorDepartment" required>
+            <option value="">-- เลือกแผนก --</option>
+        </select>
+    </div>
+
+    <div class="form-group" style="text-align: left;">
+        <label for="editDoctorWorkType">ประเภทการทำงาน</label>
+        <select id="editDoctorWorkType" required>
+            <option value="full">Full time</option>
+            <option value="part">Part time</option>
+        </select>
+    </div>
+
+    <div class="modal-actions">
+        <button onclick="closeEditDoctorModal()" class="btn btn-secondary">ยกเลิก</button>
+        <button onclick="confirmEditDoctor()" class="btn btn-primary">บันทึก</button>
+    </div>
+</div>
+```
+
 </div>
 
 <script>
@@ -1086,13 +1088,10 @@
     let currentDoctorId = null;
     let currentDoctorDepartmentId = null;
     let deleteDoctorDutyId = null;
-    let deleteDoctorDutyDoctorId = null;
-    let deleteDoctorDutyDepartmentId = null;
     let allDoctors = [];
     let pendingUserId = null;
     let pendingLicenseNumber = null;
 
-    // เลือก Work Type
     function selectWorkType(type) {
         const btnFull = document.getElementById('btnFullTime');
         const btnPart = document.getElementById('btnPartTime');
@@ -1117,7 +1116,6 @@
         }
     }
 
-    // ตรวจสอบ Login
     window.onload = function() {
         const loggedIn = sessionStorage.getItem('loggedIn');
         const username = sessionStorage.getItem('username');
@@ -1132,7 +1130,6 @@
         loadPendingCount();
     };
 
-    // โหลดจำนวน Pending Users
     async function loadPendingCount() {
         try {
             const response = await fetch(`${API_URL}/api/pending-users`);
@@ -1158,7 +1155,6 @@
         }
     }
 
-    // แสดง Modal รายการรอตรวจสอบ
     async function showPendingUsers() {
         const count = parseInt(document.getElementById('pendingCount').textContent);
         if (count === 0) return;
@@ -1222,7 +1218,6 @@
         document.getElementById('pendingUsersModal').classList.remove('show');
     }
 
-    // แสดง Modal ยืนยันเพิ่มข้อมูล
     function showConfirmAddPending(userId, licenseNumber) {
         pendingUserId = userId;
         pendingLicenseNumber = licenseNumber;
@@ -1236,37 +1231,31 @@
         pendingLicenseNumber = null;
     }
 
-    // ยืนยันเพิ่มข้อมูล
     async function confirmAddPendingUser() {
         if (!pendingLicenseNumber) return;
         
-        // เก็บค่าไว้ก่อน (เพราะ close จะลบทิ้ง)
         const licenseToAdd = pendingLicenseNumber;
         
         closeConfirmAddPendingModal();
         closePendingUsersModal();
         
-        // ไปหน้าเพิ่มแพทย์และใส่เลข ว อัตโนมัติ
         await showDoctorForm();
         
-        // รอให้ฟอร์มโหลดเสร็จ
         setTimeout(() => {
             const licenseField = document.getElementById('doctorLicenseNumber');
             if (licenseField) {
-                licenseField.value = licenseToAdd;  // ใช้ค่าที่เก็บไว้
+                licenseField.value = licenseToAdd;
                 licenseField.readOnly = true;
                 licenseField.style.background = '#f0f0f0';
                 licenseField.style.cursor = 'not-allowed';
             }
             
-            // Scroll ไปที่ฟอร์ม
             document.getElementById('doctorSection').scrollIntoView({ behavior: 'smooth' });
             
             alert(`✅ กรุณากรอกข้อมูลสำหรับเลข ว: ${licenseToAdd}`);
         }, 100);
     }
 
-    // แสดง Modal ยืนยันลบ
     function showConfirmDeletePending(userId, licenseNumber) {
         pendingUserId = userId;
         pendingLicenseNumber = licenseNumber;
@@ -1280,7 +1269,6 @@
         pendingLicenseNumber = null;
     }
 
-    // ยืนยันลบ Pending User
     async function confirmDeletePendingUser() {
         if (!pendingUserId) return;
         
@@ -1302,7 +1290,6 @@
         }
     }
 
-    // แสดงฟอร์มจัดการแผนก
     function showDepartmentForm() {
         document.getElementById('departmentSection').style.display = 'block';
         document.getElementById('doctorSection').style.display = 'none';
@@ -1310,7 +1297,6 @@
         document.getElementById('departmentSection').scrollIntoView({ behavior: 'smooth' });
     }
 
-    // แสดงฟอร์มจัดการแพทย์
     async function showDoctorForm() {
         document.getElementById('departmentSection').style.display = 'none';
         document.getElementById('doctorSection').style.display = 'block';
@@ -1322,7 +1308,6 @@
         document.getElementById('doctorSection').scrollIntoView({ behavior: 'smooth' });
     }
 
-    // เพิ่มแผนก
     document.getElementById('addDepartmentForm').addEventListener('submit', async function(e) {
         e.preventDefault();
         
@@ -1358,7 +1343,6 @@
         }
     });
 
-    // โหลดรายการแผนก
     async function loadDepartments() {
         const departmentsList = document.getElementById('departmentsList');
         departmentsList.innerHTML = '<div class="loading">กำลังโหลดข้อมูล...</div>';
@@ -1386,7 +1370,6 @@
                 for (const dept of departments) {
                     const safeName = dept.name.replace(/'/g, "\\'");
                     
-                    // ลองใช้ API นับจำนวนแพทย์จริงก่อน
                     let duties = [];
                     try {
                         const dutyCountResponse = await fetch(`${API_URL}/api/duty-count/department/${dept.id}`);
@@ -1395,13 +1378,11 @@
                         if (dutyCountResponse.ok && dutyCountData.success && dutyCountData.data.length > 0) {
                             duties = dutyCountData.data;
                         } else {
-                            // Fallback: ใช้ API เดิม
                             const dutiesResponse = await fetch(`${API_URL}/api/duties/department/${dept.id}`);
                             const dutiesData = await dutiesResponse.json();
                             duties = dutiesData.success ? dutiesData.data : [];
                         }
                     } catch (error) {
-                        // ถ้า API ใหม่ error ให้ใช้ API เดิม
                         console.error('Duty count error, using fallback:', error);
                         const dutiesResponse = await fetch(`${API_URL}/api/duties/department/${dept.id}`);
                         const dutiesData = await dutiesResponse.json();
@@ -1423,7 +1404,6 @@
                     if (duties.length > 0) {
                         html += '<div class="duty-list">';
                         duties.forEach(duty => {
-                            // ฟังก์ชันแสดงจำนวน (0 = สีแดง, ≥1 = สีดำ)
                             const formatCount = (count) => {
                                 const color = count === 0 ? 'color: #ff4757; font-weight: 700;' : '';
                                 return `<span style="${color}">${count}</span>`;
@@ -1463,7 +1443,6 @@
         }
     }
 
-    // Modal ลบแผนก
     function showDeleteModal(id, name) {
         deleteDepartmentId = id;
         document.getElementById('deleteDepartmentName').textContent = name;
@@ -1498,7 +1477,6 @@
         }
     }
 
-    // Modal แก้ไขแผนก
     function showEditModal(id, name) {
         editDepartmentId = id;
         document.getElementById('editDepartmentName').value = name;
@@ -1544,7 +1522,6 @@
         }
     }
 
-    // Modal Duty ของแผนก
     function showDutyModal(departmentId, departmentName) {
         currentDepartmentId = departmentId;
         currentDepartmentName = departmentName;
@@ -1606,7 +1583,6 @@
         }
     }
 
-    // Modal ลบ Duty ของแผนก
     function showDeleteDutyModal(dutyId, dutyName) {
         deleteDutyId = dutyId;
         document.getElementById('deleteDutyName').textContent = dutyName;
@@ -1642,7 +1618,6 @@
         }
     }
 
-    // โหลดแผนกเข้า Dropdown (สำหรับเพิ่มแพทย์)
     async function loadDepartmentsDropdown() {
         try {
             const response = await fetch(`${API_URL}/api/departments`);
@@ -1668,7 +1643,6 @@
         }
     }
 
-    // โหลดแผนกเข้า Filter
     async function loadDepartmentsFilter() {
         try {
             const response = await fetch(`${API_URL}/api/departments`);
@@ -1693,7 +1667,6 @@
         }
     }
 
-    // เพิ่มแพทย์
     document.getElementById('addDoctorForm').addEventListener('submit', async function(e) {
         e.preventDefault();
         
@@ -1744,7 +1717,6 @@
         }
     });
 
-    // โหลดรายการแพทย์
     async function loadDoctors() {
         const doctorsList = document.getElementById('doctorsList');
         doctorsList.innerHTML = '<div class="loading">กำลังโหลดข้อมูล...</div>';
@@ -1755,7 +1727,6 @@
             
             if (response.ok && data.success) {
                 allDoctors = data.data;
-                // เรียง A-Z ก่อน, ก-ฮ หลัง
                 allDoctors.sort((a, b) => {
                     const aIsEng = /^[a-zA-Z]/.test(a.name);
                     const bIsEng = /^[a-zA-Z]/.test(b.name);
@@ -1772,14 +1743,12 @@
         }
     }
 
-    // Filter แพทย์ (แผนก, Work Type, เพศ)
     async function filterDoctors() {
         const filterDept = document.getElementById('filterDepartment').value;
         const filterWorkType = document.getElementById('filterWorkType').value;
         const filterGender = document.getElementById('filterGender').value;
         const doctorsList = document.getElementById('doctorsList');
         
-        // ต้องเลือกแผนกก่อน!
         if (!filterDept) {
             doctorsList.innerHTML = `
                 <div class="empty-state">
@@ -1792,17 +1761,14 @@
         
         let filteredDoctors = allDoctors;
         
-        // Filter แผนก
         if (filterDept) {
             filteredDoctors = filteredDoctors.filter(doc => doc.department_id == filterDept);
         }
         
-        // Filter Work Type
         if (filterWorkType) {
             filteredDoctors = filteredDoctors.filter(doc => doc.work_type === filterWorkType);
         }
         
-        // Filter เพศ (นพ./พญ.)
         if (filterGender) {
             filteredDoctors = filteredDoctors.filter(doc => doc.name.startsWith(filterGender));
         }
@@ -1823,14 +1789,11 @@
             
             html += `
                 <div class="doctor-item" id="doctor-${doctor.id}">
-                    <div class="doctor-header" style="display: flex; justify-content: space-between; align-items: center;">
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <div class="doctor-name">${doctor.name}</div>
-                        </div>
+                    <div class="doctor-header">
+                        <div class="doctor-name">${doctor.name}</div>
                     </div>
                     
-                    <!-- รายละเอียด (แสดงเลย) -->
-                    <div class="doctor-details-container" id="details-${doctor.id}">
+                    <div class="doctor-details-container">
                         <div style="padding: 15px; padding-top: 10px;">
                             <div class="doctor-info-text" style="color: #666; font-size: 14px; margin-bottom: 12px;">
                                 แผนก: ${doctor.department_name || 'ไม่ระบุ'} | 
@@ -1838,249 +1801,40 @@
                                 ${doctor.work_type === 'part' ? '⏰ Part time' : '🕐 Full time'}
                             </div>
                             <div class="doctor-actions" style="display: flex; gap: 8px; margin-bottom: 15px;">
-                                <button onclick="showAddDepartmentModal(${doctor.id}, '${safeName}')" class="btn-add-department">+แผนก</button>
-                                <button onclick="showDeleteDoctorModal(${doctor.id}, '${safeName}')" class="btn-delete-doctor">ลบ</button>
-                                <button onclick="showEditDoctorModal(${doctor.id}, '${safeName}', ${doctor.department_id}, '${doctor.work_type || 'full'}')" class="btn-edit-doctor">แก้ไข</button>
-                                <button onclick="showDoctorDutyModal(${doctor.id}, ${doctor.department_id}, '${safeName}')" class="btn-duty-doctor">Duty</button>
+                                <button onclick="event.stopPropagation(); showAddDepartmentModal(${doctor.id}, '${safeName}')" class="btn-add-department">+แผนก</button>
+                                <button onclick="event.stopPropagation(); showDeleteDoctorModal(${doctor.id}, '${safeName}')" class="btn-delete-doctor">ลบ</button>
+                                <button onclick="event.stopPropagation(); showEditDoctorModal(${doctor.id}, '${safeName}', ${doctor.department_id}, '${doctor.work_type || 'full'}')" class="btn-edit-doctor">แก้ไข</button>
+                                <button onclick="event.stopPropagation(); showDoctorDutyModal(${doctor.id}, ${doctor.department_id}, '${safeName}')" class="btn-duty-doctor">Duty</button>
                             </div>
                             
-                            <!-- Duties -->
-                            <div id="duties-${doctor.id}"></div>
+                            <div id="duties-${doctor.id}"><div class="loading">กำลังโหลด Duties...</div></div>
                         </div>
                     </div>
+                </div>
             `;
-            html += '</div>';  // ปิด doctor-item
         }
         
         doctorsList.innerHTML = html;
         
         // โหลด Duties ทันทีสำหรับทุกคน
         for (const doctor of filteredDoctors) {
-            loadDoctorDepartmentsAndDuties(doctor.id, doctor.department_id);
-        }
-    }
-
-    // ========================================
-    // Toggle Doctor Details (Collapsible)
-    // ========================================
-    let loadedDoctors = new Set();  // เก็บว่าแพทย์คนไหนโหลดแล้ว
-
-    async function toggleDoctorDetails(doctorId, doctorName, departmentId, workType) {
-        const detailsContainer = document.getElementById(`details-${doctorId}`);
-        const toggleIcon = document.getElementById(`toggle-${doctorId}`);
-        
-        // Toggle แสดง/ซ่อน
-        if (detailsContainer.style.display === 'none') {
-            // เปิด
-            detailsContainer.style.display = 'block';
-            toggleIcon.textContent = '▼';
-            
-            // โหลด Departments และ Duties (ถ้ายังไม่เคยโหลด)
-            if (!loadedDoctors.has(doctorId)) {
-                await loadDoctorDepartmentsAndDuties(doctorId, departmentId);
-                loadedDoctors.add(doctorId);
-            }
-        } else {
-            // ปิด
-            detailsContainer.style.display = 'none';
-            toggleIcon.textContent = '▶';
-        }
-    }
-
-    async function loadDoctorDepartmentsAndDuties(doctorId, primaryDepartmentId) {
-        const dutiesContainer = document.getElementById(`duties-${doctorId}`);
-        
-        // ถ้า element ยังไม่มี (toggle ยังไม่เคยเปิด) → ไม่ต้องทำอะไร
-        if (!dutiesContainer) {
-            console.warn('⚠️ dutiesContainer not found for doctor:', doctorId);
-            return;
-        }
-        
-        dutiesContainer.innerHTML = '<div style="text-align: center; padding: 10px; color: #999;">กำลังโหลดข้อมูล...</div>';
-        
-        try {
-            console.log('🔍 Loading departments for doctor:', doctorId);
-            
-            // 1. โหลดข้อมูลแพทย์ (สำหรับแผนกหลัก)
-            const doctorResponse = await fetch(`${API_URL}/api/doctors/${doctorId}`);
-            const doctorData = await doctorResponse.json();
-            
-            if (!doctorData.success) {
-                throw new Error('ไม่สามารถโหลดข้อมูลแพทย์ได้');
-            }
-            
-            const doctor = doctorData.data;
-            console.log('👤 Doctor data:', doctor);
-            
-            // 2. โหลดชื่อแผนกหลัก
-            const primaryDeptResponse = await fetch(`${API_URL}/api/departments/${doctor.department_id}`);
-            const primaryDeptData = await primaryDeptResponse.json();
-            const primaryDeptName = primaryDeptData.success ? primaryDeptData.data.name : 'ไม่ระบุ';
-            
-            // 3. โหลดแผนกเสริมจาก doctor_departments
-            const deptsResponse = await fetch(`${API_URL}/api/doctor-departments?doctor_id=${doctorId}`);
-            const deptsData = await deptsResponse.json();
-            
-            console.log('📦 Doctor departments from API:', deptsData);
-            
-            let secondaryDepartments = [];
-            
-            if (deptsData.success && deptsData.data && deptsData.data.length > 0) {
-                // แยกเฉพาะแผนกที่ไม่ใช่แผนกหลัก
-                const allDeptIds = [...new Set(deptsData.data.map(d => d.department_id))];
-                const secondaryDeptIds = allDeptIds.filter(id => id !== doctor.department_id);
-                
-                // โหลดชื่อแผนกเสริม
-                const deptNamesPromises = secondaryDeptIds.map(id => 
-                    fetch(`${API_URL}/api/departments/${id}`)
-                        .then(res => res.json())
-                        .then(data => ({
-                            department_id: id,
-                            department_name: data.success ? data.data.name : 'ไม่ระบุ',
-                            is_primary: false
-                        }))
-                );
-                
-                secondaryDepartments = await Promise.all(deptNamesPromises);
-            }
-            
-            console.log('📦 Secondary departments:', secondaryDepartments);
-            
-            // 4. รวมแผนกหลัก + แผนกเสริม
-            let departments = [
-                // แผนกหลัก (เสมอ)
-                {
-                    department_id: doctor.department_id,
-                    department_name: primaryDeptName,
-                    is_primary: true
-                },
-                // แผนกเสริม (ถ้ามี)
-                ...secondaryDepartments
-            ];
-            
-            console.log('📋 Final departments:', departments);
-            
-            // 5. โหลด Duties ทั้งหมด
-            const dutiesResponse = await fetch(`${API_URL}/api/doctor-duties/doctor/${doctorId}`);
-            const dutiesData = await dutiesResponse.json();
-            const allDuties = dutiesData.success ? dutiesData.data : [];
-            
-            // 6. แสดงแยกตามแผนก
-            let html = '';
-            
-            departments.forEach(dept => {
-                const isPrimary = dept.is_primary;
-                const deptDuties = allDuties.filter(d => d.department_id === dept.department_id);
-                
-                html += `
-                    <div style="margin-bottom: 20px; padding: 15px; background: ${isPrimary ? '#f0f7ff' : '#fff9f0'}; border-radius: 8px; border: 1px solid ${isPrimary ? '#d0e7ff' : '#ffe0b0'};">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                            <h4 style="margin: 0; color: #333;">
-                                ${isPrimary ? '🏥' : '➕'} ${dept.department_name} 
-                                ${isPrimary ? '<span style="background: #667eea; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-left: 8px;">แผนกหลัก</span>' : '<span style="background: #ffa726; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-left: 8px;">แผนกเสริม</span>'}
-                            </h4>
-                            <div style="display: flex; gap: 5px;">
-                                <button onclick="event.stopPropagation(); showDoctorDutyModal(${doctorId}, ${dept.department_id}, '${dept.department_name}')" class="btn-duty-doctor" style="font-size: 12px; padding: 4px 10px;">Duty</button>
-                                ${!isPrimary ? `<button onclick="event.stopPropagation(); removeDepartment(${doctorId}, ${dept.department_id})" class="btn-delete-doctor" style="font-size: 12px; padding: 4px 10px;">ลบแผนก</button>` : ''}
-                            </div>
-                        </div>
-                `;
-                
-                if (deptDuties.length > 0) {
-                    deptDuties.sort((a, b) => a.duty_name.localeCompare(b.duty_name, ['en', 'th']));
-                    
-                    html += '<div class="doctor-duties-list">';
-                    deptDuties.forEach(duty => {
-                        const days = [];
-                        if (duty.monday) days.push('จ');
-                        if (duty.tuesday) days.push('อ');
-                        if (duty.wednesday) days.push('พ');
-                        if (duty.thursday) days.push('พฤ');
-                        if (duty.friday) days.push('ศ');
-                        if (duty.saturday) days.push('ส');
-                        if (duty.sunday) days.push('อา');
-                        
-                        html += `
-                            <div class="duty-item" style="display: flex; justify-content: space-between; align-items: center;">
-                                <div>
-                                    <strong>${duty.duty_name}</strong>
-                                    <span class="duty-days">${days.join(', ')}</span>
-                                </div>
-                                <button onclick="event.stopPropagation(); showDeleteDoctorDutyModal(${duty.id}, '${duty.duty_name.replace(/'/g, "\\'")}', ${doctorId}, ${dept.department_id})" class="btn-delete-doctor-duty" style="font-size: 11px; padding: 3px 8px;">ลบ</button>
-                            </div>
-                        `;
-                    });
-                    html += '</div>';
-                } else {
-                    html += '<div style="color: #999; font-size: 13px; padding: 10px 0;">ไม่มี Duty ในแผนกนี้</div>';
-                }
-                
-                html += '</div>';
-            });
-            
-            dutiesContainer.innerHTML = html;
-            
-        } catch (error) {
-            console.error('Load departments error:', error);
-            dutiesContainer.innerHTML = '<div style="color: #f44336; padding: 10px;">❌ เกิดข้อผิดพลาดในการโหลดข้อมูล</div>';
-        }
-    }
-
-    // ลบแผนกเสริม
-    async function removeDepartment(doctorId, departmentId) {
-        if (!confirm('ต้องการลบแผนกนี้ออกจากแพทย์หรือไม่?')) return;
-        
-        try {
-            const response = await fetch(`${API_URL}/api/doctors/${doctorId}/departments/${departmentId}`, {
-                method: 'DELETE'
-            });
-            const data = await response.json();
-            
-            if (response.ok && data.success) {
-                alert('✅ ลบแผนกสำเร็จ');
-                
-                // Reload doctor ใหม่จาก API
-                loadedDoctors.delete(doctorId);
-                
-                // ดึง primaryDeptId จาก API
-                const doctorResponse = await fetch(`${API_URL}/api/doctors/${doctorId}`);
-                const doctorData = await doctorResponse.json();
-                
-                if (doctorData.success) {
-                    const primaryDeptId = doctorData.data.department_id;
-                    await loadDoctorDepartmentsAndDuties(doctorId, primaryDeptId);
-                }
-            } else {
-                alert('❌ ลบแผนกไม่สำเร็จ: ' + (data.message || 'เกิดข้อผิดพลาด'));
-            }
-        } catch (error) {
-            console.error('Remove department error:', error);
-            alert('❌ เกิดข้อผิดพลาด: ' + error.message);
+            await loadDoctorDuties(doctor.id, doctor.department_id);
         }
     }
 
     async function loadDoctorDuties(doctorId, primaryDepartmentId) {
         const dutiesContainer = document.getElementById(`duties-${doctorId}`);
-        dutiesContainer.innerHTML = '<div style="text-align: center; padding: 10px; color: #999;">กำลังโหลด Duties...</div>';
-        
-        console.log('🔍 Loading duties for doctor:', doctorId, 'primary dept:', primaryDepartmentId);
+        if (!dutiesContainer) return;
         
         try {
-            // โหลด Duties
             const dutiesResponse = await fetch(`${API_URL}/api/doctor-duties/doctor/${doctorId}`);
             const dutiesData = await dutiesResponse.json();
             const allDuties = dutiesData.success ? dutiesData.data : [];
             
-            console.log('📦 All duties:', allDuties);
-            
-            // Filter ตามแผนกหลัก
             const duties = allDuties.filter(d => d.department_id === primaryDepartmentId);
-            
-            console.log('✅ Filtered duties (primary dept):', duties);
             
             let html = '';
             
-            // แสดง Duties ของแผนกหลัก
             if (duties.length > 0) {
                 duties.sort((a, b) => {
                     const aIsEng = /^[a-zA-Z]/.test(a.duty_name);
@@ -2112,7 +1866,6 @@
                 html += '</div>';
             }
             
-            // โหลดแผนกเสริม
             const deptResponse = await fetch(`${API_URL}/api/doctors/${doctorId}/departments`);
             const deptData = await deptResponse.json();
             
@@ -2172,20 +1925,14 @@
                 }
             }
             
-            console.log('📝 Generated HTML length:', html.length);
-            console.log('📝 HTML preview:', html.substring(0, 200));
-            
             dutiesContainer.innerHTML = html || '<div style="color: #999; font-size: 13px;">ไม่มี Duty</div>';
             
-            console.log('✅ Duties loaded successfully!');
-            
         } catch (error) {
-            console.error('❌ Load duties error:', error);
+            console.error('Load duties error:', error);
             dutiesContainer.innerHTML = '<div style="color: #ff4757;">โหลด Duties ไม่สำเร็จ</div>';
         }
     }
 
-    // Modal ลบแพทย์
     function showDeleteDoctorModal(id, name) {
         deleteDoctorId = id;
         document.getElementById('deleteDoctorName').textContent = name;
@@ -2220,16 +1967,12 @@
         }
     }
 
-    // ========================================
-    // Modal เพิ่มแผนกเสริม
-    // ========================================
     let addDepartmentDoctorId = null;
 
     async function showAddDepartmentModal(doctorId, doctorName) {
         addDepartmentDoctorId = doctorId;
         document.getElementById('addDepartmentDoctorName').textContent = doctorName;
         
-        // โหลดแผนกทั้งหมด
         try {
             const response = await fetch(`${API_URL}/api/departments`);
             const data = await response.json();
@@ -2238,14 +1981,12 @@
                 const select = document.getElementById('addDepartmentSelect');
                 select.innerHTML = '<option value="">-- เลือกแผนก --</option>';
                 
-                // โหลดแผนกที่แพทย์มีอยู่แล้ว
                 const doctorDeptsResponse = await fetch(`${API_URL}/api/doctors/${doctorId}/departments`);
                 const doctorDeptsData = await doctorDeptsResponse.json();
                 const existingDeptIds = doctorDeptsData.success 
                     ? doctorDeptsData.data.map(d => d.department_id) 
                     : [];
                 
-                // แสดงเฉพาะแผนกที่ยังไม่มี
                 data.data.forEach(dept => {
                     if (!existingDeptIds.includes(dept.id)) {
                         select.innerHTML += `<option value="${dept.id}">${dept.name}</option>`;
@@ -2293,7 +2034,12 @@
                 doctorListMessage.textContent = '✅ เพิ่มแผนกเสริมสำเร็จ';
                 setTimeout(() => doctorListMessage.classList.remove('show'), 3000);
                 closeAddDepartmentModal();
-                loadDoctors();
+                
+                // Reload เฉพาะแพทย์คนนี้
+                const doctor = allDoctors.find(d => d.id === addDepartmentDoctorId);
+                if (doctor) {
+                    await loadDoctorDuties(doctor.id, doctor.department_id);
+                }
             } else {
                 throw new Error(data.message || 'ไม่สามารถเพิ่มแผนกได้');
             }
@@ -2303,9 +2049,6 @@
         }
     }
 
-    // ========================================
-    // Modal ลบแผนกเสริม
-    // ========================================
     let deleteDeptId = null;
 
     function showDeleteDepartmentModal(deptId, deptName, doctorName) {
@@ -2324,17 +2067,11 @@
         if (!deleteDeptId) return;
 
         try {
-            console.log('🗑️ Deleting department:', deleteDeptId);
-            console.log('API URL:', `${API_URL}/api/doctor-departments/${deleteDeptId}`);
-            
             const response = await fetch(`${API_URL}/api/doctor-departments/${deleteDeptId}`, {
                 method: 'DELETE'
             });
             
-            console.log('Response status:', response.status);
-            
             const data = await response.json();
-            console.log('Response data:', data);
             
             if (response.ok && data.success) {
                 const doctorListMessage = document.getElementById('doctorListMessage');
@@ -2353,13 +2090,11 @@
         }
     }
 
-    // Modal เพิ่ม Duty ให้แพทย์
     async function showDoctorDutyModal(doctorId, departmentId, doctorName) {
         currentDoctorId = doctorId;
         currentDoctorDepartmentId = departmentId;
         document.getElementById('doctorDutyDoctorName').textContent = doctorName;
         
-        // โหลด Duties ของแผนก
         try {
             const response = await fetch(`${API_URL}/api/duties/department/${departmentId}`);
             const data = await response.json();
@@ -2380,7 +2115,6 @@
             console.error('Error loading duties:', error);
         }
         
-        // รีเซ็ต checkbox
         document.querySelectorAll('input[name="dutyDays"]').forEach(cb => cb.checked = false);
         
         document.getElementById('doctorDutyModal').classList.add('show');
@@ -2410,7 +2144,6 @@
             sunday: document.querySelector('input[name="dutyDays"][value="sunday"]').checked
         };
         
-        // ต้องเลือกอย่างน้อย 1 วัน
         if (!Object.values(days).some(d => d)) {
             alert('กรุณาเลือกวันที่ทำ Duty อย่างน้อย 1 วัน');
             return;
@@ -2424,7 +2157,7 @@
                     doctorId: currentDoctorId,
                     dutyId: parseInt(dutyId),
                     days: days,
-                    departmentId: currentDoctorDepartmentId  // ← เพิ่ม!
+                    departmentId: currentDoctorDepartmentId
                 })
             });
 
@@ -2433,8 +2166,11 @@
             if (response.ok && data.success) {
                 closeDoctorDutyModal();
                 
-                // Reload Duties ของแพทย์คนนี้ทันที
-                await loadDoctorDepartmentsAndDuties(currentDoctorId, currentDoctorDepartmentId);
+                // Reload เฉพาะแพทย์คนนี้
+                const doctor = allDoctors.find(d => d.id === currentDoctorId);
+                if (doctor) {
+                    await loadDoctorDuties(doctor.id, doctor.department_id);
+                }
                 
                 const doctorListMessage = document.getElementById('doctorListMessage');
                 doctorListMessage.className = 'message success show';
@@ -2448,11 +2184,8 @@
         }
     }
 
-    // Modal ลบ Duty ของแพทย์
-    function showDeleteDoctorDutyModal(dutyId, dutyName, doctorId, departmentId) {
+    function showDeleteDoctorDutyModal(dutyId, dutyName) {
         deleteDoctorDutyId = dutyId;
-        deleteDoctorDutyDoctorId = doctorId;
-        deleteDoctorDutyDepartmentId = departmentId;
         document.getElementById('deleteDoctorDutyName').textContent = dutyName;
         document.getElementById('deleteDoctorDutyModal').classList.add('show');
     }
@@ -2460,8 +2193,6 @@
     function closeDeleteDoctorDutyModal() {
         document.getElementById('deleteDoctorDutyModal').classList.remove('show');
         deleteDoctorDutyId = null;
-        deleteDoctorDutyDoctorId = null;
-        deleteDoctorDutyDepartmentId = null;
     }
 
     async function confirmDeleteDoctorDuty() {
@@ -2473,11 +2204,7 @@
             
             if (response.ok && data.success) {
                 closeDeleteDoctorDutyModal();
-                
-                // Reload Duties ของแพทย์คนนี้ทันที
-                if (deleteDoctorDutyDoctorId && deleteDoctorDutyDepartmentId) {
-                    await loadDoctorDepartmentsAndDuties(deleteDoctorDutyDoctorId, deleteDoctorDutyDepartmentId);
-                }
+                loadDoctors();
                 
                 const doctorListMessage = document.getElementById('doctorListMessage');
                 doctorListMessage.className = 'message success show';
@@ -2492,9 +2219,7 @@
         }
     }
 
-    // Modal แก้ไขแพทย์
     async function showEditDoctorModal(doctorId, doctorName, departmentId, workType) {
-        // ตรวจสอบว่ามี Duty หรือไม่
         try {
             const dutiesResponse = await fetch(`${API_URL}/api/doctor-duties/doctor/${doctorId}`);
             const dutiesData = await dutiesResponse.json();
@@ -2509,7 +2234,6 @@
         
         editDoctorId = doctorId;
         
-        // แยกชื่อและนามสกุล (ตัดสรรพนาม)
         const nameWithoutTitle = doctorName.replace(/^(นพ\.|พญ\.)/, '');
         const nameParts = nameWithoutTitle.trim().split(' ');
         const firstName = nameParts[0] || '';
@@ -2520,7 +2244,6 @@
         document.getElementById('editDoctorLastName').value = lastName;
         document.getElementById('editDoctorWorkType').value = workType || 'full';
         
-        // โหลดแผนก
         try {
             const response = await fetch(`${API_URL}/api/departments`);
             const data = await response.json();
@@ -2597,14 +2320,12 @@
         }
     }
 
-    // ปิด Modal เมื่อคลิกนอก
     window.onclick = function(event) {
         if (event.target.classList.contains('modal')) {
             event.target.classList.remove('show');
         }
     };
 </script>
-```
 
 </body>
 </html>
