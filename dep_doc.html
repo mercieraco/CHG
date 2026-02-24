@@ -1077,7 +1077,9 @@
 </div>
 
 <script>
-    const API_URL = 'https://dep-doc-worker.9vk92zm5z2.workers.dev';
+    // ใช้ 2 Workers แยกกัน
+    const API_DEP_URL = 'https://depdocdep.YOUR-SUBDOMAIN.workers.dev'; // จัดการแผนก
+    const API_DOC_URL = 'https://depdocdoc.YOUR-SUBDOMAIN.workers.dev'; // จัดการแพทย์
     let deleteDepartmentId = null;
     let editDepartmentId = null;
     let currentDepartmentId = null;
@@ -1132,7 +1134,7 @@
 
     async function loadPendingCount() {
         try {
-            const response = await fetch(`${API_URL}/api/pending-users`);
+            const response = await fetch(`${API_DOC_URL}/api/pending-users`);
             const data = await response.json();
             
             if (response.ok && data.success) {
@@ -1165,7 +1167,7 @@
         document.getElementById('pendingUsersModal').classList.add('show');
         
         try {
-            const response = await fetch(`${API_URL}/api/pending-users`);
+            const response = await fetch(`${API_DOC_URL}/api/pending-users`);
             const data = await response.json();
             
             if (response.ok && data.success) {
@@ -1273,7 +1275,7 @@
         if (!pendingUserId) return;
         
         try {
-            const response = await fetch(`${API_URL}/api/pending-users/${pendingUserId}`, { method: 'DELETE' });
+            const response = await fetch(`${API_DOC_URL}/api/pending-users/${pendingUserId}`, { method: 'DELETE' });
             const data = await response.json();
             
             if (response.ok && data.success) {
@@ -1317,7 +1319,7 @@
         addMessage.classList.remove('show');
 
         try {
-            const response = await fetch(`${API_URL}/api/departments`, {
+            const response = await fetch(`${API_DEP_URL}/api/departments`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ departmentName: departmentName })
@@ -1348,7 +1350,7 @@
         departmentsList.innerHTML = '<div class="loading">กำลังโหลดข้อมูล...</div>';
 
         try {
-            const response = await fetch(`${API_URL}/api/departments`);
+            const response = await fetch(`${API_DEP_URL}/api/departments`);
             const data = await response.json();
             
             if (response.ok && data.success) {
@@ -1372,19 +1374,19 @@
                     
                     let duties = [];
                     try {
-                        const dutyCountResponse = await fetch(`${API_URL}/api/duty-count/department/${dept.id}`);
+                        const dutyCountResponse = await fetch(`${API_DEP_URL}/api/duty-count/department/${dept.id}`);
                         const dutyCountData = await dutyCountResponse.json();
                         
                         if (dutyCountResponse.ok && dutyCountData.success && dutyCountData.data.length > 0) {
                             duties = dutyCountData.data;
                         } else {
-                            const dutiesResponse = await fetch(`${API_URL}/api/duties/department/${dept.id}`);
+                            const dutiesResponse = await fetch(`${API_DEP_URL}/api/duties/department/${dept.id}`);
                             const dutiesData = await dutiesResponse.json();
                             duties = dutiesData.success ? dutiesData.data : [];
                         }
                     } catch (error) {
                         console.error('Duty count error, using fallback:', error);
-                        const dutiesResponse = await fetch(`${API_URL}/api/duties/department/${dept.id}`);
+                        const dutiesResponse = await fetch(`${API_DEP_URL}/api/duties/department/${dept.id}`);
                         const dutiesData = await dutiesResponse.json();
                         duties = dutiesData.success ? dutiesData.data : [];
                     }
@@ -1458,7 +1460,7 @@
         if (!deleteDepartmentId) return;
 
         try {
-            const response = await fetch(`${API_URL}/api/departments/${deleteDepartmentId}`, { method: 'DELETE' });
+            const response = await fetch(`${API_DEP_URL}/api/departments/${deleteDepartmentId}`, { method: 'DELETE' });
             const data = await response.json();
             
             if (response.ok && data.success) {
@@ -1499,7 +1501,7 @@
         if (!editDepartmentId) return;
 
         try {
-            const response = await fetch(`${API_URL}/api/departments/${editDepartmentId}`, {
+            const response = await fetch(`${API_DEP_URL}/api/departments/${editDepartmentId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ departmentName: newName })
@@ -1556,7 +1558,7 @@
         if (!currentDepartmentId) return;
 
         try {
-            const response = await fetch(`${API_URL}/api/duties`, {
+            const response = await fetch(`${API_DEP_URL}/api/duties`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -1598,7 +1600,7 @@
         if (!deleteDutyId) return;
 
         try {
-            const response = await fetch(`${API_URL}/api/duties/${deleteDutyId}`, { method: 'DELETE' });
+            const response = await fetch(`${API_DEP_URL}/api/duties/${deleteDutyId}`, { method: 'DELETE' });
             const data = await response.json();
             
             if (response.ok && data.success) {
@@ -1620,7 +1622,7 @@
 
     async function loadDepartmentsDropdown() {
         try {
-            const response = await fetch(`${API_URL}/api/departments`);
+            const response = await fetch(`${API_DEP_URL}/api/departments`);
             const data = await response.json();
             
             if (response.ok && data.success) {
@@ -1645,7 +1647,7 @@
 
     async function loadDepartmentsFilter() {
         try {
-            const response = await fetch(`${API_URL}/api/departments`);
+            const response = await fetch(`${API_DEP_URL}/api/departments`);
             const data = await response.json();
             
             if (response.ok && data.success) {
@@ -1681,7 +1683,7 @@
         addDoctorMessage.classList.remove('show');
 
         try {
-            const response = await fetch(`${API_URL}/api/doctors`, {
+            const response = await fetch(`${API_DOC_URL}/api/doctors`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -1722,7 +1724,7 @@
         doctorsList.innerHTML = '<div class="loading">กำลังโหลดข้อมูล...</div>';
 
         try {
-            const response = await fetch(`${API_URL}/api/doctors`);
+            const response = await fetch(`${API_DOC_URL}/api/doctors`);
             const data = await response.json();
             
             if (response.ok && data.success) {
@@ -1827,7 +1829,7 @@
         if (!dutiesContainer) return;
         
         try {
-            const dutiesResponse = await fetch(`${API_URL}/api/doctor-duties/doctor/${doctorId}`);
+            const dutiesResponse = await fetch(`${API_DOC_URL}/api/doctor-duties/doctor/${doctorId}`);
             const dutiesData = await dutiesResponse.json();
             const allDuties = dutiesData.success ? dutiesData.data : [];
             
@@ -1866,7 +1868,7 @@
                 html += '</div>';
             }
             
-            const deptResponse = await fetch(`${API_URL}/api/doctors/${doctorId}/departments`);
+            const deptResponse = await fetch(`${API_DOC_URL}/api/doctors/${doctorId}/departments`);
             const deptData = await deptResponse.json();
             
             if (deptResponse.ok && deptData.success) {
@@ -1948,7 +1950,7 @@
         if (!deleteDoctorId) return;
 
         try {
-            const response = await fetch(`${API_URL}/api/doctors/${deleteDoctorId}`, { method: 'DELETE' });
+            const response = await fetch(`${API_DOC_URL}/api/doctors/${deleteDoctorId}`, { method: 'DELETE' });
             const data = await response.json();
             
             if (response.ok && data.success) {
@@ -1974,14 +1976,14 @@
         document.getElementById('addDepartmentDoctorName').textContent = doctorName;
         
         try {
-            const response = await fetch(`${API_URL}/api/departments`);
+            const response = await fetch(`${API_DEP_URL}/api/departments`);
             const data = await response.json();
             
             if (response.ok && data.success) {
                 const select = document.getElementById('addDepartmentSelect');
                 select.innerHTML = '<option value="">-- เลือกแผนก --</option>';
                 
-                const doctorDeptsResponse = await fetch(`${API_URL}/api/doctors/${doctorId}/departments`);
+                const doctorDeptsResponse = await fetch(`${API_DOC_URL}/api/doctors/${doctorId}/departments`);
                 const doctorDeptsData = await doctorDeptsResponse.json();
                 const existingDeptIds = doctorDeptsData.success 
                     ? doctorDeptsData.data.map(d => d.department_id) 
@@ -2016,7 +2018,7 @@
         }
 
         try {
-            const response = await fetch(`${API_URL}/api/doctor-departments`, {
+            const response = await fetch(`${API_DOC_URL}/api/doctor-departments`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -2064,7 +2066,7 @@
         if (!deleteDeptId) return;
 
         try {
-            const response = await fetch(`${API_URL}/api/doctor-departments/${deleteDeptId}`, {
+            const response = await fetch(`${API_DOC_URL}/api/doctor-departments/${deleteDeptId}`, {
                 method: 'DELETE'
             });
             
@@ -2093,7 +2095,7 @@
         document.getElementById('doctorDutyDoctorName').textContent = doctorName;
         
         try {
-            const response = await fetch(`${API_URL}/api/duties/department/${departmentId}`);
+            const response = await fetch(`${API_DEP_URL}/api/duties/department/${departmentId}`);
             const data = await response.json();
             
             if (response.ok && data.success) {
@@ -2147,7 +2149,7 @@
         }
 
         try {
-            const response = await fetch(`${API_URL}/api/doctor-duties`, {
+            const response = await fetch(`${API_DOC_URL}/api/doctor-duties`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -2193,7 +2195,7 @@
         if (!deleteDoctorDutyId) return;
 
         try {
-            const response = await fetch(`${API_URL}/api/doctor-duties/${deleteDoctorDutyId}`, { method: 'DELETE' });
+            const response = await fetch(`${API_DOC_URL}/api/doctor-duties/${deleteDoctorDutyId}`, { method: 'DELETE' });
             const data = await response.json();
             
             if (response.ok && data.success) {
@@ -2217,7 +2219,7 @@
 
     async function showEditDoctorModal(doctorId, doctorName, departmentId, workType) {
         try {
-            const dutiesResponse = await fetch(`${API_URL}/api/doctor-duties/doctor/${doctorId}`);
+            const dutiesResponse = await fetch(`${API_DOC_URL}/api/doctor-duties/doctor/${doctorId}`);
             const dutiesData = await dutiesResponse.json();
             
             if (dutiesResponse.ok && dutiesData.success && dutiesData.data.length > 0) {
@@ -2241,7 +2243,7 @@
         document.getElementById('editDoctorWorkType').value = workType || 'full';
         
         try {
-            const response = await fetch(`${API_URL}/api/departments`);
+            const response = await fetch(`${API_DEP_URL}/api/departments`);
             const data = await response.json();
             
             if (response.ok && data.success) {
@@ -2287,7 +2289,7 @@
         if (!editDoctorId) return;
 
         try {
-            const response = await fetch(`${API_URL}/api/doctors/${editDoctorId}`, {
+            const response = await fetch(`${API_DOC_URL}/api/doctors/${editDoctorId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
