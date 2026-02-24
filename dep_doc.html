@@ -1979,7 +1979,7 @@
                         <div class="doctor-duty-item">
                             <span class="doctor-duty-name">${duty.duty_name}</span>
                             <span class="doctor-duty-days">${days.join(', ')}</span>
-                            <button onclick="event.stopPropagation(); showDeleteDoctorDutyModal(${duty.id}, '${duty.duty_name.replace(/'/g, "\\'")}')" class="btn-delete-doctor-duty">ลบ</button>
+                            <button onclick="event.stopPropagation(); showDeleteDoctorDutyModal(${duty.id}, '${duty.duty_name.replace(/'/g, "\\'")}', ${doctorId}, ${primaryDepartmentId})" class="btn-delete-doctor-duty">ลบ</button>
                         </div>
                     `;
                 });
@@ -2034,7 +2034,7 @@
                                 <div class="doctor-duty-item">
                                     <span class="doctor-duty-name">${duty.duty_name}</span>
                                     <span class="doctor-duty-days">${days.join(', ')}</span>
-                                    <button onclick="event.stopPropagation(); showDeleteDoctorDutyModal(${duty.id}, '${duty.duty_name.replace(/'/g, "\\'")}')" class="btn-delete-doctor-duty">ลบ</button>
+                                    <button onclick="event.stopPropagation(); showDeleteDoctorDutyModal(${duty.id}, '${duty.duty_name.replace(/'/g, "\\'")}', ${doctorId}, ${secDept.department_id})" class="btn-delete-doctor-duty">ลบ</button>
                                 </div>
                             `;
                         });
@@ -2271,10 +2271,21 @@
             if (response.ok && data.success) {
                 closeDoctorDutyModal();
                 
-                // Refresh เฉพาะแพทย์ที่แก้ไข
+                // Refresh เฉพาะแพทย์ที่แก้ไข (บังคับ expand + reload)
                 const dutiesContainer = document.getElementById(`duties-${currentDoctorId}`);
-                if (dutiesContainer && expandedDoctors.has(currentDoctorId)) {
+                const detailsContainer = document.getElementById(`details-${currentDoctorId}`);
+                const toggleIcon = document.getElementById(`toggle-${currentDoctorId}`);
+                
+                if (dutiesContainer && detailsContainer && toggleIcon) {
+                    // เปิดถ้ายังปิดอยู่
+                    detailsContainer.style.display = 'block';
+                    toggleIcon.textContent = '▼';
+                    expandedDoctors.add(currentDoctorId);
+                    
+                    // Reload Duties
+                    dutiesContainer.innerHTML = '<div class="loading">กำลังโหลด Duties...</div>';
                     await loadDoctorDuties(currentDoctorId, currentDoctorDepartmentId);
+                    dutiesContainer.setAttribute('data-loaded', 'true');
                 }
             } else {
                 throw new Error(data.message || 'ไม่สามารถเพิ่ม Duty ได้');
@@ -2284,8 +2295,13 @@
         }
     }
 
-    function showDeleteDoctorDutyModal(dutyId, dutyName) {
+    let deleteDoctorDutyDoctorId = null; // เก็บ doctorId ของ Duty ที่จะลบ
+    let deleteDoctorDutyDepartmentId = null; // เก็บ departmentId
+    
+    function showDeleteDoctorDutyModal(dutyId, dutyName, doctorId, departmentId) {
         deleteDoctorDutyId = dutyId;
+        deleteDoctorDutyDoctorId = doctorId;
+        deleteDoctorDutyDepartmentId = departmentId;
         document.getElementById('deleteDoctorDutyName').textContent = dutyName;
         document.getElementById('deleteDoctorDutyModal').classList.add('show');
     }
@@ -2293,6 +2309,8 @@
     function closeDeleteDoctorDutyModal() {
         document.getElementById('deleteDoctorDutyModal').classList.remove('show');
         deleteDoctorDutyId = null;
+        deleteDoctorDutyDoctorId = null;
+        deleteDoctorDutyDepartmentId = null;
     }
 
     async function confirmDeleteDoctorDuty() {
@@ -2305,18 +2323,22 @@
             if (response.ok && data.success) {
                 closeDeleteDoctorDutyModal();
                 
-                closeDeleteDoctorDutyModal();
-                
-                // Refresh เฉพาะแพทย์ที่ถูกลบ Duty
-                // หา doctorId จาก deleteDoctorDutyId
-                const allDutiesContainers = document.querySelectorAll('[id^="duties-"]');
-                for (const container of allDutiesContainers) {
-                    const doctorId = parseInt(container.id.replace('duties-', ''));
-                    if (expandedDoctors.has(doctorId)) {
-                        const doctor = allDoctors.find(d => d.id === doctorId);
-                        if (doctor) {
-                            await loadDoctorDuties(doctorId, doctor.department_id);
-                        }
+                // Refresh เฉพาะแพทย์ที่ถูกลบ Duty (บังคับ expand + reload)
+                if (deleteDoctorDutyDoctorId && deleteDoctorDutyDepartmentId) {
+                    const dutiesContainer = document.getElementById(`duties-${deleteDoctorDutyDoctorId}`);
+                    const detailsContainer = document.getElementById(`details-${deleteDoctorDutyDoctorId}`);
+                    const toggleIcon = document.getElementById(`toggle-${deleteDoctorDutyDoctorId}`);
+                    
+                    if (dutiesContainer && detailsContainer && toggleIcon) {
+                        // เปิดถ้ายังปิดอยู่
+                        detailsContainer.style.display = 'block';
+                        toggleIcon.textContent = '▼';
+                        expandedDoctors.add(deleteDoctorDutyDoctorId);
+                        
+                        // Reload Duties
+                        dutiesContainer.innerHTML = '<div class="loading">กำลังโหลด Duties...</div>';
+                        await loadDoctorDuties(deleteDoctorDutyDoctorId, deleteDoctorDutyDepartmentId);
+                        dutiesContainer.setAttribute('data-loaded', 'true');
                     }
                 }
             } else {
