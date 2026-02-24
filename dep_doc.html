@@ -650,6 +650,29 @@
             grid-template-columns: 1fr;
         }
     }
+    
+    /* Toast Animations */
+    @keyframes slideInRight {
+        from {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    @keyframes slideOutRight {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+    }
 </style>
 ```
 
@@ -1078,8 +1101,8 @@
 
 <script>
     // ใช้ 2 Workers แยกกัน
-    const API_DEP_URL = 'https://depdocdep.9vk92zm5z2.workers.dev'; // จัดการแผนก
-    const API_DOC_URL = 'https://depdocdoc.9vk92zm5z2.workers.dev'; // จัดการแพทย์
+    const API_DEP_URL = 'https://depdocdep.YOUR-SUBDOMAIN.workers.dev'; // จัดการแผนก
+    const API_DOC_URL = 'https://depdocdoc.YOUR-SUBDOMAIN.workers.dev'; // จัดการแพทย์
     let deleteDepartmentId = null;
     let editDepartmentId = null;
     let currentDepartmentId = null;
@@ -1719,6 +1742,47 @@
         }
     });
 
+    // ============================================
+    // Toast Notification (ลอยเหนือหน้าจอ ไม่เลื่อน)
+    // ============================================
+    function showToast(message, type = 'success') {
+        // สร้าง toast element
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.textContent = message;
+        
+        // กำหนด style inline
+        toast.style.cssText = `
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            background: ${type === 'success' ? '#10b981' : '#ef4444'};
+            color: white;
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            z-index: 10000;
+            font-size: 15px;
+            font-weight: 500;
+            animation: slideInRight 0.3s ease-out;
+            max-width: 350px;
+        `;
+        
+        // เพิ่มลงใน body
+        document.body.appendChild(toast);
+        
+        // ลบหลัง 3 วินาที
+        setTimeout(() => {
+            toast.style.animation = 'slideOutRight 0.3s ease-in';
+            setTimeout(() => {
+                document.body.removeChild(toast);
+            }, 300);
+        }, 3000);
+    }
+
+    // ============================================
+    // Load Doctors
+    // ============================================
     async function loadDoctors() {
         const doctorsList = document.getElementById('doctorsList');
         doctorsList.innerHTML = '<div class="loading">กำลังโหลดข้อมูล...</div>';
@@ -1954,10 +2018,7 @@
             const data = await response.json();
             
             if (response.ok && data.success) {
-                const doctorListMessage = document.getElementById('doctorListMessage');
-                doctorListMessage.className = 'message success show';
-                doctorListMessage.textContent = '✅ ลบแพทย์สำเร็จ';
-                setTimeout(() => doctorListMessage.classList.remove('show'), 3000);
+                showToast('✅ ลบแพทย์สำเร็จ', 'success');
                 closeDeleteDoctorModal();
                 loadDoctors();
             } else {
@@ -2031,10 +2092,7 @@
             const data = await response.json();
             
             if (response.ok && data.success) {
-                const doctorListMessage = document.getElementById('doctorListMessage');
-                doctorListMessage.className = 'message success show';
-                doctorListMessage.textContent = '✅ เพิ่มแผนกเสริมสำเร็จ';
-                setTimeout(() => doctorListMessage.classList.remove('show'), 3000);
+                showToast('✅ เพิ่มแผนกเสริมสำเร็จ', 'success');
                 closeAddDepartmentModal();
                 
                 // Reload ทั้งหมด
@@ -2073,10 +2131,7 @@
             const data = await response.json();
             
             if (response.ok && data.success) {
-                const doctorListMessage = document.getElementById('doctorListMessage');
-                doctorListMessage.className = 'message success show';
-                doctorListMessage.textContent = '✅ ลบแผนกเสริมสำเร็จ';
-                setTimeout(() => doctorListMessage.classList.remove('show'), 3000);
+                showToast('✅ ลบแผนกเสริมสำเร็จ', 'success');
                 closeDeleteDepartmentModal();
                 loadDoctors();
             } else {
@@ -2165,10 +2220,8 @@
             if (response.ok && data.success) {
                 closeDoctorDutyModal();
                 
-                const doctorListMessage = document.getElementById('doctorListMessage');
-                doctorListMessage.className = 'message success show';
-                doctorListMessage.textContent = '✅ เพิ่ม Duty สำเร็จ';
-                setTimeout(() => doctorListMessage.classList.remove('show'), 3000);
+                // แสดง Toast แบบลอย (ไม่เลื่อนหน้าจอ)
+                showToast('✅ เพิ่ม Duty สำเร็จ', 'success');
                 
                 // Reload ทั้งหมด
                 await loadDoctors();
@@ -2202,9 +2255,7 @@
                 closeDeleteDoctorDutyModal();
                 
                 const doctorListMessage = document.getElementById('doctorListMessage');
-                doctorListMessage.className = 'message success show';
-                doctorListMessage.textContent = '✅ ลบ Duty สำเร็จ';
-                setTimeout(() => doctorListMessage.classList.remove('show'), 3000);
+                showToast('✅ ลบ Duty สำเร็จ', 'success');
                 
                 // Reload ทั้งหมด
                 await loadDoctors();
@@ -2306,10 +2357,7 @@
                 closeEditDoctorModal();
                 loadDoctors();
                 
-                const doctorListMessage = document.getElementById('doctorListMessage');
-                doctorListMessage.className = 'message success show';
-                doctorListMessage.textContent = '✅ แก้ไขข้อมูลแพทย์สำเร็จ';
-                setTimeout(() => doctorListMessage.classList.remove('show'), 3000);
+                showToast('✅ แก้ไขข้อมูลแพทย์สำเร็จ', 'success');
             } else {
                 throw new Error(data.message || 'ไม่สามารถแก้ไขข้อมูลแพทย์ได้');
             }
