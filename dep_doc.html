@@ -1781,9 +1781,12 @@
     }
 
     // ============================================
-    // Load Doctors
+    // Load Doctors (พร้อมบันทึก scroll position)
     // ============================================
-    async function loadDoctors() {
+    async function loadDoctors(preserveScroll = false) {
+        // บันทึกตำแหน่ง scroll ปัจจุบัน
+        const scrollPosition = preserveScroll ? window.scrollY : null;
+        
         const doctorsList = document.getElementById('doctorsList');
         doctorsList.innerHTML = '<div class="loading">กำลังโหลดข้อมูล...</div>';
 
@@ -1800,7 +1803,15 @@
                     if (!aIsEng && bIsEng) return 1;
                     return a.name.localeCompare(b.name, ['en', 'th']);
                 });
-                filterDoctors();
+                await filterDoctors();
+                
+                // กลับไปที่ตำแหน่ง scroll เดิม (ถ้าบันทึกไว้)
+                if (scrollPosition !== null) {
+                    window.scrollTo({
+                        top: scrollPosition,
+                        behavior: 'instant'
+                    });
+                }
             } else {
                 throw new Error(data.message || 'ไม่สามารถโหลดข้อมูลได้');
             }
@@ -1925,7 +1936,7 @@
                         <div class="doctor-duty-item">
                             <span class="doctor-duty-name">${duty.duty_name}</span>
                             <span class="doctor-duty-days">${days.join(', ')}</span>
-                            <button onclick="event.stopPropagation(); showDeleteDoctorDutyModal(${duty.id}, '${duty.duty_name.replace(/'/g, "\\'")}')" class="btn-delete-doctor-duty">ลบ</button>
+                            <button onclick="event.stopPropagation(); showDeleteDoctorDutyModal(${duty.id}, '${duty.duty_name.replace(/'/g, "\\'")}', ${doctorId}, ${primaryDepartmentId})" class="btn-delete-doctor-duty">ลบ</button>
                         </div>
                     `;
                 });
@@ -1980,7 +1991,7 @@
                                 <div class="doctor-duty-item">
                                     <span class="doctor-duty-name">${duty.duty_name}</span>
                                     <span class="doctor-duty-days">${days.join(', ')}</span>
-                                    <button onclick="event.stopPropagation(); showDeleteDoctorDutyModal(${duty.id}, '${duty.duty_name.replace(/'/g, "\\'")}')" class="btn-delete-doctor-duty">ลบ</button>
+                                    <button onclick="event.stopPropagation(); showDeleteDoctorDutyModal(${duty.id}, '${duty.duty_name.replace(/'/g, "\\'")}', ${doctorId}, ${secDept.department_id})" class="btn-delete-doctor-duty">ลบ</button>
                                 </div>
                             `;
                         });
@@ -2018,9 +2029,8 @@
             const data = await response.json();
             
             if (response.ok && data.success) {
-                showToast('✅ ลบแพทย์สำเร็จ', 'success');
                 closeDeleteDoctorModal();
-                loadDoctors();
+                loadDoctors(true);
             } else {
                 throw new Error(data.message || 'ไม่สามารถลบแพทย์ได้');
             }
@@ -2092,11 +2102,10 @@
             const data = await response.json();
             
             if (response.ok && data.success) {
-                showToast('✅ เพิ่มแผนกเสริมสำเร็จ', 'success');
                 closeAddDepartmentModal();
                 
-                // Reload ทั้งหมด
-                await loadDoctors();
+                // Reload ทั้งหมด (บันทึก scroll position)
+                await loadDoctors(true);
             } else {
                 throw new Error(data.message || 'ไม่สามารถเพิ่มแผนกได้');
             }
@@ -2131,9 +2140,8 @@
             const data = await response.json();
             
             if (response.ok && data.success) {
-                showToast('✅ ลบแผนกเสริมสำเร็จ', 'success');
                 closeDeleteDepartmentModal();
-                loadDoctors();
+                loadDoctors(true);
             } else {
                 throw new Error(data.message || 'ไม่สามารถลบแผนกได้');
             }
@@ -2220,11 +2228,12 @@
             if (response.ok && data.success) {
                 closeDoctorDutyModal();
                 
-                // แสดง Toast แบบลอย (ไม่เลื่อนหน้าจอ)
-                showToast('✅ เพิ่ม Duty สำเร็จ', 'success');
-                
-                // Reload ทั้งหมด
-                await loadDoctors();
+                // Refresh เฉพาะแพทย์ที่แก้ไข
+                const dutiesContainer = document.getElementById(`duties-${currentDoctorId}`);
+                if (dutiesContainer) {
+                    dutiesContainer.innerHTML = '<div class="loading">กำลังโหลด Duties...</div>';
+                    await loadDoctorDuties(currentDoctorId, currentDoctorDepartmentId);
+                }
             } else {
                 throw new Error(data.message || 'ไม่สามารถเพิ่ม Duty ได้');
             }
@@ -2233,8 +2242,13 @@
         }
     }
 
-    function showDeleteDoctorDutyModal(dutyId, dutyName) {
+    let deleteDoctorDutyDoctorId = null; // เก็บ doctorId ของ Duty ที่จะลบ
+    let deleteDoctorDutyDepartmentId = null; // เก็บ departmentId
+    
+    function showDeleteDoctorDutyModal(dutyId, dutyName, doctorId, departmentId) {
         deleteDoctorDutyId = dutyId;
+        deleteDoctorDutyDoctorId = doctorId;
+        deleteDoctorDutyDepartmentId = departmentId;
         document.getElementById('deleteDoctorDutyName').textContent = dutyName;
         document.getElementById('deleteDoctorDutyModal').classList.add('show');
     }
@@ -2242,6 +2256,8 @@
     function closeDeleteDoctorDutyModal() {
         document.getElementById('deleteDoctorDutyModal').classList.remove('show');
         deleteDoctorDutyId = null;
+        deleteDoctorDutyDoctorId = null;
+        deleteDoctorDutyDepartmentId = null;
     }
 
     async function confirmDeleteDoctorDuty() {
@@ -2254,11 +2270,14 @@
             if (response.ok && data.success) {
                 closeDeleteDoctorDutyModal();
                 
-                const doctorListMessage = document.getElementById('doctorListMessage');
-                showToast('✅ ลบ Duty สำเร็จ', 'success');
-                
-                // Reload ทั้งหมด
-                await loadDoctors();
+                // Refresh เฉพาะแพทย์ที่ถูกลบ Duty
+                if (deleteDoctorDutyDoctorId && deleteDoctorDutyDepartmentId) {
+                    const dutiesContainer = document.getElementById(`duties-${deleteDoctorDutyDoctorId}`);
+                    if (dutiesContainer) {
+                        dutiesContainer.innerHTML = '<div class="loading">กำลังโหลด Duties...</div>';
+                        await loadDoctorDuties(deleteDoctorDutyDoctorId, deleteDoctorDutyDepartmentId);
+                    }
+                }
             } else {
                 throw new Error(data.message || 'ไม่สามารถลบ Duty ได้');
             }
@@ -2355,9 +2374,7 @@
             
             if (response.ok && data.success) {
                 closeEditDoctorModal();
-                loadDoctors();
-                
-                showToast('✅ แก้ไขข้อมูลแพทย์สำเร็จ', 'success');
+                loadDoctors(true);
             } else {
                 throw new Error(data.message || 'ไม่สามารถแก้ไขข้อมูลแพทย์ได้');
             }
