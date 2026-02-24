@@ -321,6 +321,21 @@
         justify-content: space-between;
         align-items: center;
         margin-bottom: 10px;
+        gap: 12px;
+        transition: background 0.2s;
+        padding: 8px;
+        border-radius: 8px;
+    }
+    
+    .doctor-header:hover {
+        background: #f0f9ff;
+    }
+    
+    .toggle-icon {
+        font-size: 12px;
+        color: #666;
+        transition: transform 0.2s;
+        user-select: none;
     }
 
     .doctor-info {
@@ -1743,6 +1758,36 @@
     });
 
     // ============================================
+    // Toggle Doctor Details (เก็บสถานะว่าเปิดหรือปิด)
+    // ============================================
+    const expandedDoctors = new Set(); // เก็บ ID ของแพทย์ที่กำลังเปิดอยู่
+    
+    async function toggleDoctorDetails(doctorId, departmentId) {
+        const detailsContainer = document.getElementById(`details-${doctorId}`);
+        const toggleIcon = document.getElementById(`toggle-${doctorId}`);
+        const dutiesContainer = document.getElementById(`duties-${doctorId}`);
+        
+        if (expandedDoctors.has(doctorId)) {
+            // ปิด
+            detailsContainer.style.display = 'none';
+            toggleIcon.textContent = '▶';
+            expandedDoctors.delete(doctorId);
+        } else {
+            // เปิด
+            detailsContainer.style.display = 'block';
+            toggleIcon.textContent = '▼';
+            expandedDoctors.add(doctorId);
+            
+            // โหลด Duties ถ้ายังไม่เคยโหลด
+            if (!dutiesContainer.hasAttribute('data-loaded')) {
+                dutiesContainer.innerHTML = '<div class="loading">กำลังโหลด Duties...</div>';
+                await loadDoctorDuties(doctorId, departmentId);
+                dutiesContainer.setAttribute('data-loaded', 'true');
+            }
+        }
+    }
+
+    // ============================================
     // Toast Notification (ลอยเหนือหน้าจอ ไม่เลื่อน)
     // ============================================
     function showToast(message, type = 'success') {
@@ -1807,13 +1852,10 @@
                 
                 // กลับไปที่ตำแหน่ง scroll เดิม (ถ้าบันทึกไว้)
                 if (scrollPosition !== null) {
-                    // รอให้ DOM render เสร็จสนิท (หลังโหลด Duties เสร็จ)
-                    setTimeout(() => {
-                        window.scrollTo({
-                            top: scrollPosition,
-                            behavior: 'instant'
-                        });
-                    }, 200); // เพิ่มเวลารอให้ DOM render เสร็จ
+                    window.scrollTo({
+                        top: scrollPosition,
+                        behavior: 'instant'
+                    });
                 }
             } else {
                 throw new Error(data.message || 'ไม่สามารถโหลดข้อมูลได้');
@@ -1869,11 +1911,12 @@
             
             html += `
                 <div class="doctor-item" id="doctor-${doctor.id}">
-                    <div class="doctor-header">
+                    <div class="doctor-header" onclick="toggleDoctorDetails(${doctor.id}, ${doctor.department_id})" style="cursor: pointer;">
+                        <span class="toggle-icon" id="toggle-${doctor.id}">▶</span>
                         <div class="doctor-name">${doctor.name}</div>
                     </div>
                     
-                    <div class="doctor-details-container">
+                    <div class="doctor-details-container" id="details-${doctor.id}" style="display: none;">
                         <div style="padding: 15px; padding-top: 10px;">
                             <div class="doctor-info-text" style="color: #666; font-size: 14px; margin-bottom: 12px;">
                                 แผนก: ${doctor.department_name || 'ไม่ระบุ'} | 
@@ -1887,7 +1930,7 @@
                                 <button onclick="event.stopPropagation(); showDoctorDutyModal(${doctor.id}, ${doctor.department_id}, '${safeName}')" class="btn-duty-doctor">Duty</button>
                             </div>
                             
-                            <div id="duties-${doctor.id}"><div class="loading">กำลังโหลด Duties...</div></div>
+                            <div id="duties-${doctor.id}"></div>
                         </div>
                     </div>
                 </div>
@@ -1896,10 +1939,7 @@
         
         doctorsList.innerHTML = html;
         
-        // โหลด Duties ทันทีสำหรับทุกคน
-        for (const doctor of filteredDoctors) {
-            await loadDoctorDuties(doctor.id, doctor.department_id);
-        }
+        // ไม่โหลด Duties ทันที - โหลดตอนกด Toggle
     }
 
     async function loadDoctorDuties(doctorId, primaryDepartmentId) {
@@ -2231,8 +2271,11 @@
             if (response.ok && data.success) {
                 closeDoctorDutyModal();
                 
-                // Reload ทั้งหมด (บันทึก scroll position)
-                await loadDoctors(true);
+                // Refresh เฉพาะแพทย์ที่แก้ไข
+                const dutiesContainer = document.getElementById(`duties-${currentDoctorId}`);
+                if (dutiesContainer && expandedDoctors.has(currentDoctorId)) {
+                    await loadDoctorDuties(currentDoctorId, currentDoctorDepartmentId);
+                }
             } else {
                 throw new Error(data.message || 'ไม่สามารถเพิ่ม Duty ได้');
             }
@@ -2264,8 +2307,18 @@
                 
                 closeDeleteDoctorDutyModal();
                 
-                // Reload ทั้งหมด (บันทึก scroll position)
-                await loadDoctors(true);
+                // Refresh เฉพาะแพทย์ที่ถูกลบ Duty
+                // หา doctorId จาก deleteDoctorDutyId
+                const allDutiesContainers = document.querySelectorAll('[id^="duties-"]');
+                for (const container of allDutiesContainers) {
+                    const doctorId = parseInt(container.id.replace('duties-', ''));
+                    if (expandedDoctors.has(doctorId)) {
+                        const doctor = allDoctors.find(d => d.id === doctorId);
+                        if (doctor) {
+                            await loadDoctorDuties(doctorId, doctor.department_id);
+                        }
+                    }
+                }
             } else {
                 throw new Error(data.message || 'ไม่สามารถลบ Duty ได้');
             }
