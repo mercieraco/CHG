@@ -1803,17 +1803,17 @@
                     if (!aIsEng && bIsEng) return 1;
                     return a.name.localeCompare(b.name, ['en', 'th']);
                 });
-                filterDoctors();
+                await filterDoctors();
                 
                 // กลับไปที่ตำแหน่ง scroll เดิม (ถ้าบันทึกไว้)
                 if (scrollPosition !== null) {
-                    // ใช้ setTimeout เพื่อรอให้ DOM render เสร็จก่อน
+                    // รอให้ DOM render เสร็จสนิท (หลังโหลด Duties เสร็จ)
                     setTimeout(() => {
                         window.scrollTo({
                             top: scrollPosition,
-                            behavior: 'instant' // ไม่ใช้ smooth เพื่อไม่ให้เห็นการเลื่อน
+                            behavior: 'instant'
                         });
-                    }, 10);
+                    }, 200); // เพิ่มเวลารอให้ DOM render เสร็จ
                 }
             } else {
                 throw new Error(data.message || 'ไม่สามารถโหลดข้อมูลได้');
