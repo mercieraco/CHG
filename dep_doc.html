@@ -1781,9 +1781,12 @@
     }
 
     // ============================================
-    // Load Doctors
+    // Load Doctors (พร้อมบันทึก scroll position)
     // ============================================
-    async function loadDoctors() {
+    async function loadDoctors(preserveScroll = false) {
+        // บันทึกตำแหน่ง scroll ปัจจุบัน
+        const scrollPosition = preserveScroll ? window.scrollY : null;
+        
         const doctorsList = document.getElementById('doctorsList');
         doctorsList.innerHTML = '<div class="loading">กำลังโหลดข้อมูล...</div>';
 
@@ -1801,6 +1804,17 @@
                     return a.name.localeCompare(b.name, ['en', 'th']);
                 });
                 filterDoctors();
+                
+                // กลับไปที่ตำแหน่ง scroll เดิม (ถ้าบันทึกไว้)
+                if (scrollPosition !== null) {
+                    // ใช้ setTimeout เพื่อรอให้ DOM render เสร็จก่อน
+                    setTimeout(() => {
+                        window.scrollTo({
+                            top: scrollPosition,
+                            behavior: 'instant' // ไม่ใช้ smooth เพื่อไม่ให้เห็นการเลื่อน
+                        });
+                    }, 10);
+                }
             } else {
                 throw new Error(data.message || 'ไม่สามารถโหลดข้อมูลได้');
             }
@@ -2020,7 +2034,7 @@
             if (response.ok && data.success) {
                 showToast('✅ ลบแพทย์สำเร็จ', 'success');
                 closeDeleteDoctorModal();
-                loadDoctors();
+                loadDoctors(true);
             } else {
                 throw new Error(data.message || 'ไม่สามารถลบแพทย์ได้');
             }
@@ -2095,8 +2109,8 @@
                 showToast('✅ เพิ่มแผนกเสริมสำเร็จ', 'success');
                 closeAddDepartmentModal();
                 
-                // Reload ทั้งหมด
-                await loadDoctors();
+                // Reload ทั้งหมด (บันทึก scroll position)
+                await loadDoctors(true);
             } else {
                 throw new Error(data.message || 'ไม่สามารถเพิ่มแผนกได้');
             }
@@ -2133,7 +2147,7 @@
             if (response.ok && data.success) {
                 showToast('✅ ลบแผนกเสริมสำเร็จ', 'success');
                 closeDeleteDepartmentModal();
-                loadDoctors();
+                loadDoctors(true);
             } else {
                 throw new Error(data.message || 'ไม่สามารถลบแผนกได้');
             }
@@ -2223,8 +2237,8 @@
                 // แสดง Toast แบบลอย (ไม่เลื่อนหน้าจอ)
                 showToast('✅ เพิ่ม Duty สำเร็จ', 'success');
                 
-                // Reload ทั้งหมด
-                await loadDoctors();
+                // Reload ทั้งหมด (บันทึก scroll position)
+                await loadDoctors(true);
             } else {
                 throw new Error(data.message || 'ไม่สามารถเพิ่ม Duty ได้');
             }
@@ -2257,8 +2271,8 @@
                 const doctorListMessage = document.getElementById('doctorListMessage');
                 showToast('✅ ลบ Duty สำเร็จ', 'success');
                 
-                // Reload ทั้งหมด
-                await loadDoctors();
+                // Reload ทั้งหมด (บันทึก scroll position)
+                await loadDoctors(true);
             } else {
                 throw new Error(data.message || 'ไม่สามารถลบ Duty ได้');
             }
@@ -2355,7 +2369,7 @@
             
             if (response.ok && data.success) {
                 closeEditDoctorModal();
-                loadDoctors();
+                loadDoctors(true);
                 
                 showToast('✅ แก้ไขข้อมูลแพทย์สำเร็จ', 'success');
             } else {
