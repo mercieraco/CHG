@@ -156,7 +156,7 @@
     const SPECIAL_USER = {
         username: 'User',
         password: 'ch3',
-        role: 'user',
+        role: 'guest',  // เปลี่ยนจาก 'user' เป็น 'guest'
         name: 'ผู้ใช้ทั่วไป'
     };
 
@@ -245,6 +245,9 @@
                     sessionStorage.setItem('doctor_id', doctor.id.toString());
                     sessionStorage.setItem('doctor_name', doctor.name);
                     sessionStorage.setItem('department_id', doctor.department_id.toString());
+                    
+                    // ⭐ เปลี่ยน role เป็น 'doctor' (แทน 'user')
+                    sessionStorage.setItem('role', 'doctor');
                     
                     console.log('✅ Doctor found:', {
                         id: doctor.id,
