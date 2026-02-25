@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>เข้าสู่ระบบ - ระบบลางานแพทย์</title>
+    <title>ระบบลางานแพทย์ - เข้าสู่ระบบ</title>
     <style>
         * {
             margin: 0;
@@ -18,31 +18,34 @@
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         min-height: 100vh;
         display: flex;
-        align-items: center;
         justify-content: center;
+        align-items: center;
         padding: 20px;
     }
 
     .login-container {
         background: white;
         padding: 40px;
-        border-radius: 20px;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        border-radius: 15px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
         width: 100%;
         max-width: 400px;
+        margin: 0 auto;
     }
 
-    h1 {
-        color: #333;
+    .login-header {
         text-align: center;
-        margin-bottom: 10px;
-        font-size: 28px;
-    }
-
-    .subtitle {
-        text-align: center;
-        color: #666;
         margin-bottom: 30px;
+    }
+
+    .login-header h1 {
+        color: #333;
+        font-size: 28px;
+        margin-bottom: 10px;
+    }
+
+    .login-header p {
+        color: #666;
         font-size: 14px;
     }
 
@@ -50,38 +53,38 @@
         margin-bottom: 20px;
     }
 
-    label {
+    .form-group label {
         display: block;
         margin-bottom: 8px;
         color: #333;
-        font-weight: 600;
+        font-weight: 500;
         font-size: 14px;
     }
 
-    input {
+    .form-group input {
         width: 100%;
         padding: 12px 15px;
         border: 2px solid #e0e0e0;
         border-radius: 8px;
-        font-size: 16px;
-        transition: all 0.3s;
+        font-size: 14px;
+        transition: border-color 0.3s;
     }
 
-    input:focus {
+    .form-group input:focus {
         outline: none;
         border-color: #667eea;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
     }
 
     .btn {
         width: 100%;
-        padding: 14px;
+        padding: 12px;
         border: none;
         border-radius: 8px;
         font-size: 16px;
         font-weight: 600;
         cursor: pointer;
         transition: all 0.3s;
+        margin-bottom: 10px;
     }
 
     .btn-primary {
@@ -95,100 +98,26 @@
     }
 
     .btn-secondary {
-        background: #e0e0e0;
+        background: #f5f5f5;
         color: #666;
-        margin-top: 10px;
     }
 
     .btn-secondary:hover {
-        background: #d0d0d0;
+        background: #e0e0e0;
     }
 
-    .message {
-        padding: 12px;
-        border-radius: 8px;
-        margin-bottom: 20px;
-        display: none;
-        text-align: center;
-    }
-
-    .message.show {
-        display: block;
-    }
-
-    .message.error {
+    .error-message {
         background: #fee;
         color: #c33;
-        border: 1px solid #fcc;
-    }
-
-    .message.success {
-        background: #efe;
-        color: #3c3;
-        border: 1px solid #cfc;
-    }
-
-    .forgot-password {
-        text-align: center;
-        margin-top: 15px;
-    }
-
-    .forgot-password a {
-        color: #667eea;
-        text-decoration: none;
-        font-size: 14px;
-    }
-
-    .forgot-password a:hover {
-        text-decoration: underline;
-    }
-
-    .register-link {
-        text-align: center;
-        margin-top: 20px;
-        padding-top: 20px;
-        border-top: 1px solid #e0e0e0;
-    }
-
-    .register-link a {
-        color: #667eea;
-        text-decoration: none;
-        font-weight: 600;
-    }
-
-    .register-link a:hover {
-        text-decoration: underline;
-    }
-
-    /* Modal Styles */
-    .modal {
-        display: none;
-        position: fixed;
-        z-index: 1000;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.5);
-        align-items: center;
-        justify-content: center;
-    }
-
-    .modal.show {
-        display: flex;
-    }
-
-    .modal-content {
-        background: white;
-        padding: 30px;
-        border-radius: 15px;
-        max-width: 400px;
-        width: 90%;
-    }
-
-    .modal-content h3 {
-        color: #333;
+        padding: 10px;
+        border-radius: 8px;
         margin-bottom: 20px;
+        font-size: 14px;
+        display: none;
+    }
+
+    .error-message.show {
+        display: block;
     }
 </style>
 ```
@@ -196,110 +125,69 @@
 </head>
 <body>
     <div class="login-container">
-        <h1>🏥 ระบบลางานแพทย์</h1>
-        <p class="subtitle">เข้าสู่ระบบ</p>
+        <div class="login-header">
+            <h1>🏥 ระบบลางานแพทย์</h1>
+            <p>กรุณาเข้าสู่ระบบเพื่อดำเนินการต่อ</p>
+        </div>
 
 ```
-    <div id="message" class="message"></div>
+    <div id="errorMessage" class="error-message"></div>
 
     <form id="loginForm">
         <div class="form-group">
             <label for="username">ชื่อผู้ใช้</label>
-            <input type="text" id="username" required placeholder="Username">
+            <input type="text" id="username" name="username" required autocomplete="username" placeholder="Username">
         </div>
 
         <div class="form-group">
             <label for="password">รหัสผ่าน</label>
-            <input type="password" id="password" required placeholder="Password">
+            <input type="password" id="password" name="password" required autocomplete="current-password" placeholder="Password">
         </div>
 
         <button type="submit" class="btn btn-primary">เข้าสู่ระบบ</button>
+        <button type="button" class="btn btn-secondary" onclick="window.location.href='register.html'">ลงทะเบียน</button>
+        <button type="button" class="btn btn-secondary" onclick="window.location.href='reset_password.html'">ลืมรหัสผ่าน</button>
+        <button type="button" class="btn btn-secondary" onclick="window.location.href='change_password.html'">เปลี่ยนรหัสผ่าน</button>
     </form>
-
-    <div class="forgot-password">
-        <a href="#" onclick="showResetModal(); return false;">ลืมรหัสผ่าน?</a>
-    </div>
-
-    <div class="register-link">
-        ยังไม่มีบัญชี? <a href="register.html">ลงทะเบียน</a>
-    </div>
-</div>
-
-<!-- Reset Password Modal -->
-<div id="resetModal" class="modal">
-    <div class="modal-content">
-        <h3>🔑 รีเซ็ตรหัสผ่าน</h3>
-        <div id="resetMessage" class="message"></div>
-        
-        <form id="resetForm">
-            <div class="form-group">
-                <label for="resetUsername">ชื่อผู้ใช้</label>
-                <input type="text" id="resetUsername" required placeholder="Username">
-            </div>
-
-            <div class="form-group">
-                <label for="resetCode">รหัสรีเซ็ต</label>
-                <input type="text" id="resetCode" required placeholder="กรอกรหัส 4 หลัก">
-            </div>
-
-            <div class="form-group">
-                <label for="newPassword">รหัสผ่านใหม่</label>
-                <input type="password" id="newPassword" required placeholder="Password">
-            </div>
-
-            <button type="submit" class="btn btn-primary">รีเซ็ตรหัสผ่าน</button>
-            <button type="button" class="btn btn-secondary" onclick="closeResetModal()">ยกเลิก</button>
-        </form>
-    </div>
 </div>
 
 <script>
-    // API URL
-    const API_DOC_URL = 'https://depdocdoc.9vk92zm5z2.workers.dev';
-
-    // User พิเศษ (Hardcoded) - เฉพาะผู้ใช้ทั่วไป
+    // User พิเศษ (Hardcoded)
     const SPECIAL_USER = {
         username: 'User',
         password: 'ch3',
         role: 'user',
-        name: 'ผู้ใช้ทั่วไป',
-        resetCode: '8889'
+        name: 'ผู้ใช้ทั่วไป'
     };
 
-    // Login Form
     document.getElementById('loginForm').addEventListener('submit', async function(e) {
         e.preventDefault();
         
         const username = document.getElementById('username').value.trim();
         const password = document.getElementById('password').value;
-        const message = document.getElementById('message');
-
-        // แสดง Loading
-        message.className = 'message show';
-        message.style.background = '#e3f2fd';
-        message.style.color = '#1976d2';
-        message.textContent = '⏳ กำลังตรวจสอบ...';
+        const errorMessage = document.getElementById('errorMessage');
 
         try {
             // 1. เช็ค User พิเศษก่อน
             if (username === SPECIAL_USER.username && password === SPECIAL_USER.password) {
+                // Login สำเร็จ - User พิเศษ
+                errorMessage.classList.remove('show');
+                
                 sessionStorage.setItem('loggedIn', 'true');
                 sessionStorage.setItem('username', SPECIAL_USER.name);
                 sessionStorage.setItem('role', SPECIAL_USER.role);
-
-                message.className = 'message success show';
-                message.textContent = '✅ เข้าสู่ระบบสำเร็จ (ผู้ใช้ทั่วไป)';
-
-                setTimeout(() => {
-                    window.location.href = 'summary.html';
-                }, 1000);
+                
+                // ไปหน้าสรุปภาพรวม
+                window.location.href = 'summary.html';
                 return;
             }
 
-            // 2. เช็คจาก Database (แพทย์ + Admin)
-            const response = await fetch(`${API_DOC_URL}/api/login`, {
+            // 2. เช็คจาก API (แพทย์ + Admin)
+            const response = await fetch('https://doc-leave-api.9vk92zm5z2.workers.dev/api/login', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                },
                 body: JSON.stringify({
                     licenseNumber: username,
                     password: password
@@ -309,107 +197,79 @@
             const data = await response.json();
 
             if (response.ok && data.success) {
-                // Login สำเร็จ
+                // Login สำเร็จ - แพทย์/Admin
+                errorMessage.classList.remove('show');
+                
+                // เก็บข้อมูล session
                 sessionStorage.setItem('loggedIn', 'true');
-                sessionStorage.setItem('username', data.data.name);
+                sessionStorage.setItem('username', data.data.licenseNumber);
+                sessionStorage.setItem('license_number', data.data.licenseNumber);
                 sessionStorage.setItem('role', data.data.role);
-                sessionStorage.setItem('licenseNumber', data.data.license_number);
-
-                message.className = 'message success show';
-                message.textContent = `✅ เข้าสู่ระบบสำเร็จ (${data.data.role === 'admin' ? 'Admin' : 'แพทย์'})`;
-
-                setTimeout(() => {
-                    if (data.data.role === 'admin') {
-                        window.location.href = 'dev.html';
-                    } else {
-                        window.location.href = 'user.html';
-                    }
-                }, 1000);
-            } else {
-                throw new Error(data.message || 'เข้าสู่ระบบไม่สำเร็จ');
-            }
-        } catch (error) {
-            message.className = 'message error show';
-            message.textContent = '❌ ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
-        }
-    });
-
-    // Reset Password Modal
-    function showResetModal() {
-        document.getElementById('resetModal').classList.add('show');
-    }
-
-    function closeResetModal() {
-        document.getElementById('resetModal').classList.remove('show');
-        document.getElementById('resetForm').reset();
-        document.getElementById('resetMessage').classList.remove('show');
-    }
-
-    document.getElementById('resetForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        const username = document.getElementById('resetUsername').value.trim();
-        const resetCode = document.getElementById('resetCode').value.trim();
-        const newPassword = document.getElementById('newPassword').value;
-        const message = document.getElementById('resetMessage');
-
-        try {
-            // 1. เช็ค User พิเศษ
-            if (username === SPECIAL_USER.username) {
-                if (resetCode !== SPECIAL_USER.resetCode) {
-                    message.className = 'message error show';
-                    message.textContent = '❌ รหัสรีเซ็ตไม่ถูกต้อง';
-                    return;
+                
+                // Redirect ตาม role
+                if (data.data.role === 'admin') {
+                    window.location.href = 'dev.html';
+                } else {
+                    // สำหรับ user: เช็คว่ามี เลข ว หลัง หรือไม่
+                    checkDoctorData(data.data.licenseNumber);
                 }
-
-                SPECIAL_USER.password = newPassword;
-                message.className = 'message success show';
-                message.textContent = '✅ รีเซ็ตรหัสผ่านสำเร็จ';
-
-                setTimeout(() => {
-                    closeResetModal();
-                    alert('รีเซ็ตรหัสผ่านสำเร็จ กรุณาเข้าสู่ระบบใหม่');
-                }, 1500);
-                return;
-            }
-
-            // 2. เช็คจาก Database (แพทย์ + Admin)
-            const response = await fetch(`${API_DOC_URL}/api/reset-password`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    licenseNumber: username,
-                    resetCode: resetCode,
-                    newPassword: newPassword
-                })
-            });
-
-            const data = await response.json();
-
-            if (response.ok && data.success) {
-                message.className = 'message success show';
-                message.textContent = '✅ รีเซ็ตรหัสผ่านสำเร็จ';
-
-                setTimeout(() => {
-                    closeResetModal();
-                    alert('รีเซ็ตรหัสผ่านสำเร็จ กรุณาเข้าสู่ระบบใหม่');
-                }, 1500);
             } else {
-                throw new Error(data.message || 'รีเซ็ตรหัสผ่านไม่สำเร็จ');
+                // Login ไม่สำเร็จ
+                errorMessage.textContent = '❌ ' + (data.message || 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
+                errorMessage.classList.add('show');
+                document.getElementById('password').value = '';
             }
         } catch (error) {
-            message.className = 'message error show';
-            message.textContent = '❌ ' + error.message;
+            console.error('Login error:', error);
+            errorMessage.textContent = '❌ เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง';
+            errorMessage.classList.add('show');
+            document.getElementById('password').value = '';
         }
     });
 
-    // ปิด modal เมื่อคลิกนอก modal
-    window.onclick = function(event) {
-        const modal = document.getElementById('resetModal');
-        if (event.target === modal) {
-            closeResetModal();
+    // ฟังก์ชันเช็ค เลข ว หลัง
+    async function checkDoctorData(licenseNumber) {
+        try {
+            console.log('🔍 Looking for doctor with license:', licenseNumber);
+            
+            // ดึงข้อมูลแพทย์ทั้งหมด
+            const response = await fetch(`https://depdocdoc.9vk92zm5z2.workers.dev/api/doctors`);
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                // หาแพทย์จาก license_number
+                const doctor = data.data.find(d => d.license_number === licenseNumber);
+                
+                if (doctor) {
+                    // บันทึก doctor_id และข้อมูลอื่นๆ
+                    sessionStorage.setItem('doctor_id', doctor.id.toString());
+                    sessionStorage.setItem('doctor_name', doctor.name);
+                    sessionStorage.setItem('department_id', doctor.department_id.toString());
+                    
+                    console.log('✅ Doctor found:', {
+                        id: doctor.id,
+                        name: doctor.name,
+                        license: doctor.license_number
+                    });
+                    
+                    // ไป user.html
+                    window.location.href = 'user.html';
+                } else {
+                    // ไม่พบแพทย์ → ไป wait.html
+                    console.log('❌ Doctor not found for license:', licenseNumber);
+                    window.location.href = 'wait.html';
+                }
+            } else {
+                // เกิด error → ไป wait.html
+                console.error('API error:', data);
+                window.location.href = 'wait.html';
+            }
+        } catch (error) {
+            console.error('Check doctor error:', error);
+            // เกิด error → ไป wait.html
+            window.location.href = 'wait.html';
         }
-    };
+    }
 </script>
 ```
 
