@@ -107,36 +107,242 @@
         color: white;
     }
 
-    .content-section {
+    /* Filter Section */
+    .filter-section {
         background: white;
-        padding: 40px;
+        padding: 25px;
+        border-radius: 15px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        margin-bottom: 30px;
+    }
+
+    .filter-section h3 {
+        color: #333;
+        margin-bottom: 15px;
+        font-size: 18px;
+    }
+
+    .filter-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        color: #333;
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .form-group select {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: border-color 0.3s;
+    }
+
+    .form-group select:focus {
+        outline: none;
+        border-color: #11998e;
+    }
+
+    /* Calendar Styles */
+    .calendar-section {
+        background: white;
+        padding: 30px;
         border-radius: 15px;
         box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-        text-align: center;
-        min-height: 400px;
+    }
+
+    .calendar-header {
         display: flex;
-        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .month-nav {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .month-nav button {
+        padding: 8px 16px;
+        background: #667eea;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+    }
+
+    .month-nav button:hover {
+        background: #5568d3;
+    }
+
+    .month-nav span {
+        font-size: 18px;
+        font-weight: 600;
+        min-width: 180px;
+        text-align: center;
+    }
+
+    .calendar {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 5px;
+    }
+
+    .calendar-day-header {
+        text-align: center;
+        padding: 12px;
+        font-weight: 700;
+        color: #555;
+        background: #f0f0f0;
+        border-radius: 6px;
+    }
+
+    .calendar-day {
+        aspect-ratio: 1;
+        display: flex;
         align-items: center;
         justify-content: center;
-    }
-
-    .content-section h2 {
-        color: #333;
-        font-size: 28px;
-        margin-bottom: 20px;
-    }
-
-    .content-section p {
-        color: #666;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        cursor: pointer;
         font-size: 16px;
-        line-height: 1.6;
-        max-width: 600px;
+        font-weight: 500;
+        transition: all 0.2s;
+        position: relative;
+        background: white;
     }
 
-    .placeholder-icon {
-        font-size: 80px;
-        margin-bottom: 20px;
-        opacity: 0.5;
+    .calendar-day:hover:not(.empty):not(.other-month):not(.past-date) {
+        transform: scale(1.05);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .calendar-day.empty {
+        cursor: default;
+        background: #fafafa;
+        border-color: #f0f0f0;
+    }
+
+    .calendar-day.other-month {
+        color: #ccc;
+        cursor: default;
+    }
+
+    /* วันที่ผ่านมาแล้ว - สีเทาเข้มขึ้น */
+    .calendar-day.past-date {
+        background: #e0e0e0 !important;
+        color: #757575;
+        cursor: not-allowed;
+    }
+
+    .calendar-day.weekend {
+        border-color: #ffcdd2 !important;
+        position: relative;
+        z-index: 200 !important;
+    }
+
+    .calendar-day.today {
+        outline: 8px solid #2196f3;
+        outline-offset: -8px;
+        position: relative;
+        z-index: 100;
+        font-weight: 700;
+    }
+
+    /* สีการลา */
+    .calendar-day.on-leave {
+        background: #c8e6c9 !important;
+        border-color: #66bb6a !important;
+        color: #2e7d32;
+        font-weight: 700;
+    }
+
+    .calendar-day.on-leave-no-duty {
+        background: #e3f2e4 !important;
+        border-color: #81c784 !important;
+        color: #2e7d32;
+        font-weight: 700;
+    }
+
+    .calendar-day.no-delegation {
+        background: #fff9c4 !important;
+        border-color: #fdd835 !important;
+        color: #f57f17;
+        font-weight: 700;
+    }
+
+    .calendar-day.no-delegation-no-duty {
+        background: #fffce8 !important;
+        border-color: #ffecb3 !important;
+        color: #f57f17;
+        font-weight: 700;
+    }
+
+    .calendar-day.overlap {
+        background: #ffcdd2 !important;
+        border-color: #ef5350 !important;
+        color: #c62828;
+        font-weight: 700;
+    }
+
+    .calendar-day.overlap-no-delegation {
+        background: #ffe0b2 !important;
+        border-color: #fb8c00 !important;
+        color: #e65100;
+        font-weight: 700;
+    }
+
+    .calendar-day.approved {
+        background: #000000 !important;
+        border-color: #000000 !important;
+        color: #ffffff !important;
+        font-weight: 700;
+    }
+
+    .calendar-day.rejected {
+        background: #ffffff !important;
+        border-color: #000000 !important;
+        border-width: 3px !important;
+        color: #000000 !important;
+    }
+
+    .calendar-day.weekend.overlap {
+        background: #ffcdd2 !important;
+        border-color: #ef5350 !important;
+        color: #c62828;
+        font-weight: 700;
+    }
+
+    .calendar-day.weekend.overlap-no-delegation {
+        background: #ffe0b2 !important;
+        border-color: #fb8c00 !important;
+        color: #e65100;
+        font-weight: 700;
+    }
+
+    .calendar-day.weekend.approved {
+        background: #000000 !important;
+        border-color: #000000 !important;
+        color: #ffffff !important;
+        z-index: 250 !important;
+    }
+
+    .calendar-day.weekend.rejected {
+        background: #ffffff !important;
+        border-color: #000000 !important;
+        border-width: 3px !important;
+        color: #000000 !important;
+        z-index: 250 !important;
     }
 </style>
 ```
@@ -156,23 +362,49 @@
         <p id="userDisplay">กำลังโหลดข้อมูล...</p>
     </div>
 
-    <div class="content-section">
-        <div class="placeholder-icon">📅</div>
-        <h2>สรุปภาพรวม</h2>
-        <p>
-            หน้านี้จะแสดงปฏิทินภาพรวมของแต่ละแผนก<br>
-            สามารถเลือกดูแผนก เดือน และรายละเอียดของแต่ละวัน<br>
-            รวมถึงข้อมูลการแลกเวรต่างๆ
-        </p>
-        <p style="margin-top: 20px; color: #999; font-size: 14px;">
-            (ระบบกำลังพัฒนา - ทดสอบการ Navigation)
-        </p>
+    <!-- Filter Section -->
+    <div class="filter-section">
+        <h3>🔍 เลือกแผนกและเดือน</h3>
+        <div class="filter-group">
+            <div class="form-group">
+                <label for="departmentSelect">แผนก</label>
+                <select id="departmentSelect" onchange="loadDepartmentLeaves()">
+                    <option value="">-- เลือกแผนก --</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="monthSelect">เดือน</label>
+                <select id="monthSelect" onchange="changeMonth()">
+                    <option value="">-- เลือกเดือน --</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Calendar -->
+    <div class="calendar-section">
+        <div class="calendar-header">
+            <div class="month-nav">
+                <button onclick="previousMonth()">◀ เดือนก่อน</button>
+                <span id="currentMonth"></span>
+                <button onclick="nextMonth()">เดือนถัดไป ▶</button>
+            </div>
+        </div>
+        <div class="calendar" id="calendar"></div>
     </div>
 </div>
 
 <script>
+    const API_DEP_URL = 'https://depdocdep.9vk92zm5z2.workers.dev';
+    const API_LEAVE_URL = 'https://dep-rest-worker.9vk92zm5z2.workers.dev';
+    
+    let currentYear = new Date().getFullYear();
+    let currentMonth = new Date().getMonth();
+    let doctorLeaves = [];
+    let departments = [];
+
     // ตรวจสอบ Login
-    window.onload = function() {
+    window.onload = async function() {
         const loggedIn = sessionStorage.getItem('loggedIn');
         const username = sessionStorage.getItem('username');
         const role = sessionStorage.getItem('role');
@@ -185,8 +417,17 @@
         // แสดงข้อมูล User
         displayUserInfo(username, role);
 
-        // ตั้งค่าปุ่มกลับตาม role
+        // ตั้งค่าปุ่มกลับ
         setupBackButton(role);
+        
+        // โหลดแผนก
+        await loadDepartments();
+        
+        // สร้าง dropdown เดือน
+        generateMonthDropdown();
+        
+        // Render ปฏิทิน
+        renderCalendar();
     };
 
     // แสดงข้อมูล User
@@ -220,17 +461,14 @@
         const btnBack = document.getElementById('btnBack');
 
         if (role === 'admin') {
-            // Admin → กลับ dev.html
             btnBack.onclick = function() {
                 window.location.href = 'dev.html';
             };
         } else if (role === 'doctor' || role === 'user') {
-            // แพทย์ → กลับ user.html
             btnBack.onclick = function() {
                 window.location.href = 'user.html';
             };
         } else if (role === 'guest') {
-            // Guest → Logout
             btnBack.onclick = function() {
                 if (confirm('ต้องการออกจากระบบ?')) {
                     sessionStorage.clear();
@@ -238,7 +476,6 @@
                 }
             };
         } else {
-            // Default → Logout
             btnBack.onclick = function() {
                 if (confirm('ต้องการออกจากระบบ?')) {
                     sessionStorage.clear();
@@ -246,6 +483,256 @@
                 }
             };
         }
+    }
+
+    // โหลดแผนก
+    async function loadDepartments() {
+        try {
+            const response = await fetch(`${API_DEP_URL}/api/departments`);
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                departments = data.data.sort((a, b) => a.name.localeCompare(b.name, ['en', 'th']));
+                
+                const select = document.getElementById('departmentSelect');
+                departments.forEach(dept => {
+                    const option = document.createElement('option');
+                    option.value = dept.id;
+                    option.textContent = dept.name;
+                    select.appendChild(option);
+                });
+            }
+        } catch (error) {
+            console.error('Load departments error:', error);
+        }
+    }
+
+    // สร้าง dropdown เดือน
+    function generateMonthDropdown() {
+        const select = document.getElementById('monthSelect');
+        const monthNames = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+                           'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+        
+        // สร้างตัวเลือก 6 เดือนย้อนหลัง + เดือนนี้ + 6 เดือนข้างหน้า
+        const today = new Date();
+        const currentYearNow = today.getFullYear();
+        const currentMonthNow = today.getMonth();
+        
+        for (let offset = -6; offset <= 6; offset++) {
+            const date = new Date(currentYearNow, currentMonthNow + offset, 1);
+            const year = date.getFullYear();
+            const month = date.getMonth();
+            
+            const option = document.createElement('option');
+            option.value = `${year}-${month}`;
+            option.textContent = `${monthNames[month]} ${year + 543}`;
+            
+            // เลือกเดือนปัจจุบันเป็นค่าเริ่มต้น
+            if (offset === 0) {
+                option.selected = true;
+            }
+            
+            select.appendChild(option);
+        }
+    }
+
+    // เปลี่ยนเดือนจาก dropdown
+    function changeMonth() {
+        const value = document.getElementById('monthSelect').value;
+        if (!value) return;
+        
+        const [year, month] = value.split('-').map(Number);
+        currentYear = year;
+        currentMonth = month;
+        renderCalendar();
+    }
+
+    // โหลดการลาของแผนก
+    async function loadDepartmentLeaves() {
+        const departmentId = document.getElementById('departmentSelect').value;
+        
+        if (!departmentId) {
+            doctorLeaves = [];
+            renderCalendar();
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_LEAVE_URL}/api/leaves/department/${departmentId}`);
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                doctorLeaves = data.data;
+                console.log('Loaded leaves:', doctorLeaves.length);
+            } else {
+                doctorLeaves = [];
+            }
+        } catch (error) {
+            console.error('Load leaves error:', error);
+            doctorLeaves = [];
+        }
+        
+        renderCalendar();
+    }
+
+    // Render Calendar
+    function renderCalendar() {
+        const calendar = document.getElementById('calendar');
+        const monthYear = document.getElementById('currentMonth');
+        
+        const monthNames = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+                          'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+        
+        monthYear.textContent = `${monthNames[currentMonth]} ${currentYear + 543}`;
+        
+        // อัพเดท dropdown เดือนให้ตรงกับปฏิทิน
+        const monthSelect = document.getElementById('monthSelect');
+        monthSelect.value = `${currentYear}-${currentMonth}`;
+        
+        const firstDay = new Date(currentYear, currentMonth, 1);
+        const lastDay = new Date(currentYear, currentMonth + 1, 0);
+        const startDayOfWeek = firstDay.getDay();
+        const daysInMonth = lastDay.getDate();
+        
+        const dayHeaders = ['จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส', 'อา'];
+        
+        let html = '';
+        dayHeaders.forEach(day => {
+            html += `<div class="calendar-day-header">${day}</div>`;
+        });
+        
+        // วันว่าง (เริ่มจันทร์)
+        const startDay = startDayOfWeek === 0 ? 6 : startDayOfWeek - 1;
+        for (let i = 0; i < startDay; i++) {
+            html += '<div class="calendar-day empty"></div>';
+        }
+        
+        // คำนวณสี
+        const calculateColorClass = (dateStr) => {
+            const leaveTypes = {
+                green: 0,
+                yellow: 0,
+                approved: 0,
+                rejected: 0
+            };
+            
+            doctorLeaves.forEach(leave => {
+                if (dateStr >= leave.start_date && dateStr <= leave.end_date) {
+                    if (leave.approval_status === 'approved') {
+                        leaveTypes.approved++;
+                    } else if (leave.approval_status === 'rejected') {
+                        leaveTypes.rejected++;
+                    } else if (leave.delegation_type === 'none') {
+                        leaveTypes.yellow++;
+                    } else if (leave.delegation_type === 'single' || leave.delegation_type === 'custom') {
+                        leaveTypes.green++;
+                    }
+                }
+            });
+            
+            // อนุมัติ → ดำ
+            if (leaveTypes.approved > 0) {
+                return 'approved';
+            }
+            
+            const totalLeaves = leaveTypes.green + leaveTypes.yellow + leaveTypes.rejected;
+            if (totalLeaves === 0) return null;
+            
+            // แดง: เขียว >= 2
+            if (leaveTypes.green >= 2) {
+                return 'overlap';
+            }
+            // ส้ม: เขียว + เหลือง หรือ เหลือง >= 2
+            else if ((leaveTypes.green >= 1 && leaveTypes.yellow >= 1) || (leaveTypes.yellow >= 2)) {
+                return 'overlap-no-delegation';
+            }
+            // เขียว: 1 คน
+            else if (leaveTypes.green === 1 && leaveTypes.yellow === 0) {
+                return 'on-leave';
+            }
+            // เหลือง: ไม่ฝาก
+            else if (leaveTypes.yellow === 1 && leaveTypes.green === 0) {
+                return 'no-delegation';
+            } else {
+                return 'on-leave';
+            }
+        };
+        
+        // วันในเดือน
+        const today = new Date();
+        for (let day = 1; day <= daysInMonth; day++) {
+            const date = new Date(currentYear, currentMonth, day);
+            const dateStr = formatDate(date);
+            const dayOfWeek = date.getDay();
+            
+            let classes = ['calendar-day'];
+            
+            // เสาร์-อาทิตย์
+            if (dayOfWeek === 0 || dayOfWeek === 6) {
+                classes.push('weekend');
+            }
+            
+            // วันนี้
+            if (date.toDateString() === today.toDateString()) {
+                classes.push('today');
+            }
+            
+            // วันที่ผ่านแล้ว
+            if (date < today && date.toDateString() !== today.toDateString()) {
+                classes.push('past-date');
+            }
+            
+            // สีการลา
+            const colorClass = calculateColorClass(dateStr);
+            if (colorClass) {
+                classes.push(colorClass);
+            }
+            
+            html += `<div class="${classes.join(' ')}" data-date="${dateStr}" onclick="showDayDetail('${dateStr}')">${day}</div>`;
+        }
+        
+        calendar.innerHTML = html;
+    }
+
+    // แสดงรายละเอียดวัน (ยังไม่ทำ - Part ถัดไป)
+    function showDayDetail(dateStr) {
+        console.log('Clicked date:', dateStr);
+        alert(`คลิกวันที่: ${formatDateThai(dateStr)}\n\n(ฟีเจอร์แสดงรายละเอียดจะทำใน Part ถัดไป)`);
+    }
+
+    // Format Date
+    function formatDate(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    function formatDateThai(dateStr) {
+        const date = new Date(dateStr);
+        const day = date.getDate();
+        const month = date.getMonth() + 1;
+        const year = date.getFullYear() + 543;
+        return `${day}/${month}/${year}`;
+    }
+
+    // เดือนก่อน/ถัดไป
+    function previousMonth() {
+        currentMonth--;
+        if (currentMonth < 0) {
+            currentMonth = 11;
+            currentYear--;
+        }
+        renderCalendar();
+    }
+
+    function nextMonth() {
+        currentMonth++;
+        if (currentMonth > 11) {
+            currentMonth = 0;
+            currentYear++;
+        }
+        renderCalendar();
     }
 </script>
 ```
