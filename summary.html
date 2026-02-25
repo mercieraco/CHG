@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>สรุปภาพรวม - ระบบลางานแพทย์</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+```
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        min-height: 100vh;
+        padding: 20px;
+    }
+
+    .btn-back-top {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: rgba(245, 87, 108, 0.9);
+        color: white;
+        padding: 12px 20px;
+        border-radius: 25px;
+        font-size: 14px;
+        font-weight: 600;
+        box-shadow: 0 4px 15px rgba(245, 87, 108, 0.3);
+        z-index: 1000;
+        cursor: pointer;
+        border: none;
+        transition: all 0.3s;
+    }
+
+    .btn-back-top:hover {
+        background: rgba(245, 87, 108, 1);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(245, 87, 108, 0.4);
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding-top: 20px;
+    }
+
+    .header {
+        background: white;
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+    .header h1 {
+        color: #333;
+        font-size: 32px;
+        margin-bottom: 10px;
+    }
+
+    .header p {
+        color: #666;
+        font-size: 16px;
+    }
+
+    .user-info {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 30px;
+        text-align: center;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .user-info p {
+        color: #333;
+        font-size: 16px;
+        font-weight: 500;
+    }
+
+    .user-role {
+        display: inline-block;
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-size: 14px;
+        margin-left: 10px;
+    }
+
+    .role-admin {
+        background: #ff6b6b;
+        color: white;
+    }
+
+    .role-doctor {
+        background: #4ecdc4;
+        color: white;
+    }
+
+    .role-user {
+        background: #95a5a6;
+        color: white;
+    }
+
+    .content-section {
+        background: white;
+        padding: 40px;
+        border-radius: 15px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        text-align: center;
+        min-height: 400px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .content-section h2 {
+        color: #333;
+        font-size: 28px;
+        margin-bottom: 20px;
+    }
+
+    .content-section p {
+        color: #666;
+        font-size: 16px;
+        line-height: 1.6;
+        max-width: 600px;
+    }
+
+    .placeholder-icon {
+        font-size: 80px;
+        margin-bottom: 20px;
+        opacity: 0.5;
+    }
+</style>
+```
+
+</head>
+<body>
+    <button id="btnBack" class="btn-back-top">← กลับ</button>
+
+```
+<div class="container">
+    <div class="header">
+        <h1>📊 สรุปภาพรวม Duty</h1>
+        <p>ดูตารางเวร การแลกเวร และภาพรวมของทุกแผนก</p>
+    </div>
+
+    <div class="user-info">
+        <p id="userDisplay">กำลังโหลดข้อมูล...</p>
+    </div>
+
+    <div class="content-section">
+        <div class="placeholder-icon">📅</div>
+        <h2>สรุปภาพรวม</h2>
+        <p>
+            หน้านี้จะแสดงปฏิทินภาพรวมของแต่ละแผนก<br>
+            สามารถเลือกดูแผนก เดือน และรายละเอียดของแต่ละวัน<br>
+            รวมถึงข้อมูลการแลกเวรต่างๆ
+        </p>
+        <p style="margin-top: 20px; color: #999; font-size: 14px;">
+            (ระบบกำลังพัฒนา - ทดสอบการ Navigation)
+        </p>
+    </div>
+</div>
+
+<script>
+    // ตรวจสอบ Login
+    window.onload = function() {
+        const loggedIn = sessionStorage.getItem('loggedIn');
+        const username = sessionStorage.getItem('username');
+        const role = sessionStorage.getItem('role');
+
+        if (!loggedIn) {
+            window.location.href = 'index.html';
+            return;
+        }
+
+        // แสดงข้อมูล User
+        displayUserInfo(username, role);
+
+        // ตั้งค่าปุ่มกลับตาม role
+        setupBackButton(role);
+    };
+
+    // แสดงข้อมูล User
+    function displayUserInfo(username, role) {
+        const userDisplay = document.getElementById('userDisplay');
+        let roleText = '';
+        let roleClass = '';
+
+        if (role === 'admin') {
+            roleText = 'Admin';
+            roleClass = 'role-admin';
+        } else if (role === 'doctor') {
+            roleText = 'แพทย์';
+            roleClass = 'role-doctor';
+        } else {
+            roleText = 'ผู้ใช้ทั่วไป';
+            roleClass = 'role-user';
+        }
+
+        userDisplay.innerHTML = `
+            คุณ ${username}
+            <span class="user-role ${roleClass}">${roleText}</span>
+        `;
+    }
+
+    // ตั้งค่าปุ่มกลับตาม role
+    function setupBackButton(role) {
+        const btnBack = document.getElementById('btnBack');
+
+        if (role === 'admin') {
+            // Admin → กลับ dev.html
+            btnBack.onclick = function() {
+                window.location.href = 'dev.html';
+            };
+        } else if (role === 'doctor') {
+            // แพทย์ → กลับ user.html
+            btnBack.onclick = function() {
+                window.location.href = 'user.html';
+            };
+        } else {
+            // User ทั่วไป → Logout
+            btnBack.onclick = function() {
+                if (confirm('ต้องการออกจากระบบ?')) {
+                    sessionStorage.clear();
+                    window.location.href = 'index.html';
+                }
+            };
+        }
+    }
+</script>
+```
+
+</body>
+</html>
