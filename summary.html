@@ -355,17 +355,11 @@
 <div class="container">
     <div class="header">
         <h1>📊 สรุปภาพรวม Duty</h1>
-        <p>ดูตารางเวร การแลกเวร และภาพรวมของทุกแผนก</p>
-    </div>
-
-    <div class="user-info">
-        <p id="userDisplay">กำลังโหลดข้อมูล...</p>
     </div>
 
     <!-- Filter Section -->
     <div class="filter-section">
-        <h3>🔍 เลือกแผนกและเดือน</h3>
-        <div class="filter-group">
+        <div class="filter-group" style="grid-template-columns: 2fr 1fr 1fr;">
             <div class="form-group">
                 <label for="departmentSelect">แผนก</label>
                 <select id="departmentSelect" onchange="loadDepartmentLeaves()">
@@ -374,8 +368,14 @@
             </div>
             <div class="form-group">
                 <label for="monthSelect">เดือน</label>
-                <select id="monthSelect" onchange="changeMonth()">
-                    <option value="">-- เลือกเดือน --</option>
+                <select id="monthSelect" onchange="changeMonthYear()">
+                    <option value="">-- เดือน --</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="yearSelect">ปี</label>
+                <select id="yearSelect" onchange="changeMonthYear()">
+                    <option value="">-- ปี --</option>
                 </select>
             </div>
         </div>
@@ -406,7 +406,6 @@
     // ตรวจสอบ Login
     window.onload = async function() {
         const loggedIn = sessionStorage.getItem('loggedIn');
-        const username = sessionStorage.getItem('username');
         const role = sessionStorage.getItem('role');
 
         if (!loggedIn) {
@@ -414,47 +413,18 @@
             return;
         }
 
-        // แสดงข้อมูล User
-        displayUserInfo(username, role);
-
         // ตั้งค่าปุ่มกลับ
         setupBackButton(role);
         
         // โหลดแผนก
         await loadDepartments();
         
-        // สร้าง dropdown เดือน
-        generateMonthDropdown();
+        // สร้าง dropdown เดือนและปี
+        generateMonthYearDropdowns();
         
         // Render ปฏิทิน
         renderCalendar();
     };
-
-    // แสดงข้อมูล User
-    function displayUserInfo(username, role) {
-        const userDisplay = document.getElementById('userDisplay');
-        let roleText = '';
-        let roleClass = '';
-
-        if (role === 'admin') {
-            roleText = 'Admin';
-            roleClass = 'role-admin';
-        } else if (role === 'doctor' || role === 'user') {
-            roleText = 'แพทย์';
-            roleClass = 'role-doctor';
-        } else if (role === 'guest') {
-            roleText = 'ผู้ใช้ทั่วไป';
-            roleClass = 'role-user';
-        } else {
-            roleText = 'ผู้ใช้ทั่วไป';
-            roleClass = 'role-user';
-        }
-
-        userDisplay.innerHTML = `
-            คุณ ${username}
-            <span class="user-role ${roleClass}">${roleText}</span>
-        `;
-    }
 
     // ตั้งค่าปุ่มกลับตาม role
     function setupBackButton(role) {
@@ -507,43 +477,47 @@
         }
     }
 
-    // สร้าง dropdown เดือน
-    function generateMonthDropdown() {
-        const select = document.getElementById('monthSelect');
+    // สร้าง dropdown เดือนและปี
+    function generateMonthYearDropdowns() {
+        const monthSelect = document.getElementById('monthSelect');
+        const yearSelect = document.getElementById('yearSelect');
+        
         const monthNames = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
                            'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
         
-        // สร้างตัวเลือก 6 เดือนย้อนหลัง + เดือนนี้ + 6 เดือนข้างหน้า
-        const today = new Date();
-        const currentYearNow = today.getFullYear();
-        const currentMonthNow = today.getMonth();
-        
-        for (let offset = -6; offset <= 6; offset++) {
-            const date = new Date(currentYearNow, currentMonthNow + offset, 1);
-            const year = date.getFullYear();
-            const month = date.getMonth();
-            
+        // สร้าง dropdown เดือน (0-11)
+        monthNames.forEach((name, index) => {
             const option = document.createElement('option');
-            option.value = `${year}-${month}`;
-            option.textContent = `${monthNames[month]} ${year + 543}`;
-            
-            // เลือกเดือนปัจจุบันเป็นค่าเริ่มต้น
-            if (offset === 0) {
+            option.value = index;
+            option.textContent = name;
+            if (index === currentMonth) {
                 option.selected = true;
             }
-            
-            select.appendChild(option);
+            monthSelect.appendChild(option);
+        });
+        
+        // สร้าง dropdown ปี (3 ปีย้อนหลัง + ปีนี้ + 3 ปีข้างหน้า)
+        const currentYearNow = new Date().getFullYear();
+        for (let year = currentYearNow - 3; year <= currentYearNow + 3; year++) {
+            const option = document.createElement('option');
+            option.value = year;
+            option.textContent = `${year + 543}`;  // แสดงเป็น พ.ศ.
+            if (year === currentYear) {
+                option.selected = true;
+            }
+            yearSelect.appendChild(option);
         }
     }
 
-    // เปลี่ยนเดือนจาก dropdown
-    function changeMonth() {
-        const value = document.getElementById('monthSelect').value;
-        if (!value) return;
+    // เปลี่ยนเดือน/ปีจาก dropdown
+    function changeMonthYear() {
+        const monthValue = document.getElementById('monthSelect').value;
+        const yearValue = document.getElementById('yearSelect').value;
         
-        const [year, month] = value.split('-').map(Number);
-        currentYear = year;
-        currentMonth = month;
+        if (monthValue === '' || yearValue === '') return;
+        
+        currentMonth = parseInt(monthValue);
+        currentYear = parseInt(yearValue);
         renderCalendar();
     }
 
@@ -584,10 +558,6 @@
                           'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
         
         monthYear.textContent = `${monthNames[currentMonth]} ${currentYear + 543}`;
-        
-        // อัพเดท dropdown เดือนให้ตรงกับปฏิทิน
-        const monthSelect = document.getElementById('monthSelect');
-        monthSelect.value = `${currentYear}-${currentMonth}`;
         
         const firstDay = new Date(currentYear, currentMonth, 1);
         const lastDay = new Date(currentYear, currentMonth + 1, 0);
@@ -723,6 +693,9 @@
             currentMonth = 11;
             currentYear--;
         }
+        // อัพเดท dropdown
+        document.getElementById('monthSelect').value = currentMonth;
+        document.getElementById('yearSelect').value = currentYear;
         renderCalendar();
     }
 
@@ -732,6 +705,9 @@
             currentMonth = 0;
             currentYear++;
         }
+        // อัพเดท dropdown
+        document.getElementById('monthSelect').value = currentMonth;
+        document.getElementById('yearSelect').value = currentYear;
         renderCalendar();
     }
 </script>
