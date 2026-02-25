@@ -344,6 +344,124 @@
         color: #000000 !important;
         z-index: 250 !important;
     }
+
+    /* Modal */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 3000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal.show {
+        display: flex;
+    }
+
+    .modal-content {
+        background: white;
+        padding: 30px;
+        border-radius: 15px;
+        max-width: 700px;
+        width: 90%;
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+
+    .modal-header {
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e0e0e0;
+    }
+
+    .modal-header h2 {
+        color: #333;
+        font-size: 24px;
+        margin-bottom: 5px;
+    }
+
+    .modal-header p {
+        color: #666;
+        font-size: 14px;
+    }
+
+    .duty-section {
+        margin-bottom: 20px;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 10px;
+        border-left: 4px solid #667eea;
+    }
+
+    .duty-name {
+        font-size: 18px;
+        font-weight: 700;
+        color: #667eea;
+        margin-bottom: 12px;
+    }
+
+    .doctor-item {
+        padding: 10px 15px;
+        background: white;
+        border-radius: 6px;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .doctor-item.replacement {
+        background: #fff9c4;
+        border-left: 3px solid #fdd835;
+    }
+
+    .doctor-name {
+        font-weight: 600;
+        color: #333;
+        flex: 1;
+    }
+
+    .replacement-badge {
+        background: #11998e;
+        color: white;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .original-doctor {
+        color: #999;
+        font-size: 13px;
+    }
+
+    .no-doctor {
+        color: #999;
+        font-style: italic;
+        padding: 10px;
+    }
+
+    .btn-close {
+        width: 100%;
+        padding: 12px;
+        background: #e0e0e0;
+        color: #666;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        margin-top: 15px;
+    }
+
+    .btn-close:hover {
+        background: #d0d0d0;
+    }
 </style>
 ```
 
@@ -391,6 +509,18 @@
             </div>
         </div>
         <div class="calendar" id="calendar"></div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div id="dayModal" class="modal" onclick="if(event.target===this) closeModal()">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="modalDate"></h2>
+            <p id="modalDept"></p>
+        </div>
+        <div id="modalBody"></div>
+        <button class="btn-close" onclick="closeModal()">ปิด</button>
     </div>
 </div>
 
@@ -665,9 +795,131 @@
     }
 
     // แสดงรายละเอียดวัน (ยังไม่ทำ - Part ถัดไป)
-    function showDayDetail(dateStr) {
-        console.log('Clicked date:', dateStr);
-        alert(`คลิกวันที่: ${formatDateThai(dateStr)}\n\n(ฟีเจอร์แสดงรายละเอียดจะทำใน Part ถัดไป)`);
+    // แสดงรายละเอียดวัน
+    async function showDayDetail(dateStr) {
+        const deptId = document.getElementById('departmentSelect').value;
+        if (!deptId) {
+            alert('กรุณาเลือกแผนกก่อน');
+            return;
+        }
+
+        const dept = departments.find(d => d.id == deptId);
+        const deptName = dept ? dept.name : 'ไม่ระบุ';
+
+        try {
+            // 1. ดึง Duties
+            const dutiesRes = await fetch(`https://depdocdoc.9vk92zm5z2.workers.dev/api/duties/department/${deptId}`);
+            const dutiesData = await dutiesRes.json();
+            
+            if (!dutiesData.success) {
+                alert('ไม่พบข้อมูล Duty');
+                return;
+            }
+
+            // 2. ดึง Doctor-Duties
+            const ddRes = await fetch(`https://depdocdoc.9vk92zm5z2.workers.dev/api/doctor-duties/department/${deptId}`);
+            const ddData = await ddRes.json();
+            
+            // 3. ดึงรายชื่อแพทย์
+            const docRes = await fetch(`https://depdocdoc.9vk92zm5z2.workers.dev/api/doctors`);
+            const docData = await docRes.json();
+
+            const duties = dutiesData.data || [];
+            const doctorDuties = ddData.success ? ddData.data : [];
+            const allDoctors = docData.success ? docData.data : [];
+
+            // หาวัน
+            const date = new Date(dateStr);
+            const dayIdx = date.getDay();
+            const dayNames = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+            const dayName = dayNames[dayIdx];
+
+            // สร้างข้อมูล
+            let html = '';
+
+            duties.forEach(duty => {
+                // หาแพทย์ที่ทำ duty นี้วันนี้
+                const docsOnDuty = doctorDuties.filter(dd => 
+                    dd.duty_id === duty.id && dd[dayName] === 1
+                );
+
+                html += `<div class="duty-section">`;
+                html += `<div class="duty-name">${duty.duty_name}</div>`;
+
+                if (docsOnDuty.length === 0) {
+                    html += `<div class="no-doctor">ไม่มีแพทย์</div>`;
+                } else {
+                    docsOnDuty.forEach(dd => {
+                        const doc = allDoctors.find(d => d.id === dd.doctor_id);
+                        if (!doc) return;
+
+                        // เช็คว่าลาหรือไม่
+                        const leave = doctorLeaves.find(l => 
+                            l.doctor_id === doc.id &&
+                            dateStr >= l.start_date &&
+                            dateStr <= l.end_date &&
+                            l.department_id == deptId
+                        );
+
+                        if (leave) {
+                            // ลา - หาคนมาแทน
+                            let replacement = null;
+
+                            if (leave.delegation_type === 'single' && leave.replacement_doctor_id) {
+                                replacement = allDoctors.find(d => d.id === leave.replacement_doctor_id);
+                            } else if (leave.delegation_type === 'custom' && leave.duty_assignments) {
+                                const assign = leave.duty_assignments.find(a => 
+                                    a.duty_date === dateStr && a.duty_id === duty.id
+                                );
+                                if (assign) {
+                                    replacement = allDoctors.find(d => d.id === assign.replacement_doctor_id);
+                                }
+                            }
+
+                            if (replacement) {
+                                html += `
+                                    <div class="doctor-item replacement">
+                                        <span class="doctor-name">${replacement.name}</span>
+                                        <span class="replacement-badge">แทน</span>
+                                        <span class="original-doctor">${doc.name}</span>
+                                    </div>
+                                `;
+                            } else {
+                                html += `
+                                    <div class="doctor-item replacement">
+                                        <span class="doctor-name">${doc.name} (ลางาน - ไม่ฝากงาน)</span>
+                                    </div>
+                                `;
+                            }
+                        } else {
+                            // ไม่ลา
+                            html += `
+                                <div class="doctor-item">
+                                    <span class="doctor-name">${doc.name}</span>
+                                </div>
+                            `;
+                        }
+                    });
+                }
+
+                html += `</div>`;
+            });
+
+            // แสดง Modal
+            document.getElementById('modalDate').textContent = `วันที่ ${formatDateThai(dateStr)}`;
+            document.getElementById('modalDept').textContent = `แผนก: ${deptName}`;
+            document.getElementById('modalBody').innerHTML = html;
+            document.getElementById('dayModal').classList.add('show');
+
+        } catch (error) {
+            console.error('Error:', error);
+            alert('เกิดข้อผิดพลาด: ' + error.message);
+        }
+    }
+
+    // ปิด Modal
+    function closeModal() {
+        document.getElementById('dayModal').classList.remove('show');
     }
 
     // Format Date
