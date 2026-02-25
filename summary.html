@@ -537,25 +537,40 @@
 
     // ตรวจสอบ Login
     window.onload = async function() {
+        console.log('🚀 Page loaded');
+        
         const loggedIn = sessionStorage.getItem('loggedIn');
         const role = sessionStorage.getItem('role');
+        
+        console.log('Session:', { loggedIn, role });
 
         if (!loggedIn) {
+            console.log('❌ Not logged in, redirecting...');
             window.location.href = 'index.html';
             return;
         }
+
+        console.log('✅ Logged in as:', role);
 
         // ตั้งค่าปุ่มกลับ
         setupBackButton(role);
         
         // โหลดแผนก
+        console.log('📋 Starting to load departments...');
         await loadDepartments();
+        console.log('📋 Departments loaded');
         
         // สร้าง dropdown เดือนและปี
+        console.log('📅 Generating month/year dropdowns...');
         generateMonthYearDropdowns();
+        console.log('📅 Dropdowns generated');
         
         // Render ปฏิทิน
+        console.log('🗓️ Rendering calendar...');
         renderCalendar();
+        console.log('🗓️ Calendar rendered');
+        
+        console.log('✅ Initialization complete');
     };
 
     // ตั้งค่าปุ่มกลับตาม role
@@ -589,23 +604,47 @@
 
     // โหลดแผนก
     async function loadDepartments() {
+        console.log('🔄 Loading departments...');
+        console.log('API URL:', API_DEP_URL);
+        
         try {
             const response = await fetch(`${API_DEP_URL}/api/departments`);
+            console.log('Response status:', response.status, response.ok);
+            
             const data = await response.json();
+            console.log('Response data:', data);
             
             if (response.ok && data.success) {
                 departments = data.data.sort((a, b) => a.name.localeCompare(b.name, ['en', 'th']));
+                console.log('✅ Departments loaded:', departments.length, departments);
                 
                 const select = document.getElementById('departmentSelect');
+                console.log('Select element:', select);
+                
+                if (!select) {
+                    console.error('❌ departmentSelect not found!');
+                    return;
+                }
+                
+                // ล้าง options เก่า (ยกเว้น option แรก)
+                while (select.options.length > 1) {
+                    select.remove(1);
+                }
+                
                 departments.forEach(dept => {
                     const option = document.createElement('option');
                     option.value = dept.id;
                     option.textContent = dept.name;
                     select.appendChild(option);
+                    console.log(`  Added: ${dept.name} (ID: ${dept.id})`);
                 });
+                
+                console.log('✅ Department dropdown populated');
+            } else {
+                console.error('❌ API failed:', data);
             }
         } catch (error) {
-            console.error('Load departments error:', error);
+            console.error('❌ Load departments error:', error);
         }
     }
 
