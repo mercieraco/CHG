@@ -814,7 +814,7 @@
         try {
             // 1. ดึง Duties
             console.log('📋 Fetching duties...');
-            const dutiesRes = await fetch(`https://depdocdoc.9vk92zm5z2.workers.dev/api/duties/department/${deptId}`);
+            const dutiesRes = await fetch(`https://depdocdoc.9vk92zm5z2.workers.dev/api/departments/${deptId}/duties`);
             console.log('Duties response status:', dutiesRes.status, dutiesRes.ok);
             
             const dutiesData = await dutiesRes.json();
@@ -831,7 +831,7 @@
 
             // 2. ดึง Doctor-Duties
             console.log('👨‍⚕️ Fetching doctor-duties...');
-            const ddRes = await fetch(`https://depdocdoc.9vk92zm5z2.workers.dev/api/doctor-duties/department/${deptId}`);
+            const ddRes = await fetch(`https://depdocdoc.9vk92zm5z2.workers.dev/api/departments/${deptId}/doctor-duties`);
             console.log('Doctor-duties response status:', ddRes.status, ddRes.ok);
             
             const ddData = await ddRes.json();
