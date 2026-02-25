@@ -527,7 +527,7 @@
 </div>
 
 <script>
-    const API_DEP_URL = 'https://depdocdep.9vk92zm5z2.workers.dev';
+    const API_DEP_URL = 'https://depdocdoc.9vk92zm5z2.workers.dev';
     const API_LEAVE_URL = 'https://dep-rest-worker.9vk92zm5z2.workers.dev';
     
     let currentYear = new Date().getFullYear();
@@ -824,21 +824,21 @@
             }
 
             const duties = dutiesData.data;
-            console.log('Duties in department:', duties.length);
+            console.log('✅ Duties in department:', duties);
 
             // 3. ดึง Doctor-Duties ของแผนกนี้
-            const doctorDutiesResponse = await fetch(`${API_LEAVE_URL}/api/duties/department/${departmentId}`);
+            const doctorDutiesResponse = await fetch(`${API_DEP_URL}/api/doctor-duties/department/${departmentId}`);
             const doctorDutiesData = await doctorDutiesResponse.json();
 
             const doctorDuties = doctorDutiesData.success ? doctorDutiesData.data : [];
-            console.log('Doctor-Duties:', doctorDuties.length);
+            console.log('✅ Doctor-Duties:', doctorDuties.length, doctorDuties);
 
             // 4. ดึงรายชื่อแพทย์ทั้งหมด
             const doctorsResponse = await fetch(`${API_DEP_URL}/api/doctors`);
             const doctorsData = await doctorsResponse.json();
 
             const allDoctors = doctorsData.success ? doctorsData.data : [];
-            console.log('All doctors:', allDoctors.length);
+            console.log('✅ All doctors:', allDoctors.length);
 
             // 5. หาว่าวันนี้เป็นวันอะไร
             const date = new Date(dateStr);
@@ -846,41 +846,64 @@
             const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
             const dayName = dayNames[dayOfWeek];
 
-            console.log('Day of week:', dayName);
+            console.log('📅 Day of week:', dayName);
 
             // 6. สร้างข้อมูลแต่ละ Duty
             const dutyDetails = [];
 
             duties.forEach(duty => {
+                console.log(`\n🔍 Processing Duty: ${duty.duty_name} (ID: ${duty.id})`);
+                
                 // หาแพทย์ที่ทำ Duty นี้ในวันนี้
-                const doctorsOnDuty = doctorDuties.filter(dd => 
-                    dd.duty_id === duty.id && dd[dayName] === 1
-                );
+                const doctorsOnDuty = doctorDuties.filter(dd => {
+                    const match = dd.duty_id === duty.id && dd[dayName] === 1;
+                    if (match) {
+                        console.log(`  ✓ Doctor ID ${dd.doctor_id} works on ${dayName}`);
+                    }
+                    return match;
+                });
 
-                // หาแพทย์ที่ลาในวันนี้
-                const doctorsOnLeave = doctorLeaves.filter(leave => 
-                    dateStr >= leave.start_date && 
-                    dateStr <= leave.end_date &&
-                    leave.department_id == departmentId
-                );
+                console.log(`  → Total doctors on duty: ${doctorsOnDuty.length}`);
 
-                console.log(`Duty: ${duty.duty_name}, Doctors on duty:`, doctorsOnDuty.length, 'On leave:', doctorsOnLeave.length);
+                // หาแพทย์ที่ลาในวันนี้ (ของแผนกนี้เท่านั้น)
+                const doctorsOnLeave = doctorLeaves.filter(leave => {
+                    // เช็คว่าอยู่ในช่วงวันที่
+                    const inDateRange = dateStr >= leave.start_date && dateStr <= leave.end_date;
+                    // เช็คว่าเป็นแผนกนี้
+                    const inDepartment = leave.department_id == departmentId;
+                    
+                    if (inDateRange && inDepartment) {
+                        console.log(`  🏖️ Doctor ID ${leave.doctor_id} is on leave (${leave.delegation_type})`);
+                    }
+                    
+                    return inDateRange && inDepartment;
+                });
+
+                console.log(`  → Doctors on leave: ${doctorsOnLeave.length}`);
 
                 // จับคู่แพทย์กับข้อมูล
                 const doctorList = doctorsOnDuty.map(dd => {
                     const doctor = allDoctors.find(d => d.id === dd.doctor_id);
-                    if (!doctor) return null;
+                    if (!doctor) {
+                        console.warn(`  ⚠️ Doctor ID ${dd.doctor_id} not found in doctors list`);
+                        return null;
+                    }
+
+                    console.log(`  👨‍⚕️ Processing doctor: ${doctor.name}`);
 
                     // เช็คว่าแพทย์คนนี้ลาหรือไม่
                     const leave = doctorsOnLeave.find(l => l.doctor_id === doctor.id);
 
                     if (leave) {
+                        console.log(`    → On leave, finding replacement...`);
+                        
                         // ลา → หาคนมาแทน
                         let replacement = null;
 
                         if (leave.delegation_type === 'single' && leave.replacement_doctor_id) {
                             // Single Delegation
                             replacement = allDoctors.find(d => d.id === leave.replacement_doctor_id);
+                            console.log(`    → Single delegation, replacement: ${replacement?.name || 'NOT FOUND'}`);
                         } else if (leave.delegation_type === 'custom' && leave.duty_assignments) {
                             // Custom Delegation
                             const assignment = leave.duty_assignments.find(a => 
@@ -888,7 +911,12 @@
                             );
                             if (assignment) {
                                 replacement = allDoctors.find(d => d.id === assignment.replacement_doctor_id);
+                                console.log(`    → Custom delegation, replacement: ${replacement?.name || 'NOT FOUND'}`);
+                            } else {
+                                console.log(`    → Custom delegation, but no assignment for this duty/date`);
                             }
+                        } else if (leave.delegation_type === 'none') {
+                            console.log(`    → No delegation (ไม่ฝากงาน)`);
                         }
 
                         return {
@@ -897,6 +925,8 @@
                             replacement: replacement
                         };
                     } else {
+                        console.log(`    → Not on leave, working normally`);
+                        
                         // ไม่ลา
                         return {
                             doctor: doctor,
@@ -906,17 +936,21 @@
                     }
                 }).filter(item => item !== null);
 
+                console.log(`  ✅ Final doctor list for ${duty.duty_name}: ${doctorList.length} doctors`);
+
                 dutyDetails.push({
                     dutyName: duty.duty_name,
                     doctors: doctorList
                 });
             });
 
+            console.log('\n📊 Summary:', dutyDetails);
+
             // 7. แสดง Modal
             displayDayDetailModal(dateStr, departmentName, dutyDetails);
 
         } catch (error) {
-            console.error('Error loading day detail:', error);
+            console.error('❌ Error loading day detail:', error);
             alert('เกิดข้อผิดพลาด: ' + error.message);
         }
     }
