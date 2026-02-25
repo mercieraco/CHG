@@ -198,9 +198,12 @@
         if (role === 'admin') {
             roleText = 'Admin';
             roleClass = 'role-admin';
-        } else if (role === 'doctor') {
+        } else if (role === 'doctor' || role === 'user') {
             roleText = 'แพทย์';
             roleClass = 'role-doctor';
+        } else if (role === 'guest') {
+            roleText = 'ผู้ใช้ทั่วไป';
+            roleClass = 'role-user';
         } else {
             roleText = 'ผู้ใช้ทั่วไป';
             roleClass = 'role-user';
@@ -221,13 +224,21 @@
             btnBack.onclick = function() {
                 window.location.href = 'dev.html';
             };
-        } else if (role === 'doctor') {
+        } else if (role === 'doctor' || role === 'user') {
             // แพทย์ → กลับ user.html
             btnBack.onclick = function() {
                 window.location.href = 'user.html';
             };
+        } else if (role === 'guest') {
+            // Guest → Logout
+            btnBack.onclick = function() {
+                if (confirm('ต้องการออกจากระบบ?')) {
+                    sessionStorage.clear();
+                    window.location.href = 'index.html';
+                }
+            };
         } else {
-            // User ทั่วไป → Logout
+            // Default → Logout
             btnBack.onclick = function() {
                 if (confirm('ต้องการออกจากระบบ?')) {
                     sessionStorage.clear();
