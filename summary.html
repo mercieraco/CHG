@@ -525,7 +525,7 @@
 </div>
 
 <script>
-    const API_DEP_URL = 'https://depdocdep.9vk92zm5z2.workers.dev';
+    const API_DEP_URL = 'https://dep-doc-worker.9vk92zm5z2.workers.dev';
     const API_LEAVE_URL = 'https://dep-rest-worker.9vk92zm5z2.workers.dev';
     
     let currentYear = new Date().getFullYear();
@@ -814,7 +814,7 @@
         try {
             // 1. ดึง Duties
             console.log('📋 Fetching duties...');
-            const dutiesRes = await fetch(`https://depdocdoc.9vk92zm5z2.workers.dev/api/departments/${deptId}/duties`);
+            const dutiesRes = await fetch(`https://dep-doc-worker.9vk92zm5z2.workers.dev/api/duties/department/${deptId}`);
             console.log('Duties response status:', dutiesRes.status, dutiesRes.ok);
             
             const dutiesData = await dutiesRes.json();
@@ -829,9 +829,9 @@
             const duties = dutiesData.data || [];
             console.log('✅ Duties loaded:', duties.length, duties);
 
-            // 2. ดึง Doctor-Duties
+            // 2. ดึง Doctor-Duties (ใช้ dep-rest-worker)
             console.log('👨‍⚕️ Fetching doctor-duties...');
-            const ddRes = await fetch(`https://depdocdoc.9vk92zm5z2.workers.dev/api/departments/${deptId}/doctor-duties`);
+            const ddRes = await fetch(`https://dep-rest-worker.9vk92zm5z2.workers.dev/api/duties/department/${deptId}`);
             console.log('Doctor-duties response status:', ddRes.status, ddRes.ok);
             
             const ddData = await ddRes.json();
@@ -842,7 +842,7 @@
             
             // 3. ดึงรายชื่อแพทย์
             console.log('👤 Fetching doctors...');
-            const docRes = await fetch(`https://depdocdoc.9vk92zm5z2.workers.dev/api/doctors`);
+            const docRes = await fetch(`https://dep-doc-worker.9vk92zm5z2.workers.dev/api/doctors`);
             console.log('Doctors response status:', docRes.status, docRes.ok);
             
             const docData = await docRes.json();
