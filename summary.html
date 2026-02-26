@@ -750,11 +750,17 @@
 
             // 2. โหลด Doctor-Duties ของแผนกหลัก
             console.log('📋 Loading doctor-duties for main department...');
+            console.log('API URL:', `${API_LEAVE_URL}/api/duties/department/${departmentId}`);
             const ddRes = await fetch(`${API_LEAVE_URL}/api/duties/department/${departmentId}`);
+            console.log('Response status:', ddRes.status, ddRes.ok);
             const ddData = await ddRes.json();
+            console.log('Response data:', ddData);
+            
             if (ddData.success) {
                 currentDoctorDuties = ddData.data || [];
                 console.log('✅ Main department doctor-duties:', currentDoctorDuties.length);
+            } else {
+                console.error('❌ API failed:', ddData);
             }
 
             // 3. โหลด Doctors ทั้งหมด (ถ้ายังไม่มี)
@@ -783,15 +789,21 @@
                     const hasThisDept = deptData.data.some(d => d.department_id == departmentId);
                     
                     if (hasThisDept) {
+                        console.log(`    → มีแผนกนี้ โหลด doctor-duties...`);
                         // โหลด doctor-duties ของแพทย์คนนี้
                         const ddRes = await fetch(`${API_DEP_URL}/api/doctor-duties/doctor/${doctor.id}`);
+                        console.log(`    → API: ${API_DEP_URL}/api/doctor-duties/doctor/${doctor.id}`);
+                        console.log(`    → Response status:`, ddRes.status, ddRes.ok);
                         const ddData = await ddRes.json();
+                        console.log(`    → Response data:`, ddData);
                         
                         if (ddData.success && ddData.data) {
+                            console.log(`    → Total duties:`, ddData.data.length);
                             // กรองเฉพาะ duty ของแผนกที่เลือก
                             const relevantDuties = ddData.data.filter(dd => 
                                 dutyIds.includes(dd.duty_id)
                             );
+                            console.log(`    → Relevant duties for this dept:`, relevantDuties.length);
                             
                             // เพิ่มเฉพาะที่ยังไม่มี (ป้องกันซ้ำ)
                             relevantDuties.forEach(rd => {
@@ -801,6 +813,9 @@
                                 if (!exists) {
                                     currentDoctorDuties.push(rd);
                                     secondaryCount++;
+                                    console.log(`      → Added duty_id=${rd.duty_id}`);
+                                } else {
+                                    console.log(`      → Already exists duty_id=${rd.duty_id}`);
                                 }
                             });
                         }
