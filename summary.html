@@ -734,7 +734,7 @@
         }
 
         try {
-            // 1. โหลด Duties
+            // 1. โหลด Duties ของแผนก
             const dutiesRes = await fetch(`${API_DEP_URL}/api/duties/department/${departmentId}`);
             const dutiesData = await dutiesRes.json();
             
@@ -748,27 +748,74 @@
                 });
             }
 
-            // 2. โหลด Doctor-Duties
+            // 2. โหลด Doctor-Duties ของแผนกหลัก
+            console.log('📋 Loading doctor-duties for main department...');
             const ddRes = await fetch(`${API_LEAVE_URL}/api/duties/department/${departmentId}`);
             const ddData = await ddRes.json();
             if (ddData.success) {
                 currentDoctorDuties = ddData.data || [];
+                console.log('✅ Main department doctor-duties:', currentDoctorDuties.length);
             }
 
-            // 3. โหลด Leaves
-            const leavesRes = await fetch(`${API_LEAVE_URL}/api/leaves/department/${departmentId}`);
-            const leavesData = await leavesRes.json();
-            if (leavesData.success) {
-                doctorLeaves = leavesData.data || [];
-            }
-
-            // 4. โหลด Doctors (ถ้ายังไม่มี)
+            // 3. โหลด Doctors ทั้งหมด (ถ้ายังไม่มี)
             if (allDoctors.length === 0) {
                 const docRes = await fetch(`${API_DEP_URL}/api/doctors`);
                 const docData = await docRes.json();
                 if (docData.success) {
                     allDoctors = docData.data || [];
                 }
+            }
+
+            // 4. หาแพทย์ที่มีหลายแผนก และโหลดแผนกเสริม
+            console.log('🔍 Checking for doctors with multiple departments...');
+            const dutyIds = currentDuties.map(d => d.id);
+            let secondaryCount = 0;
+            
+            for (const doctor of allDoctors) {
+                // เช็คว่ามีหลายแผนกหรือไม่
+                const deptRes = await fetch(`${API_DEP_URL}/api/doctors/${doctor.id}/departments`);
+                const deptData = await deptRes.json();
+                
+                if (deptData.success && deptData.data && deptData.data.length > 1) {
+                    console.log(`  👨‍⚕️ ${doctor.name} มี ${deptData.data.length} แผนก`);
+                    
+                    // เช็คว่ามีแผนกที่เราเลือกอยู่ในนั้นหรือไม่
+                    const hasThisDept = deptData.data.some(d => d.department_id == departmentId);
+                    
+                    if (hasThisDept) {
+                        // โหลด doctor-duties ของแพทย์คนนี้
+                        const ddRes = await fetch(`${API_DEP_URL}/api/doctor-duties/doctor/${doctor.id}`);
+                        const ddData = await ddRes.json();
+                        
+                        if (ddData.success && ddData.data) {
+                            // กรองเฉพาะ duty ของแผนกที่เลือก
+                            const relevantDuties = ddData.data.filter(dd => 
+                                dutyIds.includes(dd.duty_id)
+                            );
+                            
+                            // เพิ่มเฉพาะที่ยังไม่มี (ป้องกันซ้ำ)
+                            relevantDuties.forEach(rd => {
+                                const exists = currentDoctorDuties.some(cd => 
+                                    cd.doctor_id === rd.doctor_id && cd.duty_id === rd.duty_id
+                                );
+                                if (!exists) {
+                                    currentDoctorDuties.push(rd);
+                                    secondaryCount++;
+                                }
+                            });
+                        }
+                    }
+                }
+            }
+            
+            console.log(`✅ Added ${secondaryCount} doctor-duties from secondary departments`);
+            console.log(`✅ Total doctor-duties:`, currentDoctorDuties.length);
+
+            // 5. โหลด Leaves
+            const leavesRes = await fetch(`${API_LEAVE_URL}/api/leaves/department/${departmentId}`);
+            const leavesData = await leavesRes.json();
+            if (leavesData.success) {
+                doctorLeaves = leavesData.data || [];
             }
 
             renderCalendar();
