@@ -748,43 +748,45 @@
                 });
             }
 
-            // 2. โหลด Doctor-Duties ทั้งหมด (ไม่กรองตามแผนก)
-            console.log('📋 Loading all doctor-duties...');
-            const ddRes = await fetch(`${API_LEAVE_URL}/api/duties`);
-            const ddData = await ddRes.json();
-            
-            if (ddData.success) {
-                // กรองเฉพาะ doctor-duties ที่เกี่ยวข้องกับ duties ของแผนกนี้
-                const dutyIds = currentDuties.map(d => d.id);
-                currentDoctorDuties = (ddData.data || []).filter(dd => 
-                    dutyIds.includes(dd.duty_id)
-                );
-                console.log('✅ Filtered doctor-duties:', currentDoctorDuties.length);
-            } else {
-                console.warn('⚠️ /api/duties failed, trying department endpoint...');
-                // Fallback: ใช้ endpoint แผนก
-                const ddRes2 = await fetch(`${API_LEAVE_URL}/api/duties/department/${departmentId}`);
-                const ddData2 = await ddRes2.json();
-                if (ddData2.success) {
-                    currentDoctorDuties = ddData2.data || [];
-                    console.log('✅ Fallback doctor-duties:', currentDoctorDuties.length);
-                }
-            }
-
-            // 3. โหลด Leaves
-            const leavesRes = await fetch(`${API_LEAVE_URL}/api/leaves/department/${departmentId}`);
-            const leavesData = await leavesRes.json();
-            if (leavesData.success) {
-                doctorLeaves = leavesData.data || [];
-            }
-
-            // 4. โหลด Doctors (ถ้ายังไม่มี)
+            // 2. โหลด Doctors ทั้งหมด (ถ้ายังไม่มี)
             if (allDoctors.length === 0) {
                 const docRes = await fetch(`${API_DEP_URL}/api/doctors`);
                 const docData = await docRes.json();
                 if (docData.success) {
                     allDoctors = docData.data || [];
                 }
+            }
+
+            // 3. โหลด Doctor-Duties ของแพทย์ทุกคนที่เกี่ยวข้องกับ duties ของแผนกนี้
+            console.log('📋 Loading doctor-duties for all doctors...');
+            currentDoctorDuties = [];
+            const dutyIds = currentDuties.map(d => d.id);
+            
+            // โหลดจาก API doctor-duties (ทีละแพทย์)
+            for (const doctor of allDoctors) {
+                try {
+                    const ddRes = await fetch(`${API_DEP_URL}/api/doctor-duties/doctor/${doctor.id}`);
+                    const ddData = await ddRes.json();
+                    
+                    if (ddData.success && ddData.data) {
+                        // กรองเฉพาะ duty ของแผนกนี้
+                        const relevantDuties = ddData.data.filter(dd => 
+                            dutyIds.includes(dd.duty_id)
+                        );
+                        currentDoctorDuties.push(...relevantDuties);
+                    }
+                } catch (err) {
+                    console.warn(`Failed to load duties for doctor ${doctor.id}:`, err);
+                }
+            }
+            
+            console.log('✅ Total doctor-duties loaded:', currentDoctorDuties.length);
+
+            // 4. โหลด Leaves
+            const leavesRes = await fetch(`${API_LEAVE_URL}/api/leaves/department/${departmentId}`);
+            const leavesData = await leavesRes.json();
+            if (leavesData.success) {
+                doctorLeaves = leavesData.data || [];
             }
 
             renderCalendar();
