@@ -588,8 +588,9 @@
 </div>
 
 <script>
-    const API_DEP_URL = 'https://dep-doc-worker.9vk92zm5z2.workers.dev';
-    const API_LEAVE_URL = 'https://dep-rest-worker.9vk92zm5z2.workers.dev';
+    const API_DEP_URL = 'https://depdocdep.9vk92zm5z2.workers.dev';  // จัดการแผนก
+    const API_DOC_URL = 'https://depdocdoc.9vk92zm5z2.workers.dev';  // จัดการแพทย์
+    const API_LEAVE_URL = 'https://dep-rest-worker.9vk92zm5z2.workers.dev';  // จัดการลา
     
     let currentYear = new Date().getFullYear();
     let currentMonth = new Date().getMonth();
@@ -734,7 +735,7 @@
         }
 
         try {
-            // 1. โหลด Duties ของแผนก
+            // 1. โหลด Duties
             const dutiesRes = await fetch(`${API_DEP_URL}/api/duties/department/${departmentId}`);
             const dutiesData = await dutiesRes.json();
             
@@ -748,89 +749,27 @@
                 });
             }
 
-            // 2. โหลด Doctor-Duties ของแผนกหลัก (จาก dep-doc-worker)
-            console.log('📋 Loading doctor-duties for main department...');
-            console.log('API URL:', `${API_DEP_URL}/api/doctor-duties/department/${departmentId}`);
-            const ddRes = await fetch(`${API_DEP_URL}/api/doctor-duties/department/${departmentId}`);
-            console.log('Response status:', ddRes.status, ddRes.ok);
+            // 2. โหลด Doctor-Duties
+            const ddRes = await fetch(`${API_LEAVE_URL}/api/duties/department/${departmentId}`);
             const ddData = await ddRes.json();
-            console.log('Response data:', ddData);
-            
             if (ddData.success) {
                 currentDoctorDuties = ddData.data || [];
-                console.log('✅ Main department doctor-duties:', currentDoctorDuties.length);
-            } else {
-                console.error('❌ API failed:', ddData);
             }
 
-            // 3. โหลด Doctors ทั้งหมด (ถ้ายังไม่มี)
-            if (allDoctors.length === 0) {
-                const docRes = await fetch(`${API_DEP_URL}/api/doctors`);
-                const docData = await docRes.json();
-                if (docData.success) {
-                    allDoctors = docData.data || [];
-                }
-            }
-
-            // 4. หาแพทย์ที่มีหลายแผนก และโหลดแผนกเสริม
-            console.log('🔍 Checking for doctors with multiple departments...');
-            const dutyIds = currentDuties.map(d => d.id);
-            let secondaryCount = 0;
-            
-            for (const doctor of allDoctors) {
-                // เช็คว่ามีหลายแผนกหรือไม่
-                const deptRes = await fetch(`${API_DEP_URL}/api/doctors/${doctor.id}/departments`);
-                const deptData = await deptRes.json();
-                
-                if (deptData.success && deptData.data && deptData.data.length > 1) {
-                    console.log(`  👨‍⚕️ ${doctor.name} มี ${deptData.data.length} แผนก`);
-                    
-                    // เช็คว่ามีแผนกที่เราเลือกอยู่ในนั้นหรือไม่
-                    const hasThisDept = deptData.data.some(d => d.department_id == departmentId);
-                    
-                    if (hasThisDept) {
-                        console.log(`    → มีแผนกนี้ โหลด doctor-duties...`);
-                        // โหลด doctor-duties ของแพทย์คนนี้
-                        const ddRes = await fetch(`${API_DEP_URL}/api/doctor-duties/doctor/${doctor.id}`);
-                        console.log(`    → API: ${API_DEP_URL}/api/doctor-duties/doctor/${doctor.id}`);
-                        console.log(`    → Response status:`, ddRes.status, ddRes.ok);
-                        const ddData = await ddRes.json();
-                        console.log(`    → Response data:`, ddData);
-                        
-                        if (ddData.success && ddData.data) {
-                            console.log(`    → Total duties:`, ddData.data.length);
-                            // กรองเฉพาะ duty ของแผนกที่เลือก
-                            const relevantDuties = ddData.data.filter(dd => 
-                                dutyIds.includes(dd.duty_id)
-                            );
-                            console.log(`    → Relevant duties for this dept:`, relevantDuties.length);
-                            
-                            // เพิ่มเฉพาะที่ยังไม่มี (ป้องกันซ้ำ)
-                            relevantDuties.forEach(rd => {
-                                const exists = currentDoctorDuties.some(cd => 
-                                    cd.doctor_id === rd.doctor_id && cd.duty_id === rd.duty_id
-                                );
-                                if (!exists) {
-                                    currentDoctorDuties.push(rd);
-                                    secondaryCount++;
-                                    console.log(`      → Added duty_id=${rd.duty_id}`);
-                                } else {
-                                    console.log(`      → Already exists duty_id=${rd.duty_id}`);
-                                }
-                            });
-                        }
-                    }
-                }
-            }
-            
-            console.log(`✅ Added ${secondaryCount} doctor-duties from secondary departments`);
-            console.log(`✅ Total doctor-duties:`, currentDoctorDuties.length);
-
-            // 5. โหลด Leaves
+            // 3. โหลด Leaves
             const leavesRes = await fetch(`${API_LEAVE_URL}/api/leaves/department/${departmentId}`);
             const leavesData = await leavesRes.json();
             if (leavesData.success) {
                 doctorLeaves = leavesData.data || [];
+            }
+
+            // 4. โหลด Doctors (ถ้ายังไม่มี)
+            if (allDoctors.length === 0) {
+                const docRes = await fetch(`${API_DOC_URL}/api/doctors`);
+                const docData = await docRes.json();
+                if (docData.success) {
+                    allDoctors = docData.data || [];
+                }
             }
 
             renderCalendar();
@@ -990,7 +929,7 @@
         try {
             // 1. ดึง Duties
             console.log('📋 Fetching duties...');
-            const dutiesRes = await fetch(`https://dep-doc-worker.9vk92zm5z2.workers.dev/api/duties/department/${deptId}`);
+            const dutiesRes = await fetch(`${API_DEP_URL}/api/duties/department/${deptId}`);
             console.log('Duties response status:', dutiesRes.status, dutiesRes.ok);
             
             const dutiesData = await dutiesRes.json();
@@ -1005,9 +944,9 @@
             const duties = dutiesData.data || [];
             console.log('✅ Duties loaded:', duties.length, duties);
 
-            // 2. ดึง Doctor-Duties (ใช้ dep-rest-worker)
+            // 2. ดึง Doctor-Duties
             console.log('👨‍⚕️ Fetching doctor-duties...');
-            const ddRes = await fetch(`https://dep-rest-worker.9vk92zm5z2.workers.dev/api/duties/department/${deptId}`);
+            const ddRes = await fetch(`${API_LEAVE_URL}/api/duties/department/${deptId}`);
             console.log('Doctor-duties response status:', ddRes.status, ddRes.ok);
             
             const ddData = await ddRes.json();
@@ -1018,7 +957,7 @@
             
             // 3. ดึงรายชื่อแพทย์
             console.log('👤 Fetching doctors...');
-            const docRes = await fetch(`https://dep-doc-worker.9vk92zm5z2.workers.dev/api/doctors`);
+            const docRes = await fetch(`${API_DOC_URL}/api/doctors`);
             console.log('Doctors response status:', docRes.status, docRes.ok);
             
             const docData = await docRes.json();
