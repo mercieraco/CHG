@@ -734,7 +734,7 @@
         }
 
         try {
-            // 1. โหลด Duties
+            // 1. โหลด Duties ของแผนก
             const dutiesRes = await fetch(`${API_DEP_URL}/api/duties/department/${departmentId}`);
             const dutiesData = await dutiesRes.json();
             
@@ -748,11 +748,27 @@
                 });
             }
 
-            // 2. โหลด Doctor-Duties
-            const ddRes = await fetch(`${API_LEAVE_URL}/api/duties/department/${departmentId}`);
+            // 2. โหลด Doctor-Duties ทั้งหมด (ไม่กรองตามแผนก)
+            console.log('📋 Loading all doctor-duties...');
+            const ddRes = await fetch(`${API_LEAVE_URL}/api/duties`);
             const ddData = await ddRes.json();
+            
             if (ddData.success) {
-                currentDoctorDuties = ddData.data || [];
+                // กรองเฉพาะ doctor-duties ที่เกี่ยวข้องกับ duties ของแผนกนี้
+                const dutyIds = currentDuties.map(d => d.id);
+                currentDoctorDuties = (ddData.data || []).filter(dd => 
+                    dutyIds.includes(dd.duty_id)
+                );
+                console.log('✅ Filtered doctor-duties:', currentDoctorDuties.length);
+            } else {
+                console.warn('⚠️ /api/duties failed, trying department endpoint...');
+                // Fallback: ใช้ endpoint แผนก
+                const ddRes2 = await fetch(`${API_LEAVE_URL}/api/duties/department/${departmentId}`);
+                const ddData2 = await ddRes2.json();
+                if (ddData2.success) {
+                    currentDoctorDuties = ddData2.data || [];
+                    console.log('✅ Fallback doctor-duties:', currentDoctorDuties.length);
+                }
             }
 
             // 3. โหลด Leaves
