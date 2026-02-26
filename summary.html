@@ -748,10 +748,10 @@
                 });
             }
 
-            // 2. โหลด Doctor-Duties ของแผนกหลัก
+            // 2. โหลด Doctor-Duties ของแผนกหลัก (จาก dep-doc-worker)
             console.log('📋 Loading doctor-duties for main department...');
-            console.log('API URL:', `${API_LEAVE_URL}/api/duties/department/${departmentId}`);
-            const ddRes = await fetch(`${API_LEAVE_URL}/api/duties/department/${departmentId}`);
+            console.log('API URL:', `${API_DEP_URL}/api/doctor-duties/department/${departmentId}`);
+            const ddRes = await fetch(`${API_DEP_URL}/api/doctor-duties/department/${departmentId}`);
             console.log('Response status:', ddRes.status, ddRes.ok);
             const ddData = await ddRes.json();
             console.log('Response data:', ddData);
