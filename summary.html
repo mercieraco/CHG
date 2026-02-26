@@ -734,7 +734,7 @@
         }
 
         try {
-            // 1. โหลด Duties ของแผนก
+            // 1. โหลด Duties
             const dutiesRes = await fetch(`${API_DEP_URL}/api/duties/department/${departmentId}`);
             const dutiesData = await dutiesRes.json();
             
@@ -748,45 +748,27 @@
                 });
             }
 
-            // 2. โหลด Doctors ทั้งหมด (ถ้ายังไม่มี)
+            // 2. โหลด Doctor-Duties
+            const ddRes = await fetch(`${API_LEAVE_URL}/api/duties/department/${departmentId}`);
+            const ddData = await ddRes.json();
+            if (ddData.success) {
+                currentDoctorDuties = ddData.data || [];
+            }
+
+            // 3. โหลด Leaves
+            const leavesRes = await fetch(`${API_LEAVE_URL}/api/leaves/department/${departmentId}`);
+            const leavesData = await leavesRes.json();
+            if (leavesData.success) {
+                doctorLeaves = leavesData.data || [];
+            }
+
+            // 4. โหลด Doctors (ถ้ายังไม่มี)
             if (allDoctors.length === 0) {
                 const docRes = await fetch(`${API_DEP_URL}/api/doctors`);
                 const docData = await docRes.json();
                 if (docData.success) {
                     allDoctors = docData.data || [];
                 }
-            }
-
-            // 3. โหลด Doctor-Duties ของแพทย์ทุกคนที่เกี่ยวข้องกับ duties ของแผนกนี้
-            console.log('📋 Loading doctor-duties for all doctors...');
-            currentDoctorDuties = [];
-            const dutyIds = currentDuties.map(d => d.id);
-            
-            // โหลดจาก API doctor-duties (ทีละแพทย์)
-            for (const doctor of allDoctors) {
-                try {
-                    const ddRes = await fetch(`${API_DEP_URL}/api/doctor-duties/doctor/${doctor.id}`);
-                    const ddData = await ddRes.json();
-                    
-                    if (ddData.success && ddData.data) {
-                        // กรองเฉพาะ duty ของแผนกนี้
-                        const relevantDuties = ddData.data.filter(dd => 
-                            dutyIds.includes(dd.duty_id)
-                        );
-                        currentDoctorDuties.push(...relevantDuties);
-                    }
-                } catch (err) {
-                    console.warn(`Failed to load duties for doctor ${doctor.id}:`, err);
-                }
-            }
-            
-            console.log('✅ Total doctor-duties loaded:', currentDoctorDuties.length);
-
-            // 4. โหลด Leaves
-            const leavesRes = await fetch(`${API_LEAVE_URL}/api/leaves/department/${departmentId}`);
-            const leavesData = await leavesRes.json();
-            if (leavesData.success) {
-                doctorLeaves = leavesData.data || [];
             }
 
             renderCalendar();
