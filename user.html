@@ -1772,9 +1772,23 @@
             const isSelected = selectedDates.includes(dateStr);
             const colorClass = calculateColorClass(dateStr, isSelected);
             
+            // 🔧 FIX: บังคับสีเขียวในวันหยุด
+            let inlineStyle = '';
+            const dayOfWeek = date.getDay();
+            const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+            
             if (colorClass) {
                 const colorClasses = colorClass.split(' ');
                 classes.push(...colorClasses);
+                
+                // ถ้าเป็นวันหยุด + on-leave → บังคับสีเขียว
+                if (isWeekend && colorClasses.includes('on-leave')) {
+                    inlineStyle = ' style="background: #c8e6c9 !important; border-color: #66bb6a !important;"';
+                }
+                // ถ้าเป็นวันหยุด + on-leave-no-duty → บังคับสีเขียวอ่อน
+                else if (isWeekend && colorClasses.includes('on-leave-no-duty')) {
+                    inlineStyle = ' style="background: #e3f2e4 !important; border-color: #81c784 !important;"';
+                }
                 
                 // เพิ่มลูกศรถ้าเป็นวันเริ่มต้น
                 if (startDate === dateStr && selectionStep === 1) {
@@ -1788,7 +1802,7 @@
                 }
             }
             
-            html += `<div class="${classes.join(' ')}" data-date="${dateStr}" onmousedown="handleMouseDown('${dateStr}', event)">${day}</div>`;
+            html += `<div class="${classes.join(' ')}" data-date="${dateStr}"${inlineStyle} onmousedown="handleMouseDown('${dateStr}', event)">${day}</div>`;
         }
         
         calendar.innerHTML = html;
