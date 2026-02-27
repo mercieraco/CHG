@@ -351,9 +351,21 @@
     }
 
     .calendar-day.weekend.on-leave {
-        /* ลบสีเขียวออก - ให้เป็นสีปกติ */
-        background: inherit !important;
-        border-color: #ffcdd2 !important;  /* กรอบชมพูของ weekend */
+        /* แสดงสีเขียวในวันหยุดด้วย */
+        background: #c8e6c9 !important;
+        border-color: #66bb6a !important;
+        color: #2e7d32;
+        font-weight: 700;
+        z-index: 210 !important;  /* สูงกว่า weekend ปกติ (200) */
+    }
+
+    .calendar-day.weekend.on-leave-no-duty {
+        /* แสดงสีเขียวอ่อนในวันหยุดด้วย (ลาวันที่ไม่มี duty) */
+        background: #e3f2e4 !important;
+        border-color: #81c784 !important;
+        color: #2e7d32;
+        font-weight: 700;
+        z-index: 210 !important;
     }
     
     .calendar-day.weekend.approved {
