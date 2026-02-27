@@ -2299,6 +2299,35 @@
             return;
         }
 
+        // ========================================
+        // เช็ควันที่ 20: แพทย์ไม่สามารถลาในเดือนปัจจุบันหลังวันที่ 20
+        // ========================================
+        const today = new Date();
+        const currentDay = today.getDate();
+        const currentMonthNumber = today.getMonth(); // 0-11
+        const currentYearNumber = today.getFullYear();
+
+        // เช็คว่ามีวันที่ลาในเดือนปัจจุบันหรือไม่
+        const hasCurrentMonthLeave = selectedDates.some(dateStr => {
+            const leaveDate = new Date(dateStr);
+            return leaveDate.getMonth() === currentMonthNumber && 
+                   leaveDate.getFullYear() === currentYearNumber;
+        });
+
+        // ถ้าวันนี้เกินวันที่ 20 และมีการลาในเดือนปัจจุบัน
+        if (currentDay > 20 && hasCurrentMonthLeave) {
+            const monthNames = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+                               'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+            
+            showMessage(
+                `❌ ไม่สามารถลางานในเดือน${monthNames[currentMonthNumber]}ได้\n\n` +
+                `เนื่องจากเลยวันที่ 20 ${monthNames[currentMonthNumber]} ไปแล้ว\n\n` +
+                `กรุณาเลือกวันที่ลาในเดือนถัดไป`,
+                'error'
+            );
+            return;
+        }
+
         // เช็คว่ากดยืนยันเลือกวันที่แล้วหรือยัง
         if (currentDutyData.length === 0) {
             showMessage('กรุณากดปุ่ม "ยืนยันเลือกวันที่ลา" ก่อน', 'error');
