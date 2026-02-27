@@ -1805,6 +1805,33 @@
             return;
         }
 
+        // ========================================
+        // เช็ควันที่ 20: ห้ามเลือกวันในเดือนปัจจุบัน ถ้าเลยวันที่ 20 แล้ว
+        // ========================================
+        const currentDay = today.getDate();
+        const currentMonth = today.getMonth();
+        const currentYear = today.getFullYear();
+        const selectedMonth = selectedDate.getMonth();
+        const selectedYear = selectedDate.getFullYear();
+        
+        // ถ้าวันนี้เกินวันที่ 20 และพยายามเลือกวันในเดือนเดียวกัน
+        if (currentDay > 20 && 
+            selectedMonth === currentMonth && 
+            selectedYear === currentYear) {
+            
+            const monthNamesShort = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
+                                    'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+            
+            showMessage(
+                `❌ ไม่สามารถลางานได้<br>` +
+                `เลยวันที่ 20 ${monthNamesShort[currentMonth]} แล้ว<br>` +
+                `จัดตารางเวรไม่ทัน<br>` +
+                `กรุณาเลือกวันลาในเดือนถัดไป`,
+                'error'
+            );
+            return;
+        }
+
         if (isDateOnLeaveBySelectedDoctor(dateStr)) {
             alert('⚠️ แพทย์ท่านนี้ลาวันนี้อยู่แล้ว');
             return;
@@ -2299,36 +2326,6 @@
             return;
         }
 
-        // ========================================
-        // เช็ควันที่ 20: แพทย์ไม่สามารถลาในเดือนปัจจุบันหลังวันที่ 20
-        // ========================================
-        const today = new Date();
-        const currentDay = today.getDate();
-        const currentMonthNumber = today.getMonth(); // 0-11
-        const currentYearNumber = today.getFullYear();
-
-        // เช็คว่ามีวันที่ลาในเดือนปัจจุบันหรือไม่
-        const hasCurrentMonthLeave = selectedDates.some(dateStr => {
-            const leaveDate = new Date(dateStr);
-            return leaveDate.getMonth() === currentMonthNumber && 
-                   leaveDate.getFullYear() === currentYearNumber;
-        });
-
-        // ถ้าวันนี้เกินวันที่ 20 และมีการลาในเดือนปัจจุบัน
-        if (currentDay > 20 && hasCurrentMonthLeave) {
-            const monthNamesShort = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
-                                    'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
-            
-            showMessage(
-                `❌ ไม่สามารถลางานได้<br>` +
-                `เลยวันที่ 20 ${monthNamesShort[currentMonthNumber]} แล้ว<br>` +
-                `จัดตารางเวรไม่ทัน<br>` +
-                `กรุณาเลือกวันลาในเดือนถัดไป`,
-                'error'
-            );
-            return;
-        }
-
         // เช็คว่ากดยืนยันเลือกวันที่แล้วหรือยัง
         if (currentDutyData.length === 0) {
             showMessage('กรุณากดปุ่ม "ยืนยันเลือกวันที่ลา" ก่อน', 'error');
@@ -2535,7 +2532,7 @@
         // ใช้ innerHTML เพื่อรองรับ <br>
         msg.innerHTML = text;
         msg.className = `message ${type} show`;
-        setTimeout(() => msg.classList.remove('show'), 5000);
+        setTimeout(() => msg.classList.remove('show'), 7000); // เพิ่มเป็น 7 วินาที
     }
 
     // Highlight วันที่ลาในปฏิทิน (toggle on/off)
