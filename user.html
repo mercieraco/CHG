@@ -353,6 +353,8 @@
 
     .calendar-day.weekend.on-leave {
         /* แสดงสีเขียวในวันหยุดด้วย */
+        background-color: #c8e6c9 !important;
+        background-image: none !important;
         background: #c8e6c9 !important;
         border-color: #66bb6a !important;
         color: #2e7d32 !important;
@@ -749,21 +751,23 @@
        ======================================== */
     .calendar-day.weekend.on-leave {
         background-color: #c8e6c9 !important;
+        background-image: none !important;
         background: #c8e6c9 !important;
         border-color: #66bb6a !important;
         color: #2e7d32 !important;
         font-weight: 700 !important;
         position: relative !important;
-        z-index: 220 !important;
+        z-index: 999 !important;  /* สูงสุด */
     }
 
     .calendar-day.weekend.on-leave-no-duty {
         background-color: #e3f2e4 !important;
+        background-image: none !important;
         background: #e3f2e4 !important;
         border-color: #81c784 !important;
         color: #2e7d32 !important;
         font-weight: 700 !important;
-        z-index: 220 !important;
+        z-index: 999 !important;
     }
 
 </style>
