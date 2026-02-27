@@ -744,6 +744,28 @@
         border-radius: 4px;
         font-size: 14px;
     }
+    /* ========================================
+       🔧 FIX: สีเขียวในวันหยุด - Override ทับทุกอย่าง
+       ======================================== */
+    .calendar-day.weekend.on-leave {
+        background-color: #c8e6c9 !important;
+        background: #c8e6c9 !important;
+        border-color: #66bb6a !important;
+        color: #2e7d32 !important;
+        font-weight: 700 !important;
+        position: relative !important;
+        z-index: 220 !important;
+    }
+
+    .calendar-day.weekend.on-leave-no-duty {
+        background-color: #e3f2e4 !important;
+        background: #e3f2e4 !important;
+        border-color: #81c784 !important;
+        color: #2e7d32 !important;
+        font-weight: 700 !important;
+        z-index: 220 !important;
+    }
+
 </style>
 ```
 
