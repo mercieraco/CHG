@@ -351,9 +351,11 @@
     }
 
     .calendar-day.weekend.on-leave {
-        /* ลบสีเขียวออก - ให้เป็นสีปกติ */
-        background: inherit !important;
-        border-color: #ffcdd2 !important;  /* กรอบชมพูของ weekend */
+        /* แสดงสีเขียวในวันหยุดด้วย */
+        background: #c8e6c9 !important;
+        border-color: #66bb6a !important;
+        color: #2e7d32;
+        font-weight: 700;
     }
     
     .calendar-day.weekend.approved {
@@ -783,9 +785,6 @@
         <div class="calendar" id="calendar"></div>
     </div>
 
-    <!-- Message แสดงผล (ย้ายมาใต้ปฏิทิน) -->
-    <div id="message" class="message"></div>
-
     <!-- แสดงช่วงวันที่เลือก (ย้ายมาใต้ปฏิทิน) -->
     <div id="selectedRange" class="selected-range" style="display: none;"></div>
 
@@ -823,11 +822,14 @@
     <!-- แสดงข้อมูลการลาที่บันทึกแล้ว -->
     <div id="leaveRecords" class="leave-records"></div>
 
+    <!-- Message แสดงผล (ย้ายมาอยู่เหนือปุ่มบันทึก) -->
+    <div id="message" class="message"></div>
+
     <button class="btn-submit" onclick="submitLeave()">💾 บันทึกการลา</button>
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 12 (UI Fix Weekend)</span>
+        <span id="versionInfo">Version 13 (Fix Green Weekend)</span>
     </div>
 </div>
 
@@ -1805,33 +1807,6 @@
             return;
         }
 
-        // ========================================
-        // เช็ควันที่ 20: ห้ามเลือกวันในเดือนปัจจุบัน ถ้าเลยวันที่ 20 แล้ว
-        // ========================================
-        const currentDay = today.getDate();
-        const currentMonth = today.getMonth();
-        const currentYear = today.getFullYear();
-        const selectedMonth = selectedDate.getMonth();
-        const selectedYear = selectedDate.getFullYear();
-        
-        // ถ้าวันนี้เกินวันที่ 20 และพยายามเลือกวันในเดือนเดียวกัน
-        if (currentDay > 20 && 
-            selectedMonth === currentMonth && 
-            selectedYear === currentYear) {
-            
-            const monthNamesShort = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
-                                    'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
-            
-            showMessage(
-                `❌ ไม่สามารถลางานได้<br>` +
-                `เลยวันที่ 20 ${monthNamesShort[currentMonth]} แล้ว<br>` +
-                `จัดตารางเวรไม่ทัน<br>` +
-                `กรุณาเลือกวันลาในเดือนถัดไป`,
-                'error'
-            );
-            return;
-        }
-
         if (isDateOnLeaveBySelectedDoctor(dateStr)) {
             alert('⚠️ แพทย์ท่านนี้ลาวันนี้อยู่แล้ว');
             return;
@@ -2529,10 +2504,9 @@
     // แสดงข้อความ
     function showMessage(text, type) {
         const msg = document.getElementById('message');
-        // ใช้ innerHTML เพื่อรองรับ <br>
-        msg.innerHTML = text;
+        msg.textContent = text;
         msg.className = `message ${type} show`;
-        setTimeout(() => msg.classList.remove('show'), 7000); // เพิ่มเป็น 7 วินาที
+        setTimeout(() => msg.classList.remove('show'), 5000);
     }
 
     // Highlight วันที่ลาในปฏิทิน (toggle on/off)
