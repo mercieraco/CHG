@@ -2320,9 +2320,9 @@
                                     'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
             
             showMessage(
-                `❌ ไม่สามารถลางานได้\n` +
-                `เลยวันที่ 20 ${monthNamesShort[currentMonthNumber]} แล้ว\n` +
-                `จัดตารางเวรไม่ทัน\n` +
+                `❌ ไม่สามารถลางานได้<br>` +
+                `เลยวันที่ 20 ${monthNamesShort[currentMonthNumber]} แล้ว<br>` +
+                `จัดตารางเวรไม่ทัน<br>` +
                 `กรุณาเลือกวันลาในเดือนถัดไป`,
                 'error'
             );
@@ -2532,7 +2532,8 @@
     // แสดงข้อความ
     function showMessage(text, type) {
         const msg = document.getElementById('message');
-        msg.textContent = text;
+        // ใช้ innerHTML เพื่อรองรับ <br>
+        msg.innerHTML = text;
         msg.className = `message ${type} show`;
         setTimeout(() => msg.classList.remove('show'), 5000);
     }
