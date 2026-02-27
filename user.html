@@ -230,6 +230,7 @@
     }
 
     .calendar-day.weekend {
+        background: transparent !important;  /* ไม่มีสีพื้นหลัง */
         border-color: #ffcdd2 !important;
         position: relative;
         z-index: 200 !important;  /* เพิ่มเป็น 200 */
@@ -354,9 +355,10 @@
         /* แสดงสีเขียวในวันหยุดด้วย */
         background: #c8e6c9 !important;
         border-color: #66bb6a !important;
-        color: #2e7d32;
-        font-weight: 700;
-        z-index: 210 !important;  /* สูงกว่า weekend ปกติ (200) */
+        color: #2e7d32 !important;
+        font-weight: 700 !important;
+        position: relative !important;
+        z-index: 220 !important;  /* เพิ่มเป็น 220 */
     }
 
     .calendar-day.weekend.on-leave-no-duty {
