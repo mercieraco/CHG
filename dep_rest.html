@@ -362,9 +362,11 @@
     }
 
     .calendar-day.weekend.on-leave {
-        /* ลบสีเขียวออก - ให้เป็นสีปกติ */
-        background: inherit !important;
-        border-color: #ffcdd2 !important;  /* กรอบชมพูของ weekend */
+        /* แสดงสีเขียวในวันหยุดด้วย */
+        background: #c8e6c9 !important;
+        border-color: #66bb6a !important;
+        color: #2e7d32;
+        font-weight: 700;
     }
     
     .calendar-day.weekend.approved {
@@ -833,7 +835,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 8 (Admin + Rounded Button)</span>
+        <span id="versionInfo">Version 9 (Fix Green Weekend - Admin)</span>
     </div>
 </div>
 
