@@ -829,7 +829,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 17 (Delete Own Leave Only)</span>
+        <span id="versionInfo">Version 18 (Fix Assignment Filter - Custom)</span>
     </div>
 </div>
 
@@ -1171,15 +1171,15 @@
                                         }
                                     }
                                     
-                                    // Case 2: Multiple Delegation
-                                    if (leave.delegation_type === 'multiple' && leave.duty_assignments) {
+                                    // Case 2: Custom Delegation (แก้จาก Multiple)
+                                    if (leave.delegation_type === 'custom' && leave.duty_assignments) {
                                         return leave.duty_assignments.some(assignment => {
                                             const match = assignment.replacement_doctor_id === doc.id &&
                                                 assignment.duty_date === checkDate &&
                                                 assignment.duty_id === duty.duty_id;
                                             
                                             if (match) {
-                                                console.log(`Found Multiple Assignment: ${doc.name} for ${duty.duty_name} on ${checkDate}`);
+                                                console.log(`Found Custom Assignment: ${doc.name} for ${duty.duty_name} on ${checkDate}`);
                                             }
                                             return match;
                                         });
