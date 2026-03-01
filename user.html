@@ -829,7 +829,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 16 (Lighter Green 75%)</span>
+        <span id="versionInfo">Version 17 (Delete Own Leave Only)</span>
     </div>
 </div>
 
@@ -1364,12 +1364,16 @@
                     fullText += ` >> ${replacementFullName}`;
                 }
                 
+                // เช็คว่าเป็นการลาของตัวเองหรือไม่
+                const currentDoctorId = parseInt(sessionStorage.getItem('doctor_id'));
+                const isOwnLeave = leave.doctor_id === currentDoctorId;
+                
                 recordDiv.innerHTML = `
                     <div class="leave-record-info" onclick="highlightLeaveDates('${leave.start_date}', '${leave.end_date}'); event.stopPropagation();">
                         <span class="name-short">${shortText}</span>
                         <span class="name-full">${fullText}</span>
                     </div>
-                    <button class="btn-delete" onclick="deleteLeave(${leave.id}); event.stopPropagation();">ลบ</button>
+                    ${isOwnLeave ? `<button class="btn-delete" onclick="deleteLeave(${leave.id}); event.stopPropagation();">ลบ</button>` : ''}
                 `;
                 
             } else if (leave.delegation_type === 'custom' && leave.duty_assignments) {
@@ -1399,10 +1403,14 @@
                     `;
                 });
                 
+                // เช็คว่าเป็นการลาของตัวเองหรือไม่
+                const currentDoctorId = parseInt(sessionStorage.getItem('doctor_id'));
+                const isOwnLeave = leave.doctor_id === currentDoctorId;
+                
                 html += `
                         </div>
                     </div>
-                    <button class="btn-delete" onclick="deleteLeave(${leave.id}); event.stopPropagation();">ลบ</button>
+                    ${isOwnLeave ? `<button class="btn-delete" onclick="deleteLeave(${leave.id}); event.stopPropagation();">ลบ</button>` : ''}
                 `;
                 
                 recordDiv.innerHTML = html;
@@ -1440,12 +1448,16 @@
                     fullText += ` | ไม่ฝากงาน (รออนุมัติ)`;
                 }
                 
+                // เช็คว่าเป็นการลาของตัวเองหรือไม่
+                const currentDoctorId = parseInt(sessionStorage.getItem('doctor_id'));
+                const isOwnLeave = leave.doctor_id === currentDoctorId;
+                
                 recordDiv.innerHTML = `
                     <div class="leave-record-info" onclick="highlightLeaveDates('${leave.start_date}', '${leave.end_date}'); event.stopPropagation();">
                         <span class="name-short">${shortText}</span>
                         <span class="name-full">${fullText}</span>
                     </div>
-                    <button class="btn-delete" onclick="deleteLeave(${leave.id}); event.stopPropagation();">ลบ</button>
+                    ${isOwnLeave ? `<button class="btn-delete" onclick="deleteLeave(${leave.id}); event.stopPropagation();">ลบ</button>` : ''}
                 `;
             }
             
