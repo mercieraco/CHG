@@ -829,7 +829,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 19 (Multi-Department Calendars)</span>
+        <span id="versionInfo">Version 20 (Fix Multi-Dept Calendar Loading)</span>
     </div>
 </div>
 
@@ -1226,11 +1226,14 @@
         }
 
         try {
-            // โหลดการลาทั้งแผนก
-            const leavesResponse = await fetch(`${LEAVE_API_URL}/api/leaves/department/${departmentId}`);
+            // *** แก้ไข: โหลดการลาทุกแผนกของแพทย์คนนี้ ***
+            const doctorId = sessionStorage.getItem('doctor_id');
+            
+            // โหลดการลาทั้งหมดของแพทย์คนนี้ (ทุกแผนก)
+            const leavesResponse = await fetch(`${LEAVE_API_URL}/api/leaves/doctor/${doctorId}`);
             const leavesData = await leavesResponse.json();
             
-            // โหลด doctor_duties ทั้งแผนก
+            // โหลด doctor_duties ของแผนกหลัก (สำหรับคำนวณสี)
             const dutiesResponse = await fetch(`${LEAVE_API_URL}/api/duties/department/${departmentId}`);
             const dutiesData = await dutiesResponse.json();
             
@@ -1240,7 +1243,7 @@
                 // เก็บ duties data ไว้ใช้ตอนคำนวณสี
                 window.departmentDuties = dutiesData.data;
                 
-                console.log('=== Doctor Leaves Data ===');
+                console.log('=== Doctor Leaves Data (All Departments) ===');
                 console.log('Leaves:', doctorLeaves.length);
                 console.log('Duties:', window.departmentDuties.length);
                 
@@ -2465,9 +2468,19 @@
                 currentDutyData = [];
                 document.getElementById('departmentDetailsContainer').innerHTML = '';
                 document.getElementById('confirmDatesBtn').style.display = 'none';
-                loadDoctorLeaves();
+                
+                // โหลดการลาใหม่
+                await loadDoctorLeaves();
+                
+                // Render ปฏิทินหลักและปฏิทินแยกแผนก
                 updateSelectedRange();
                 renderCalendar();
+                
+                // Render ปฏิทินแยกแผนก (ถ้ามี)
+                const selectedDepts = getSelectedDepartments();
+                selectedDepts.forEach(dept => {
+                    renderCalendarForDepartment(dept.department_id);
+                });
             }
         } catch (error) {
             showMessage('❌ ' + error.message, 'error');
