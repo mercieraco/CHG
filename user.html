@@ -829,7 +829,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 18 (Fix Assignment Filter - Custom)</span>
+        <span id="versionInfo">Version 20 (Fix Assignment - Prevent All Duplicate)</span>
     </div>
 </div>
 
@@ -1058,6 +1058,10 @@
             const dutiesResponse = await fetch(`${LEAVE_API_URL}/api/duties/department/${filterDept}`);
             const dutiesData = await dutiesResponse.json();
             
+            // 3. **สำคัญ! โหลดการลาของแผนกที่ filter**
+            const filterDeptLeavesResponse = await fetch(`${LEAVE_API_URL}/api/leaves/department/${filterDept}`);
+            const filterDeptLeavesData = await filterDeptLeavesResponse.json();
+            
             if (doctorsResponse.ok && doctorsData.success && dutiesData.success) {
                 let doctors = doctorsData.data.filter(d => d.department_id == filterDept);
                 console.log('Doctors in department:', doctors.length);
@@ -1115,14 +1119,16 @@
                 
                 console.log('After busy check:', doctors.length);
                 
-                // *** ขั้นตอนที่ 2: กรองแพทย์ที่ลาอยู่แล้ว ***
+                // *** ขั้นตอนที่ 2: กรองแพทย์ที่ลาอยู่แล้ว (ใช้ข้อมูลจากแผนกที่ filter) ***
+                const filterDeptLeaves = filterDeptLeavesData.success ? filterDeptLeavesData.data : [];
+                
                 doctors = doctors.filter(doc => {
                     // เช็คทุกวันที่ลา
                     for (const day of currentDutyData) {
                         const checkDate = day.duty_date;
                         
                         // เช็คว่าแพทย์คนนี้มีการลาในวันนี้หรือไม่
-                        const isOnLeave = doctorLeaves.some(leave => {
+                        const isOnLeave = filterDeptLeaves.some(leave => {
                             if (leave.doctor_id !== doc.id) return false;
                             
                             const leaveStart = new Date(leave.start_date);
@@ -1142,57 +1148,53 @@
                 
                 console.log('After leave check:', doctors.length);
                 
-                // *** ขั้นตอนที่ 3: กรองแพทย์ที่ได้รับมอบหมายให้มาแทน ***
+                // *** ขั้นตอนที่ 3: กรองแพทย์ที่ได้รับมอบหมายให้มาแทน (ใช้ข้อมูลจากแผนกที่ filter) ***
                 console.log('=== Checking Assignments ===');
-                console.log('Total leaves:', doctorLeaves.length);
+                console.log('Total leaves in filter dept:', filterDeptLeaves.length);
                 
                 doctors = doctors.filter(doc => {
                     // เช็คทุกวันที่ลา
                     for (const day of currentDutyData) {
-                        if (day.duties.length > 0) {
-                            const checkDate = day.duty_date;
-                            
-                            // เช็คว่าแพทย์คนนี้ได้รับมอบหมายให้มาแทนในวันนี้หรือไม่
-                            for (const duty of day.duties) {
-                                const isAssigned = doctorLeaves.some(leave => {
-                                    // Case 1: Single Delegation
-                                    if (leave.delegation_type === 'single') {
-                                        // เช็คว่าเป็นแพทย์มาแทนหรือไม่ + วันที่ซ้อนทับ
-                                        if (leave.replacement_doctor_id === doc.id) {
-                                            const leaveStart = new Date(leave.start_date);
-                                            const leaveEnd = new Date(leave.end_date);
-                                            const checkDateObj = new Date(checkDate);
-                                            
-                                            const isInRange = checkDateObj >= leaveStart && checkDateObj <= leaveEnd;
-                                            if (isInRange) {
-                                                console.log(`Found Single Assignment: ${doc.name} replacing on ${checkDate}`);
-                                                return true;
-                                            }
-                                        }
-                                    }
-                                    
-                                    // Case 2: Custom Delegation (แก้จาก Multiple)
-                                    if (leave.delegation_type === 'custom' && leave.duty_assignments) {
-                                        return leave.duty_assignments.some(assignment => {
-                                            const match = assignment.replacement_doctor_id === doc.id &&
-                                                assignment.duty_date === checkDate &&
-                                                assignment.duty_id === duty.duty_id;
-                                            
-                                            if (match) {
-                                                console.log(`Found Custom Assignment: ${doc.name} for ${duty.duty_name} on ${checkDate}`);
-                                            }
-                                            return match;
-                                        });
-                                    }
-                                    
-                                    return false;
-                                });
+                        const checkDate = day.duty_date;
+                        
+                        // เช็คว่าแพทย์คนนี้ได้รับมอบหมายให้มาแทนในวันนี้หรือไม่
+                        const isAssigned = filterDeptLeaves.some(leave => {
+                            // Case 1: Single Delegation - เช็คว่าได้รับมอบหมายในวันนี้หรือไม่
+                            if (leave.delegation_type === 'single' && leave.replacement_doctor_id === doc.id) {
+                                const leaveStart = new Date(leave.start_date);
+                                const leaveEnd = new Date(leave.end_date);
+                                const checkDateObj = new Date(checkDate);
                                 
-                                if (isAssigned) {
-                                    console.log(`❌ ${doc.name} ได้รับมอบหมายแล้ว: ${duty.duty_name} วันที่ ${checkDate}`);
-                                    return false; // กรองออก
+                                const isInRange = checkDateObj >= leaveStart && checkDateObj <= leaveEnd;
+                                if (isInRange) {
+                                    console.log(`❌ Found Single Assignment: ${doc.name} replacing on ${checkDate}`);
+                                    return true;
                                 }
                             }
+                            
+                            // Case 2: Custom Delegation - เช็ค duty_date + duty_id ที่ตรงกัน
+                            if (leave.delegation_type === 'custom' && leave.duty_assignments && day.duties.length > 0) {
+                                // เช็คทุก duty ในวันนี้
+                                for (const duty of day.duties) {
+                                    const hasAssignment = leave.duty_assignments.some(assignment => 
+                                        assignment.replacement_doctor_id === doc.id &&
+                                        assignment.duty_date === checkDate &&
+                                        assignment.duty_id === duty.duty_id
+                                    );
+                                    
+                                    if (hasAssignment) {
+                                        console.log(`❌ Found Custom Assignment: ${doc.name} for ${duty.duty_name} on ${checkDate}`);
+                                        return true;
+                                    }
+                                }
+                            }
+                            
+                            return false;
+                        });
+                        
+                        if (isAssigned) {
+                            console.log(`❌ ${doc.name} ได้รับมอบหมายแล้ว: วันที่ ${checkDate}`);
+                            return false; // กรองออก
                         }
                     }
                     return true; // ไม่มีการมอบหมาย
