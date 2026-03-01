@@ -835,7 +835,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 11 (Lighter Green 75% - Admin)</span>
+        <span id="versionInfo">Version 12 (Fix Custom Delegation - Use duty_id)</span>
     </div>
 </div>
 
@@ -2864,7 +2864,7 @@
         dutiesWithWork.forEach(item => {
             item.duties.forEach(duty => {
                 const dateStr = formatDateThai(item.date);
-                const uniqueId = `${deptId}_${duty.id}_${item.date}`;
+                const uniqueId = `${deptId}_${duty.duty_id}_${item.date}`;
                 
                 html += `
                     <div style="margin-bottom: 15px; padding: 15px; background: white; border-radius: 6px; border: 1px solid #e0e0e0;">
@@ -2890,7 +2890,7 @@
                         <select 
                             class="custom-delegation-select" 
                             data-dept-id="${deptId}" 
-                            data-duty-id="${duty.id}" 
+                            data-duty-id="${duty.duty_id}" 
                             data-date="${item.date}"
                             data-unique-id="${uniqueId}"
                             style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
