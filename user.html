@@ -829,7 +829,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 17 (Delete Own Leave Only)</span>
+        <span id="versionInfo">Version 17.1 (Debug Custom Delegation)</span>
     </div>
 </div>
 
@@ -2331,19 +2331,29 @@
                 const dutyAssignments = [];
                 const selects = document.querySelectorAll(`.custom-delegation-select[data-dept-id="${deptId}"]`);
                 
+                console.log(`=== Custom Delegation for Dept ${deptId} ===`);
+                console.log('Found selects:', selects.length);
+                
                 for (const select of selects) {
                     const replacementDoctorId = select.value;
+                    const dutyId = select.dataset.dutyId;
+                    const dutyDate = select.dataset.date;
+                    
+                    console.log(`  Select: dutyId=${dutyId}, date=${dutyDate}, replacementId=${replacementDoctorId}`);
+                    
                     if (!replacementDoctorId) {
                         showMessage(`กรุณาเลือกแพทย์ที่มาแทนให้ครบทุก Duty ในแผนก ${dept.department_name}`, 'error');
                         return;
                     }
                     
                     dutyAssignments.push({
-                        dutyId: parseInt(select.dataset.dutyId),
-                        dutyDate: select.dataset.date,
+                        dutyId: parseInt(dutyId),
+                        dutyDate: dutyDate,
                         replacementDoctorId: parseInt(replacementDoctorId)
                     });
                 }
+                
+                console.log('Final dutyAssignments:', dutyAssignments);
                 
                 deptRequestBody.dutyAssignments = dutyAssignments;
                 confirmMessage += `\n📍 ${dept.department_name}: กำหนดเอง (${dutyAssignments.length} งาน)`;
@@ -2428,10 +2438,13 @@
 
                 const data = await response.json();
 
+                console.log('Response:', response.status, data);
+
                 if (response.ok && data.success) {
                     successCount++;
                     console.log(`✅ บันทึกแผนก ${item.department.department_name} สำเร็จ`);
                 } else {
+                    console.error(`❌ Error from server:`, data);
                     throw new Error(`แผนก ${item.department.department_name}: ${data.message || 'ไม่สามารถบันทึกได้'}`);
                 }
             }
