@@ -218,7 +218,7 @@
     }
 
     .calendar-day.on-leave-no-duty {
-        background: #e3f2e4 !important;
+        background: #f1f9f2 !important;
         border-color: #81c784 !important;
         color: #2e7d32;
         font-weight: 700;
@@ -246,6 +246,48 @@
     }
 
     .calendar-day.overlap-no-delegation {
+        background: #ffe0b2 !important;
+        border-color: #ffb74d !important;
+        color: #e65100;
+        font-weight: 700;
+    }
+
+    /* วันเสาร์-อาทิตย์ - แสดงสีตามปกติ */
+    .calendar-day.weekend.on-leave {
+        background: #c8e6c9 !important;
+        border-color: #66bb6a !important;
+        color: #2e7d32;
+        font-weight: 700;
+    }
+
+    .calendar-day.weekend.approved {
+        background: #000000 !important;
+        border-color: #000000 !important;
+        color: #ffffff !important;
+        z-index: 250 !important;
+    }
+
+    .calendar-day.weekend.rejected {
+        background: #ffffff !important;
+        border-color: #000000 !important;
+        border-width: 3px !important;
+        color: #000000 !important;
+        z-index: 250 !important;
+    }
+
+    .calendar-day.weekend.no-delegation {
+        background: #fff9c4 !important;
+        border-color: #fdd835 !important;
+    }
+
+    .calendar-day.weekend.overlap {
+        background: #ffcdd2 !important;
+        border-color: #e57373 !important;
+        color: #c62828;
+        font-weight: 700;
+    }
+
+    .calendar-day.weekend.overlap-no-delegation {
         background: #ffe0b2 !important;
         border-color: #ffb74d !important;
         color: #e65100;
@@ -577,45 +619,140 @@
 
     // คำนวณสีตามการลา
     function calculateColorClass(dateStr) {
-        const leavesOnDate = departmentLeaves.filter(leave => 
-            dateStr >= leave.start_date && dateStr <= leave.end_date
-        );
+        // นับจำนวนการลาแต่ละประเภทในวันนี้
+        const leaveTypes = {
+            green: 0,   // ฝากงานปกติ (single/custom)
+            yellow: 0,  // ไม่ฝากงาน (none)
+            approved: 0,  // อนุมัติแล้ว
+            rejected: 0,  // ไม่อนุมัติ
+        };
         
-        if (leavesOnDate.length === 0) return null;
-        
-        // นับประเภทการลา
-        const leaveTypes = { green: 0, yellow: 0, approved: 0, rejected: 0 };
-        
-        leavesOnDate.forEach(leave => {
-            if (leave.approval_status === 'approved') {
-                leaveTypes.approved++;
-            } else if (leave.approval_status === 'rejected') {
-                leaveTypes.rejected++;
-            } else if (leave.delegation_type === 'none') {
-                leaveTypes.yellow++;
-            } else {
-                leaveTypes.green++;
+        // Loop ทุกการลาในวันนี้
+        const leavesInDay = [];
+        departmentLeaves.forEach(leave => {
+            if (dateStr >= leave.start_date && dateStr <= leave.end_date) {
+                // เช็คสถานะอนุมัติก่อน
+                if (leave.approval_status === 'approved') {
+                    leaveTypes.approved++;
+                    leavesInDay.push(leave);
+                } else if (leave.approval_status === 'rejected') {
+                    leaveTypes.rejected++;
+                    leavesInDay.push(leave);
+                } else if (leave.delegation_type === 'none') {
+                    leaveTypes.yellow++;
+                    leavesInDay.push(leave);
+                } else if (leave.delegation_type === 'single' || leave.delegation_type === 'custom') {
+                    leavesInDay.push(leave);
+                    leaveTypes.green++;
+                }
             }
         });
         
-        // ลำดับความสำคัญของสี
-        if (leaveTypes.approved > 0) return 'approved';  // ดำ
-        if (leaveTypes.rejected > 0) return 'rejected';  // ขาว กรอบดำ
-        
-        // ซ้อนทับ
-        if (leaveTypes.green + leaveTypes.yellow > 1) {
-            if (leaveTypes.yellow > 0) {
-                return 'overlap-no-delegation';  // ส้ม
-            } else {
-                return 'overlap';  // แดง
-            }
+        // *** อนุมัติแล้ว → สีดำ (ทับทุกอย่าง) ***
+        if (leaveTypes.approved > 0) {
+            return 'approved';
         }
         
-        // เดี่ยว
-        if (leaveTypes.green === 1) return 'pending';  // รออนุมัติ (ไม่มีสี)
-        if (leaveTypes.yellow === 1) return 'no-delegation';  // เหลือง
+        const totalLeaves = leaveTypes.green + leaveTypes.yellow + leaveTypes.rejected;
         
-        return null;
+        // ไม่มีการลา
+        if (totalLeaves === 0) {
+            return null;
+        }
+        
+        let baseClass = '';
+        
+        // แดง: เขียว >= 2
+        if (leaveTypes.green >= 2) {
+            baseClass = 'overlap';
+        }
+        // ส้ม: เขียว + เหลือง, หรือ เหลือง >= 2
+        else if ((leaveTypes.green >= 1 && leaveTypes.yellow >= 1) ||
+            (leaveTypes.yellow >= 2)) {
+            baseClass = 'overlap-no-delegation';
+        }
+        // เขียว/เขียวอ่อน: มีแค่คนเดียว
+        else if (leaveTypes.green === 1 && leaveTypes.yellow === 0) {
+            if (leavesInDay.length === 1) {
+                const leave = leavesInDay[0];
+                let hasDutyOnThisDay = false;
+                
+                // เช็คตามประเภทการลา
+                if (leave.delegation_type === 'custom') {
+                    if (!leave.duty_assignments || leave.duty_assignments.length === 0) {
+                        hasDutyOnThisDay = false;
+                    } else {
+                        hasDutyOnThisDay = leave.duty_assignments.some(
+                            assignment => assignment.duty_date === dateStr
+                        );
+                    }
+                } else if (leave.delegation_type === 'single' || leave.delegation_type === 'none') {
+                    const doctorId = leave.doctor_id;
+                    const checkDate = new Date(dateStr);
+                    const dayOfWeek = checkDate.getDay();
+                    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+                    const dayName = dayNames[dayOfWeek];
+                    
+                    if (window.departmentDuties && window.departmentDuties.length > 0) {
+                        hasDutyOnThisDay = window.departmentDuties.some(dd => 
+                            dd.doctor_id === doctorId && dd[dayName] === 1
+                        );
+                    } else {
+                        hasDutyOnThisDay = true;
+                    }
+                } else {
+                    hasDutyOnThisDay = false;
+                }
+                
+                // ถ้าไม่มี duty → สีเขียวอ่อน
+                if (!hasDutyOnThisDay) {
+                    baseClass = 'on-leave-no-duty';
+                } else {
+                    baseClass = 'on-leave';
+                }
+            } else {
+                baseClass = 'on-leave';
+            }
+        }
+        // เหลือง/เหลืองอ่อน: มีแค่เหลืองคนเดียว
+        else if (leaveTypes.yellow === 1 && leaveTypes.green === 0) {
+            if (leavesInDay.length === 1) {
+                const leave = leavesInDay[0];
+                let hasDutyOnThisDay = false;
+                
+                const doctorId = leave.doctor_id;
+                const checkDate = new Date(dateStr);
+                const dayOfWeek = checkDate.getDay();
+                const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+                const dayName = dayNames[dayOfWeek];
+                
+                if (window.departmentDuties && window.departmentDuties.length > 0) {
+                    hasDutyOnThisDay = window.departmentDuties.some(dd => 
+                        dd.doctor_id === doctorId && dd[dayName] === 1
+                    );
+                } else {
+                    hasDutyOnThisDay = true;
+                }
+                
+                // ถ้าไม่มี duty → สีเหลืองอ่อน
+                if (!hasDutyOnThisDay) {
+                    baseClass = 'no-delegation-no-duty';
+                } else {
+                    baseClass = 'no-delegation';
+                }
+            } else {
+                baseClass = 'no-delegation';
+            }
+        } else {
+            baseClass = 'on-leave';
+        }
+        
+        // *** เพิ่มกรอบดำถ้ามี rejected ***
+        if (leaveTypes.rejected > 0 && baseClass) {
+            return baseClass + ' rejected';
+        }
+        
+        return baseClass || 'on-leave';
     }
 
     function previousMonth() {
@@ -878,6 +1015,11 @@
             รับทราบ
         </button>
     </div>
+</div>
+
+<!-- Version Info -->
+<div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
+    <span id="versionInfo">Version 2 (Fix Color Logic + 75% Lighter Green)</span>
 </div>
 ```
 
