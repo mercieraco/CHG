@@ -829,7 +829,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 18.4 (Debug Backend Response)</span>
+        <span id="versionInfo">Version 18.5 (Add Delay Before Reload)</span>
     </div>
 </div>
 
@@ -2526,6 +2526,11 @@
                 currentDutyData = [];
                 document.getElementById('departmentDetailsContainer').innerHTML = '';
                 document.getElementById('confirmDatesBtn').style.display = 'none';
+                
+                // รอ Backend เขียนข้อมูลเสร็จก่อนโหลดใหม่
+                console.log('⏳ รอ 1 วินาทีก่อนโหลดข้อมูลใหม่...');
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
                 loadDoctorLeaves();
                 updateSelectedRange();
                 renderCalendar();
