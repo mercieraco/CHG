@@ -829,7 +829,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 18.3 (Debug Each Department)</span>
+        <span id="versionInfo">Version 18.4 (Debug Backend Response)</span>
     </div>
 </div>
 
@@ -2489,6 +2489,17 @@
                 const data = await response.json();
 
                 console.log('Response:', response.status, data);
+                
+                // แสดง Record ที่ Backend สร้าง
+                if (data.success && data.data) {
+                    console.log('📝 Created leave record:', {
+                        id: data.data.id,
+                        doctor_id: data.data.doctor_id,
+                        department_id: data.data.department_id,
+                        start_date: data.data.start_date,
+                        end_date: data.data.end_date
+                    });
+                }
 
                 if (response.ok && data.success) {
                     successCount++;
