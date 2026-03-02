@@ -829,7 +829,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 18.1 (Debug Multi-Dept Step 1)</span>
+        <span id="versionInfo">Version 18.2 (Load All Departments)</span>
     </div>
 </div>
 
@@ -1231,78 +1231,66 @@
         }
 
         try {
-            // ทดสอบ 2 endpoints
-            console.log('📡 Testing API endpoints...');
+            // *** ใหม่: โหลดการลาทุกแผนกของแพทย์ ***
+            console.log('📡 Loading leaves for all departments...');
             
-            // Endpoint 1: ตามแผนก (เดิม)
-            const url1 = `${LEAVE_API_URL}/api/leaves/department/${departmentId}`;
-            console.log('  URL1 (by department):', url1);
+            // 1. ดึงแผนกทั้งหมดของแพทย์
+            const userDeptIds = userDepartments.map(d => d.department_id);
+            console.log('  User departments:', userDeptIds);
             
-            // Endpoint 2: ตามแพทย์ (ใหม่)
-            const url2 = `${LEAVE_API_URL}/api/leaves/doctor/${doctorId}`;
-            console.log('  URL2 (by doctor):', url2);
+            // 2. โหลดการลาจากทุกแผนก
+            const leavePromises = userDeptIds.map(deptId => 
+                fetch(`${LEAVE_API_URL}/api/leaves/department/${deptId}`)
+                    .then(res => res.json())
+                    .then(data => ({
+                        deptId,
+                        success: data.success,
+                        leaves: data.success ? data.data : []
+                    }))
+            );
             
-            // ลอง endpoint 2 ก่อน (ตามแพทย์)
-            let leavesResponse, leavesData;
+            const allDeptLeaves = await Promise.all(leavePromises);
+            console.log('  Loaded from departments:', allDeptLeaves);
             
-            try {
-                console.log('🔄 Trying endpoint 2 (by doctor)...');
-                leavesResponse = await fetch(url2);
-                console.log('  Response status:', leavesResponse.status);
-                
-                if (leavesResponse.ok) {
-                    leavesData = await leavesResponse.json();
-                    console.log('  ✅ Endpoint 2 works!');
-                    console.log('  Data:', leavesData);
-                } else {
-                    throw new Error('Endpoint 2 not available');
+            // 3. รวมการลาทุกแผนก แล้วกรองเฉพาะของแพทย์คนนี้
+            let allLeaves = [];
+            allDeptLeaves.forEach(deptData => {
+                if (deptData.success) {
+                    // กรองเฉพาะการลาของแพทย์คนนี้
+                    const myLeaves = deptData.leaves.filter(leave => leave.doctor_id == doctorId);
+                    allLeaves = allLeaves.concat(myLeaves);
                 }
-            } catch (error) {
-                console.log('  ❌ Endpoint 2 failed:', error.message);
-                console.log('🔄 Falling back to endpoint 1 (by department)...');
-                
-                leavesResponse = await fetch(url1);
-                console.log('  Response status:', leavesResponse.status);
-                leavesData = await leavesResponse.json();
-                console.log('  Data:', leavesData);
-            }
+            });
             
-            // โหลด doctor_duties ทั้งแผนก
+            console.log('📊 === Data Loaded Successfully ===');
+            console.log('  Total leaves (all departments):', allLeaves.length);
+            
+            // แสดงรายละเอียดแต่ละการลา
+            allLeaves.forEach((leave, index) => {
+                console.log(`  Leave ${index + 1}:`, {
+                    id: leave.id,
+                    doctor_id: leave.doctor_id,
+                    department_id: leave.department_id,
+                    start_date: leave.start_date,
+                    end_date: leave.end_date,
+                    delegation_type: leave.delegation_type
+                });
+            });
+            
+            doctorLeaves = allLeaves;
+            
+            // โหลด doctor_duties ของแผนกหลัก
             const dutiesResponse = await fetch(`${LEAVE_API_URL}/api/duties/department/${departmentId}`);
             const dutiesData = await dutiesResponse.json();
             
-            if (leavesResponse.ok && leavesData.success && dutiesResponse.ok && dutiesData.success) {
-                doctorLeaves = leavesData.data;
-                
-                console.log('📊 === Data Loaded Successfully ===');
-                console.log('  Total leaves:', doctorLeaves.length);
-                
-                // แสดงรายละเอียดแต่ละการลา
-                doctorLeaves.forEach((leave, index) => {
-                    console.log(`  Leave ${index + 1}:`, {
-                        id: leave.id,
-                        doctor_id: leave.doctor_id,
-                        department_id: leave.department_id,
-                        department_name: leave.department_name,
-                        start_date: leave.start_date,
-                        end_date: leave.end_date,
-                        delegation_type: leave.delegation_type
-                    });
-                });
-                
-                // เก็บ duties data ไว้ใช้ตอนคำนวณสี
+            if (dutiesResponse.ok && dutiesData.success) {
                 window.departmentDuties = dutiesData.data;
                 console.log('  Total duties:', window.departmentDuties.length);
-                
-                renderCalendar();
-                displayLeaveRecords();
-            } else {
-                console.warn('⚠️ API not available');
-                doctorLeaves = [];
-                window.departmentDuties = [];
-                renderCalendar();
-                displayLeaveRecords();
             }
+            
+            renderCalendar();
+            displayLeaveRecords();
+            
         } catch (error) {
             console.error('❌ Load leaves error:', error);
             doctorLeaves = [];
@@ -1320,7 +1308,6 @@
                 loadReplacementDoctors();
             }
         } catch (error) {
-            // ไม่มี radio button (ยังไม่ได้ยืนยันวันที่) → ไม่ต้องทำอะไร
             console.log('No hasReplacement radio found (normal after delete)');
         }
     }
