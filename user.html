@@ -829,7 +829,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 18.2 (Load All Departments)</span>
+        <span id="versionInfo">Version 18.3 (Debug Each Department)</span>
     </div>
 </div>
 
@@ -1254,10 +1254,21 @@
             
             // 3. รวมการลาทุกแผนก แล้วกรองเฉพาะของแพทย์คนนี้
             let allLeaves = [];
-            allDeptLeaves.forEach(deptData => {
+            allDeptLeaves.forEach((deptData, index) => {
+                console.log(`  📦 Department ${deptData.deptId}:`, {
+                    success: deptData.success,
+                    total_leaves: deptData.leaves.length,
+                    all_leaves: deptData.leaves.map(l => ({
+                        id: l.id,
+                        doctor_id: l.doctor_id,
+                        department_id: l.department_id
+                    }))
+                });
+                
                 if (deptData.success) {
                     // กรองเฉพาะการลาของแพทย์คนนี้
                     const myLeaves = deptData.leaves.filter(leave => leave.doctor_id == doctorId);
+                    console.log(`    → My leaves in dept ${deptData.deptId}:`, myLeaves.length);
                     allLeaves = allLeaves.concat(myLeaves);
                 }
             });
