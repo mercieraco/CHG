@@ -829,7 +829,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 19 (Main Calendar - Primary Dept Only)</span>
+        <span id="versionInfo">Version 20 (Add Department Calendars)</span>
     </div>
 </div>
 
@@ -2706,6 +2706,15 @@
                 <div class="department-section" data-dept-id="${dept.department_id}" style="margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #667eea;">
                     <h3 style="color: #667eea; margin: 0 0 15px 0;">📍 ${dept.department_name}</h3>
                     
+                    <!-- ปฏิทินแผนกเสริม (แสดงการลาทุกคนในแผนก) -->
+                    <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 2px solid #667eea;">
+                        <h4 style="margin: 0 0 10px 0; color: #667eea;">📅 ปฏิทินแผนก ${dept.department_name}</h4>
+                        <p style="margin: 0 0 10px 0; font-size: 13px; color: #666;">
+                            แสดงการลาของทุกคนในแผนกนี้
+                        </p>
+                        <div class="calendar" id="dept-calendar-${dept.department_id}"></div>
+                    </div>
+                    
                     <!-- รายละเอียดงานที่ลา -->
                     <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
                         <h4 style="margin: 0 0 10px 0; color: #1976d2;">📋 รายละเอียดงานที่ลา</h4>
@@ -2723,6 +2732,11 @@
         }
         
         container.innerHTML = html;
+        
+        // Render ปฏิทินแผนกเสริมสำหรับแต่ละแผนก
+        for (const dept of selectedDepts) {
+            await renderDepartmentCalendar(dept.department_id);
+        }
         
         // โหลด Dropdown แพทย์สำหรับแต่ละแผนก
         for (const dept of selectedDepts) {
@@ -3176,6 +3190,128 @@
         const month = date.getMonth() + 1;
         const year = date.getFullYear() + 543;
         return `${day}/${month}/${year}`;
+    }
+
+    // Render ปฏิทินแผนกเสริม (แสดงการลาทุกคนในแผนก)
+    async function renderDepartmentCalendar(departmentId) {
+        const calendar = document.getElementById(`dept-calendar-${departmentId}`);
+        if (!calendar) return;
+        
+        console.log(`🎨 Rendering calendar for department ${departmentId}`);
+        
+        // โหลดการลาทั้งแผนก
+        const response = await fetch(`${LEAVE_API_URL}/api/leaves/department/${departmentId}`);
+        const data = await response.json();
+        
+        const allDeptLeaves = data.success ? data.data : [];
+        console.log(`  Total leaves in dept ${departmentId}:`, allDeptLeaves.length);
+        
+        const monthNames = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+                          'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+        
+        const firstDay = new Date(currentYear, currentMonth, 1);
+        const lastDay = new Date(currentYear, currentMonth + 1, 0);
+        const startDayOfWeek = firstDay.getDay();
+        const daysInMonth = lastDay.getDate();
+        
+        const dayHeaders = ['จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส', 'อา'];
+        
+        let html = '';
+        dayHeaders.forEach(day => {
+            html += `<div class="calendar-day-header">${day}</div>`;
+        });
+        
+        // วันว่าง
+        const startDay = startDayOfWeek === 0 ? 6 : startDayOfWeek - 1;
+        for (let i = 0; i < startDay; i++) {
+            html += '<div class="calendar-day empty"></div>';
+        }
+        
+        // ฟังก์ชันคำนวณสี (แสดงการลาทุกคน)
+        const calculateColorClass = (dateStr) => {
+            const leaveTypes = {
+                green: 0,
+                yellow: 0,
+                approved: 0,
+                rejected: 0,
+            };
+            
+            allDeptLeaves.forEach(leave => {
+                if (dateStr >= leave.start_date && dateStr <= leave.end_date) {
+                    if (leave.approval_status === 'approved') {
+                        leaveTypes.approved++;
+                    } else if (leave.approval_status === 'rejected') {
+                        leaveTypes.rejected++;
+                    } else if (leave.delegation_type === 'none') {
+                        leaveTypes.yellow++;
+                    } else if (leave.delegation_type === 'single' || leave.delegation_type === 'custom') {
+                        leaveTypes.green++;
+                    }
+                }
+            });
+            
+            // อนุมัติแล้ว → สีดำ
+            if (leaveTypes.approved > 0) {
+                return 'approved';
+            }
+            
+            const totalLeaves = leaveTypes.green + leaveTypes.yellow + leaveTypes.rejected;
+            
+            if (totalLeaves === 0) {
+                return null;
+            }
+            
+            // สีแดง: เขียว >= 2
+            if (leaveTypes.green >= 2) {
+                return 'overlap';
+            }
+            // สีส้ม: เขียว + เหลือง
+            else if ((leaveTypes.green >= 1 && leaveTypes.yellow >= 1) || (leaveTypes.yellow >= 2)) {
+                return 'overlap-no-delegation';
+            }
+            // สีเขียว
+            else if (leaveTypes.green === 1 && leaveTypes.yellow === 0) {
+                return 'on-leave';
+            }
+            // สีเหลือง
+            else if (leaveTypes.yellow === 1 && leaveTypes.green === 0) {
+                return 'no-delegation';
+            } else {
+                return 'on-leave';
+            }
+        };
+        
+        // วันในเดือน
+        const today = new Date();
+        for (let day = 1; day <= daysInMonth; day++) {
+            const date = new Date(currentYear, currentMonth, day);
+            const dateStr = formatDate(date);
+            const dayOfWeek = date.getDay();
+            
+            let classes = ['calendar-day'];
+            
+            if (dayOfWeek === 0 || dayOfWeek === 6) {
+                classes.push('weekend');
+            }
+            
+            if (date.toDateString() === today.toDateString()) {
+                classes.push('today');
+            }
+            
+            if (date < today && date.toDateString() !== today.toDateString()) {
+                classes.push('past-date');
+            }
+            
+            const colorClass = calculateColorClass(dateStr);
+            
+            if (colorClass) {
+                classes.push(colorClass);
+            }
+            
+            html += `<div class="${classes.join(' ')}">${day}</div>`;
+        }
+        
+        calendar.innerHTML = html;
     }
 </script>
 ```
