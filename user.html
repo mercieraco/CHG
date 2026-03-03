@@ -829,7 +829,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 22 (Step 3 - Main = Primary Dept All)</span>
+        <span id="versionInfo">Version 22 (Step 4 Debug - Light Green)</span>
     </div>
 </div>
 
@@ -1759,8 +1759,10 @@
                     
                     // ถ้าไม่มี duty → สีเขียวอ่อน
                     if (!hasDutyOnThisDay) {
+                        console.log(`✨ ${dateStr}: ไม่มี Duty → สีเขียวอ่อน`);
                         baseClass = 'on-leave-no-duty';
                     } else {
+                        console.log(`📌 ${dateStr}: มี Duty → สีเขียวเข้ม`);
                         baseClass = isSelected ? 'on-leave selected' : 'on-leave';
                     }
                 } else {
