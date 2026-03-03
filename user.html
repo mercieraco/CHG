@@ -829,7 +829,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 23 (Step 4 Enhanced Debug)</span>
+        <span id="versionInfo">Version 24 (Step 4 Fix - Light Green in Dept Leaves)</span>
     </div>
 </div>
 
@@ -1629,8 +1629,59 @@
             else if ((leaveTypes.green >= 1 && leaveTypes.yellow >= 1) || (leaveTypes.yellow >= 2)) {
                 return isSelected ? 'overlap-no-delegation selected' : 'overlap-no-delegation';
             }
-            // สีเขียว
-            else if (leaveTypes.green === 1) {
+            // สีเขียว/เขียวอ่อน: มีแค่ 1 คน
+            else if (leaveTypes.green === 1 && leaveTypes.yellow === 0) {
+                console.log(`🔍 Single green leave on ${dateStr}, checking for light green...`);
+                
+                // หา leave ของตัวเอง (doctor_id ตรงกับที่เลือก)
+                const doctorId = parseInt(document.getElementById('doctorSelect')?.value);
+                const myLeave = allDeptLeaves.find(leave => 
+                    leave.doctor_id === doctorId &&
+                    dateStr >= leave.start_date && 
+                    dateStr <= leave.end_date
+                );
+                
+                if (myLeave && !isSelected) {
+                    // เช็ค Duty
+                    let hasDutyOnThisDay = false;
+                    
+                    if (myLeave.delegation_type === 'custom') {
+                        if (myLeave.duty_assignments && myLeave.duty_assignments.length > 0) {
+                            hasDutyOnThisDay = myLeave.duty_assignments.some(
+                                assignment => assignment.duty_date === dateStr
+                            );
+                        }
+                    } else if (myLeave.delegation_type === 'single' || myLeave.delegation_type === 'none') {
+                        const checkDate = new Date(dateStr);
+                        const dayOfWeek = checkDate.getDay();
+                        const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+                        const dayName = dayNames[dayOfWeek];
+                        
+                        console.log(`  → Checking ${dayName} for doctor ${doctorId}`);
+                        
+                        if (window.departmentDuties && window.departmentDuties.length > 0) {
+                            hasDutyOnThisDay = window.departmentDuties.some(dd => {
+                                const match = dd.doctor_id === doctorId && dd[dayName] === 1;
+                                if (dd.doctor_id === doctorId) {
+                                    console.log(`    → doctor_duties[${dayName}] = ${dd[dayName]}, match=${match}`);
+                                }
+                                return match;
+                            });
+                        } else {
+                            console.log(`  → No departmentDuties! Default to has duty`);
+                            hasDutyOnThisDay = true;
+                        }
+                    }
+                    
+                    if (!hasDutyOnThisDay) {
+                        console.log(`✨ ${dateStr}: ไม่มี Duty → สีเขียวอ่อน`);
+                        return 'on-leave-no-duty';
+                    } else {
+                        console.log(`📌 ${dateStr}: มี Duty → สีเขียวเข้ม`);
+                        return 'on-leave';
+                    }
+                }
+                
                 return isSelected ? 'on-leave selected' : 'on-leave';
             }
             // สีเหลือง
