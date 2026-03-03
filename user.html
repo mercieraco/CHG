@@ -829,7 +829,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 21 (Step 3 - Main Calendar Selection)</span>
+        <span id="versionInfo">Version 22 (Step 3 - Main = Primary Dept All)</span>
     </div>
 </div>
 
@@ -935,7 +935,10 @@
                 userDepartments = doctorDepartments;
                 console.log('✅ userDepartments กำหนดแล้ว:', userDepartments);
                 
-                // 9. โหลด duties
+                // 9. โหลดการลาของแพทย์
+                await loadDoctorLeaves();
+                
+                // 10. โหลด duties
                 await onDoctorChange();
             } else {
                 alert('ไม่สามารถโหลดรายการแพทย์ได้');
@@ -1266,6 +1269,13 @@
                 });
                 
                 if (deptData.success) {
+                    // เก็บการลาทั้งแผนกหลัก (สำหรับปฏิทินหลัก)
+                    const primaryDept = userDepartments.find(d => d.is_primary === 1);
+                    if (primaryDept && deptData.deptId == primaryDept.department_id) {
+                        window.primaryDeptLeaves = deptData.leaves;  // เก็บทุกคนในแผนกหลัก
+                        console.log(`  💾 Saved primary dept leaves:`, window.primaryDeptLeaves.length);
+                    }
+                    
                     // กรองเฉพาะการลาของแพทย์คนนี้
                     const myLeaves = deptData.leaves.filter(leave => leave.doctor_id == doctorId);
                     console.log(`    → My leaves in dept ${deptData.deptId}:`, myLeaves.length);
@@ -1554,13 +1564,88 @@
             html += '<div class="calendar-day empty"></div>';
         }
         
-        // ฟังก์ชันคำนวณสีตามลำดับความสำคัญ (เฉพาะแผนกหลัก)
+        // ฟังก์ชันคำนวณสี (เหมือนปฏิทินแผนก - แสดงทุกคนในแผนกหลัก)
         const calculateColorClass = (dateStr, isSelected) => {
-            // หาแผนกหลัก (Primary Department)
+            // ถ้ามี primaryDeptLeaves → ใช้การลาทั้งแผนก
+            if (window.primaryDeptLeaves && window.primaryDeptLeaves.length >= 0) {
+                return calculateColorClassFromDeptLeaves(dateStr, isSelected);
+            }
+            
+            // Fallback: ใช้การลาของตัวเอง
+            return calculateColorClassFromOwnLeaves(dateStr, isSelected);
+        };
+        
+        // คำนวณสีจากการลาทั้งแผนก (เหมือนปฏิทินแผนก)
+        const calculateColorClassFromDeptLeaves = (dateStr, isSelected) => {
+            const allDeptLeaves = window.primaryDeptLeaves;
+            
+            const leaveTypes = {
+                green: 0,
+                yellow: 0,
+                approved: 0,
+                rejected: 0,
+            };
+            
+            allDeptLeaves.forEach(leave => {
+                if (dateStr >= leave.start_date && dateStr <= leave.end_date) {
+                    if (leave.approval_status === 'approved') {
+                        leaveTypes.approved++;
+                    } else if (leave.approval_status === 'rejected') {
+                        leaveTypes.rejected++;
+                    } else if (leave.delegation_type === 'none') {
+                        leaveTypes.yellow++;
+                    } else if (leave.delegation_type === 'single' || leave.delegation_type === 'custom') {
+                        leaveTypes.green++;
+                    }
+                }
+            });
+            
+            // ถ้ากำลังเลือก
+            if (isSelected) {
+                leaveTypes.green++;
+            }
+            
+            // อนุมัติ → สีดำ
+            if (leaveTypes.approved > 0) {
+                return 'approved';
+            }
+            
+            const totalLeaves = leaveTypes.green + leaveTypes.yellow + leaveTypes.rejected;
+            
+            if (totalLeaves === 0) {
+                return null;
+            }
+            
+            // ถ้าเลือกอย่างเดียว → สีฟ้า
+            if (isSelected && totalLeaves === 1 && leaveTypes.green === 1) {
+                return 'selected';
+            }
+            
+            // สีแดง: เขียว >= 2
+            if (leaveTypes.green >= 2) {
+                return isSelected ? 'overlap selected' : 'overlap';
+            }
+            // สีส้ม: เขียว + เหลือง
+            else if ((leaveTypes.green >= 1 && leaveTypes.yellow >= 1) || (leaveTypes.yellow >= 2)) {
+                return isSelected ? 'overlap-no-delegation selected' : 'overlap-no-delegation';
+            }
+            // สีเขียว
+            else if (leaveTypes.green === 1) {
+                return isSelected ? 'on-leave selected' : 'on-leave';
+            }
+            // สีเหลือง
+            else if (leaveTypes.yellow === 1) {
+                return isSelected ? 'no-delegation selected' : 'no-delegation';
+            }
+            
+            return 'on-leave';
+        };
+        
+        // Fallback: คำนวณสีจากการลาของตัวเอง
+        const calculateColorClassFromOwnLeaves = (dateStr, isSelected) => {
             const primaryDept = userDepartments.find(d => d.is_primary === 1);
             const primaryDeptId = primaryDept ? primaryDept.department_id : null;
             
-            // กรองเฉพาะการลาของแผนกหลัก
             const primaryLeaves = primaryDeptId 
                 ? doctorLeaves.filter(leave => leave.department_id === primaryDeptId)
                 : doctorLeaves;
