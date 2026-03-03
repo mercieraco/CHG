@@ -829,7 +829,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 22 (Step 4 Debug - Light Green)</span>
+        <span id="versionInfo">Version 23 (Step 4 Enhanced Debug)</span>
     </div>
 </div>
 
@@ -1719,10 +1719,22 @@
             }
             // เขียว/เขียวอ่อน: มีแค่คนเดียว (รวม selected)
             else if (leaveTypes.green === 1 && leaveTypes.yellow === 0) {
+                console.log(`🔍 Checking light green for ${dateStr}:`, {
+                    isSelected,
+                    leavesInDay_length: leavesInDay.length,
+                    condition: !isSelected && leavesInDay.length === 1
+                });
+                
                 // ถ้าไม่ได้ selected และมีการลาที่บันทึกแล้ว
                 if (!isSelected && leavesInDay.length === 1) {
                     const leave = leavesInDay[0];
                     let hasDutyOnThisDay = false;
+                    
+                    console.log(`  → Checking duty for leave:`, {
+                        doctor_id: leave.doctor_id,
+                        delegation_type: leave.delegation_type,
+                        dateStr
+                    });
                     
                     // เช็คตามประเภทการลา
                     if (leave.delegation_type === 'custom') {
@@ -1743,13 +1755,29 @@
                         const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
                         const dayName = dayNames[dayOfWeek];
                         
+                        console.log(`  → Checking doctor_duties:`, {
+                            doctorId,
+                            dayName,
+                            has_departmentDuties: !!window.departmentDuties,
+                            departmentDuties_length: window.departmentDuties?.length || 0
+                        });
+                        
                         // เช็คว่าแพทย์คนนี้มี duty ในวันนี้หรือไม่
                         if (window.departmentDuties && window.departmentDuties.length > 0) {
-                            hasDutyOnThisDay = window.departmentDuties.some(dd => 
-                                dd.doctor_id === doctorId && dd[dayName] === 1
-                            );
+                            hasDutyOnThisDay = window.departmentDuties.some(dd => {
+                                const match = dd.doctor_id === doctorId && dd[dayName] === 1;
+                                if (dd.doctor_id === doctorId) {
+                                    console.log(`    → Found duty record:`, {
+                                        doctor_id: dd.doctor_id,
+                                        [dayName]: dd[dayName],
+                                        match
+                                    });
+                                }
+                                return match;
+                            });
                         } else {
                             // ถ้าไม่มี duties data → ถือว่ามี duty (safe default)
+                            console.log(`  → No departmentDuties! Using safe default (has duty)`);
                             hasDutyOnThisDay = true;
                         }
                     } else {
@@ -1766,6 +1794,7 @@
                         baseClass = isSelected ? 'on-leave selected' : 'on-leave';
                     }
                 } else {
+                    console.log(`  → Skipped: isSelected=${isSelected}, leavesInDay=${leavesInDay.length}`);
                     baseClass = isSelected ? 'on-leave selected' : 'on-leave';  // เขียว
                 }
             }
