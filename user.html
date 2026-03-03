@@ -829,7 +829,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 18.4 (Debug Backend Response)</span>
+        <span id="versionInfo">Version 19 (Main Calendar - Primary Dept Only)</span>
     </div>
 </div>
 
@@ -1554,9 +1554,18 @@
             html += '<div class="calendar-day empty"></div>';
         }
         
-        // ฟังก์ชันคำนวณสีตามลำดับความสำคัญ
+        // ฟังก์ชันคำนวณสีตามลำดับความสำคัญ (เฉพาะแผนกหลัก)
         const calculateColorClass = (dateStr, isSelected) => {
-            // นับจำนวนการลาแต่ละประเภทในวันนี้
+            // หาแผนกหลัก (Primary Department)
+            const primaryDept = userDepartments.find(d => d.is_primary === 1);
+            const primaryDeptId = primaryDept ? primaryDept.department_id : null;
+            
+            // กรองเฉพาะการลาของแผนกหลัก
+            const primaryLeaves = primaryDeptId 
+                ? doctorLeaves.filter(leave => leave.department_id === primaryDeptId)
+                : doctorLeaves;
+            
+            // นับจำนวนการลาแต่ละประเภทในวันนี้ (เฉพาะแผนกหลัก)
             const leaveTypes = {
                 green: 0,   // ฝากงานปกติ (single/custom)
                 yellow: 0,  // ไม่ฝากงาน (none)
@@ -1564,9 +1573,9 @@
                 rejected: 0,  // ไม่อนุมัติ
             };
             
-            // Loop ทุกการลาในวันนี้
+            // Loop ทุกการลาในวันนี้ (เฉพาะแผนกหลัก)
             const leavesInDay = [];
-            doctorLeaves.forEach(leave => {
+            primaryLeaves.forEach(leave => {
                 if (dateStr >= leave.start_date && dateStr <= leave.end_date) {
                     // เช็คสถานะอนุมัติก่อน
                     if (leave.approval_status === 'approved') {
