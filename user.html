@@ -829,7 +829,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 31 (Debug: Leave Records for 2-dept doctors)</span>
+        <span id="versionInfo">Version 32 (Debug: doctor_id mismatch)</span>
     </div>
 </div>
 
@@ -1277,8 +1277,14 @@
                     }
                     
                     // กรองเฉพาะการลาของแพทย์คนนี้
-                    const myLeaves = deptData.leaves.filter(leave => leave.doctor_id == doctorId);
-                    console.log(`    → My leaves in dept ${deptData.deptId}:`, myLeaves.length);
+                    const myLeaves = deptData.leaves.filter(leave => {
+                        const match = leave.doctor_id == doctorId;
+                        if (!match && deptData.leaves.length > 0) {
+                            console.log(`    ⚠️ Leave doctor_id ${leave.doctor_id} != ${doctorId} (type: ${typeof leave.doctor_id} vs ${typeof doctorId})`);
+                        }
+                        return match;
+                    });
+                    console.log(`    → My leaves in dept ${deptData.deptId}:`, myLeaves.length, `(Total in dept: ${deptData.leaves.length})`);
                     allLeaves = allLeaves.concat(myLeaves);
                 }
             });
