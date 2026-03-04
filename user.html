@@ -829,7 +829,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 34 (Fix: Light Green use sessionStorage)</span>
+        <span id="versionInfo">Version 35 (Fix: Load departmentDuties for primary dept)</span>
     </div>
 </div>
 
@@ -1219,14 +1219,19 @@
 
     // โหลดการลาของแพทย์
     async function loadDoctorLeaves() {
-        const departmentId = document.getElementById('departmentSelect').value;
         const doctorId = parseInt(sessionStorage.getItem('doctor_id'));  // แปลงเป็น number
         
         console.log('🔍 === loadDoctorLeaves START ===');
-        console.log('  departmentId:', departmentId);
         console.log('  doctorId:', doctorId, `(type: ${typeof doctorId})`);
         
-        if (!departmentId) {
+        // หาแผนกหลักของแพทย์
+        const primaryDept = userDepartments.find(d => d.is_primary === 1);
+        const primaryDeptId = primaryDept ? primaryDept.department_id : null;
+        
+        console.log('  primaryDeptId:', primaryDeptId);
+        
+        if (!primaryDeptId) {
+            console.log('  ⚠️ No primary department found');
             doctorLeaves = [];
             renderCalendar();
             displayLeaveRecords();
@@ -1307,12 +1312,16 @@
             doctorLeaves = allLeaves;
             
             // โหลด doctor_duties ของแผนกหลัก
-            const dutiesResponse = await fetch(`${LEAVE_API_URL}/api/duties/department/${departmentId}`);
+            console.log('📡 Loading duties for primary department:', primaryDeptId);
+            const dutiesResponse = await fetch(`${LEAVE_API_URL}/api/duties/department/${primaryDeptId}`);
             const dutiesData = await dutiesResponse.json();
             
             if (dutiesResponse.ok && dutiesData.success) {
                 window.departmentDuties = dutiesData.data;
-                console.log('  Total duties:', window.departmentDuties.length);
+                console.log('  ✅ Loaded departmentDuties:', window.departmentDuties.length);
+            } else {
+                window.departmentDuties = [];
+                console.log('  ⚠️ No duties loaded');
             }
             
             renderCalendar();
