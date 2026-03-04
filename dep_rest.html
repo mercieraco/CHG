@@ -835,7 +835,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 17 (Debug: Mar 13=เข้ม, 14=อ่อน)</span>
+        <span id="versionInfo">Version 18 (Debug: Show every color decision)</span>
     </div>
 </div>
 
@@ -3324,36 +3324,21 @@
                             // เช็ค Duty ของแผนกนี้
                             const deptDuties = window.allDepartmentDuties?.[departmentId];
                             
-                            // DEBUG
-                            if (dateStr === '2026-03-13' || dateStr === '2026-03-14') {
-                                console.log(`🔍 [Dept ${departmentId}] ${dateStr} (${dayName}):`);
-                                console.log(`  Doctor ID: ${leaveDoctorId}`);
-                                console.log(`  deptDuties available:`, deptDuties?.length || 0);
-                            }
-                            
                             if (deptDuties && deptDuties.length > 0) {
-                                hasDutyOnThisDay = deptDuties.some(dd => {
-                                    const match = dd.doctor_id === leaveDoctorId && dd[dayName] === 1;
-                                    if (dateStr === '2026-03-13' || dateStr === '2026-03-14') {
-                                        if (dd.doctor_id === leaveDoctorId) {
-                                            console.log(`    Duty record: doctor_id=${dd.doctor_id}, ${dayName}=${dd[dayName]}, match=${match}`);
-                                        }
-                                    }
-                                    return match;
-                                });
+                                hasDutyOnThisDay = deptDuties.some(dd => 
+                                    dd.doctor_id === leaveDoctorId && dd[dayName] === 1
+                                );
                             } else {
-                                hasDutyOnThisDay = true;
-                            }
-                            
-                            // DEBUG
-                            if (dateStr === '2026-03-13' || dateStr === '2026-03-14') {
-                                console.log(`  → hasDutyOnThisDay: ${hasDutyOnThisDay}`);
-                                console.log(`  → Color: ${hasDutyOnThisDay ? 'เขียวเข้ม' : 'เขียวอ่อน'}`);
+                                // ถ้าไม่มี deptDuties ให้ถือว่าไม่มี Duty (safe)
+                                hasDutyOnThisDay = false;
                             }
                         }
                         
                         if (!hasDutyOnThisDay) {
+                            console.log(`✨ ${dateStr}: สีเขียวอ่อน (doctor=${leaveDoctorId}, dept=${departmentId})`);
                             return 'on-leave-no-duty'; // สีเขียวอ่อน
+                        } else {
+                            console.log(`🟢 ${dateStr}: สีเขียวเข้ม (doctor=${leaveDoctorId}, dept=${departmentId})`);
                         }
                     }
                 }
