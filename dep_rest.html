@@ -835,7 +835,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 20 (Fix: Load duties per department)</span>
+        <span id="versionInfo">Version 21 (Debug: Check doctor departments loading)</span>
     </div>
 </div>
 
@@ -895,13 +895,20 @@
     // โหลดข้อมูลแพทย์เมื่อ Admin เลือก (แทน loadDoctorData เดิม)
     async function loadDoctorDataForAdmin(doctorId) {
         try {
+            console.log(`🔍 Loading data for doctor ID: ${doctorId}`);
+            
             // 2. โหลดแผนกของแพทย์คนนี้
             const doctorDeptsResponse = await fetch(`${API_URL}/api/doctors/${doctorId}/departments`);
             const doctorDeptsData = await doctorDeptsResponse.json();
             
+            console.log(`📡 Doctor departments API response:`, doctorDeptsData);
+            
             let doctorDepartments = [];
             if (doctorDeptsResponse.ok && doctorDeptsData.success) {
                 doctorDepartments = doctorDeptsData.data;
+                console.log(`✅ Doctor has ${doctorDepartments.length} department(s):`, doctorDepartments);
+            } else {
+                console.warn(`⚠️ Failed to load doctor departments`);
             }
 
             // 3. โหลดข้อมูลแพทย์ทั้งหมด
@@ -3221,18 +3228,9 @@
         const allDeptLeaves = data.success ? data.data : [];
         console.log(`  Total leaves in dept ${departmentId}:`, allDeptLeaves.length);
         
-        // โหลด duties ของแผนกนี้
-        let deptDuties = [];
-        try {
-            const dutiesResponse = await fetch(`${API_URL}/api/duties/department/${departmentId}`);
-            const dutiesData = await dutiesResponse.json();
-            if (dutiesResponse.ok && dutiesData.success) {
-                deptDuties = dutiesData.data;
-                console.log(`  ✅ Loaded duties for dept ${departmentId}:`, deptDuties.length);
-            }
-        } catch (error) {
-            console.error(`Error loading duties for dept ${departmentId}:`, error);
-        }
+        // ใช้ duties ที่โหลดไว้แล้วใน loadDoctorLeaves
+        const deptDuties = window.allDepartmentDuties?.[departmentId] || [];
+        console.log(`  Using duties from allDepartmentDuties[${departmentId}]:`, deptDuties.length);
         
         const monthNames = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
                           'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
