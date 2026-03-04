@@ -829,7 +829,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 28 (Fix: Light Green uses correct dept duties)</span>
+        <span id="versionInfo">Version 29 (Fix: Light Green with deptDuties)</span>
     </div>
 </div>
 
@@ -2034,7 +2034,7 @@
             rangeDiv.style.display = 'none';
             confirmBtn.style.display = 'none';
             
-            // *** Step 5: Re-render ปฏิทินแผนกเมื่อยกเลิกการเลือก ***
+            // Re-render ปฏิทินแผนก
             rerenderDepartmentCalendars();
             return;
         }
@@ -2049,11 +2049,11 @@
         // แสดงปุ่มยืนยัน
         confirmBtn.style.display = 'inline-block';
         
-        // *** Step 5: Re-render ปฏิทินแผนกเมื่อเลือกวันที่ ***
+        // Re-render ปฏิทินแผนก
         rerenderDepartmentCalendars();
     }
     
-    // Re-render ปฏิทินแผนกทั้งหมด (เพื่ออัพเดทสีฟ้า)
+    // Re-render ปฏิทินแผนก
     async function rerenderDepartmentCalendars() {
         if (userDepartments && userDepartments.length > 0) {
             for (const dept of userDepartments) {
@@ -3346,18 +3346,6 @@
         const allDeptLeaves = data.success ? data.data : [];
         console.log(`  Total leaves in dept ${departmentId}:`, allDeptLeaves.length);
         
-        // *** โหลด departmentDuties ของแผนกนี้ (สำหรับเช็ค Duty) ***
-        let deptDuties = [];
-        try {
-            const dutiesResponse = await fetch(`${API_URL}/api/duties/department/${departmentId}`);
-            const dutiesData = await dutiesResponse.json();
-            if (dutiesResponse.ok && dutiesData.success) {
-                deptDuties = dutiesData.data;
-            }
-        } catch (error) {
-            console.error('Error loading dept duties:', error);
-        }
-        
         const monthNames = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
                           'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
         
@@ -3379,7 +3367,7 @@
             html += '<div class="calendar-day empty"></div>';
         }
         
-        // ฟังก์ชันคำนวณสี (แสดงการลาทุกคน + วันที่เลือก)
+        // ฟังก์ชันคำนวณสี (แสดงการลาทุกคน + cursor สีฟ้า)
         const calculateColorClass = (dateStr, isSelected) => {
             const leaveTypes = {
                 green: 0,
@@ -3402,7 +3390,7 @@
                 }
             });
             
-            // *** Step 5: ถ้าวันนี้ถูกเลือกในปฏิทินหลัก → นับเป็น +1 ***
+            // *** Step 5: ถ้าวันนี้ถูกเลือก → นับเป็น +1 ***
             if (isSelected) {
                 leaveTypes.green++;
             }
@@ -3418,12 +3406,12 @@
                 return null;
             }
             
-            // ถ้าเลือกอย่างเดียว (ไม่มีคนลา) → สีฟ้า
+            // ถ้าเลือกอย่างเดียว → สีฟ้า
             if (isSelected && totalLeaves === 1 && leaveTypes.green === 1) {
                 return 'selected';
             }
             
-            // สีแดง: เขียว >= 2 (รวมที่เลือก)
+            // สีแดง: เขียว >= 2
             if (leaveTypes.green >= 2) {
                 return isSelected ? 'overlap selected' : 'overlap';
             }
@@ -3433,11 +3421,12 @@
             }
             // สีเขียว/เขียวอ่อน: มีแค่ 1 คน
             else if (leaveTypes.green === 1 && leaveTypes.yellow === 0) {
-                // ถ้าไม่ได้เลือก → เช็ค Duty ของแต่ละคน
+                // ถ้าไม่ได้เลือก → เช็ค Duty ของคนที่ลา
                 if (!isSelected && allDeptLeaves.length > 0) {
                     // หาคนที่ลาในวันนี้
                     const leavesOnThisDay = allDeptLeaves.filter(leave => 
-                        dateStr >= leave.start_date && dateStr <= leave.end_date
+                        dateStr >= leave.start_date && dateStr <= leave.end_date &&
+                        (leave.delegation_type === 'single' || leave.delegation_type === 'custom')
                     );
                     
                     if (leavesOnThisDay.length === 1) {
@@ -3451,7 +3440,7 @@
                                     assignment => assignment.duty_date === dateStr
                                 );
                             }
-                        } else if (leave.delegation_type === 'single' || leave.delegation_type === 'none') {
+                        } else if (leave.delegation_type === 'single') {
                             const checkDate = new Date(dateStr);
                             const dayOfWeek = checkDate.getDay();
                             const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
@@ -3477,7 +3466,7 @@
             }
             // สีเหลือง
             else if (leaveTypes.yellow === 1 && leaveTypes.green === 0) {
-                return 'no-delegation';
+                return isSelected ? 'no-delegation selected' : 'no-delegation';
             } else {
                 return 'on-leave';
             }
@@ -3490,7 +3479,7 @@
             const dateStr = formatDate(date);
             const dayOfWeek = date.getDay();
             
-            // *** Step 5: เช็คว่าวันนี้ถูกเลือกในปฏิทินหลักหรือไม่ ***
+            // *** เช็คว่าวันนี้ถูกเลือกหรือไม่ ***
             const isSelected = selectedDates && selectedDates.includes(dateStr);
             
             let classes = ['calendar-day'];
