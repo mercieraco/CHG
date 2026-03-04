@@ -829,7 +829,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 27 (Step 4+5 Complete: Light Green in All Calendars)</span>
+        <span id="versionInfo">Version 28 (Fix: Light Green uses correct dept duties)</span>
     </div>
 </div>
 
@@ -3346,6 +3346,18 @@
         const allDeptLeaves = data.success ? data.data : [];
         console.log(`  Total leaves in dept ${departmentId}:`, allDeptLeaves.length);
         
+        // *** โหลด departmentDuties ของแผนกนี้ (สำหรับเช็ค Duty) ***
+        let deptDuties = [];
+        try {
+            const dutiesResponse = await fetch(`${API_URL}/api/duties/department/${departmentId}`);
+            const dutiesData = await dutiesResponse.json();
+            if (dutiesResponse.ok && dutiesData.success) {
+                deptDuties = dutiesData.data;
+            }
+        } catch (error) {
+            console.error('Error loading dept duties:', error);
+        }
+        
         const monthNames = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
                           'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
         
@@ -3445,8 +3457,9 @@
                             const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
                             const dayName = dayNames[dayOfWeek];
                             
-                            if (window.departmentDuties && window.departmentDuties.length > 0) {
-                                hasDutyOnThisDay = window.departmentDuties.some(dd => 
+                            // *** ใช้ deptDuties ของแผนกนี้ ***
+                            if (deptDuties && deptDuties.length > 0) {
+                                hasDutyOnThisDay = deptDuties.some(dd => 
                                     dd.doctor_id === leave.doctor_id && dd[dayName] === 1
                                 );
                             } else {
