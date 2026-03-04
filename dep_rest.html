@@ -835,7 +835,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 16 (Fix: Copy light green logic from calendar 1)</span>
+        <span id="versionInfo">Version 17 (Debug: Show dept calendar info clearly)</span>
     </div>
 </div>
 
@@ -3190,13 +3190,18 @@
         const calendar = document.getElementById(`dept-calendar-${departmentId}`);
         if (!calendar) return;
         
-        console.log(`🎨 Rendering calendar for department ${departmentId}`);
+        console.log(`\n========================================`);
+        console.log(`🎨 RENDERING CALENDAR FOR DEPARTMENT ${departmentId}`);
+        console.log(`========================================`);
         
         // โหลดการลาทั้งแผนก
         const response = await fetch(`${LEAVE_API_URL}/api/leaves/department/${departmentId}`);
         const data = await response.json();
         
         const allDeptLeaves = data.success ? data.data : [];
+        console.log(`📋 Total leaves in dept ${departmentId}:`, allDeptLeaves.length);
+        console.log(`🔧 Using window.departmentDuties:`, window.departmentDuties?.length || 0);
+        console.log(`========================================\n`);
         console.log(`  Total leaves in dept ${departmentId}:`, allDeptLeaves.length);
         
         const monthNames = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
