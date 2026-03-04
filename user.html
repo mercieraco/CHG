@@ -829,7 +829,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 33 (Fix: doctorId parseInt)</span>
+        <span id="versionInfo">Version 34 (Fix: Light Green use sessionStorage)</span>
     </div>
 </div>
 
@@ -1638,7 +1638,7 @@
             // สีเขียว/เขียวอ่อน: มีแค่ 1 คน
             else if (leaveTypes.green === 1 && leaveTypes.yellow === 0) {
                 // หา leave ของตัวเอง
-                const doctorId = parseInt(document.getElementById('doctorSelect')?.value);
+                const doctorId = parseInt(sessionStorage.getItem('doctor_id'));
                 const myLeave = allDeptLeaves.find(leave => 
                     leave.doctor_id === doctorId &&
                     dateStr >= leave.start_date && 
