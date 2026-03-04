@@ -829,7 +829,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 32 (Debug: doctor_id mismatch)</span>
+        <span id="versionInfo">Version 33 (Fix: doctorId parseInt)</span>
     </div>
 </div>
 
@@ -1220,11 +1220,11 @@
     // โหลดการลาของแพทย์
     async function loadDoctorLeaves() {
         const departmentId = document.getElementById('departmentSelect').value;
-        const doctorId = sessionStorage.getItem('doctor_id');
+        const doctorId = parseInt(sessionStorage.getItem('doctor_id'));  // แปลงเป็น number
         
         console.log('🔍 === loadDoctorLeaves START ===');
         console.log('  departmentId:', departmentId);
-        console.log('  doctorId:', doctorId);
+        console.log('  doctorId:', doctorId, `(type: ${typeof doctorId})`);
         
         if (!departmentId) {
             doctorLeaves = [];
