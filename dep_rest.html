@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบลางาน - แพทย์</title>
+    <title>ระบบลางาน - ผู้ดูแลระบบ</title>
     <style>
         * {
             margin: 0;
@@ -46,15 +46,26 @@
         background: #ff6b6b;
         color: white;
         border: none;
-        border-radius: 8px;
+        border-radius: 20px;  /* เพิ่มความมน จาก 8px → 20px */
         cursor: pointer;
         font-size: 16px;
         text-decoration: none;
         display: inline-block;
+        font-weight: 600;  /* เพิ่มความหนา */
+        transition: all 0.3s;  /* เพิ่ม transition */
+        
+        /* ทำให้ลอยติดหน้าจอ */
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 500;  /* สูงกว่า weekend (250) แต่ต่ำกว่า popup (1000) */
+        box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
     }
 
     .btn-back:hover {
         background: #ee5a52;
+        transform: translateY(-2px);  /* ยกขึ้นเล็กน้อย */
+        box-shadow: 0 6px 16px rgba(255, 107, 107, 0.4);
     }
 
     .form-row {
@@ -372,7 +383,7 @@
         border-color: #000000 !important;
         border-width: 3px !important;
         color: #000000 !important;
-        z-index: 250 !important;  /* สูงกว่า weekend ปกติ แต่ต่ำกว่า popup */
+        z-index: 250 !important;
     }
 
     .calendar-day.weekend.no-delegation {
@@ -740,21 +751,20 @@
     <div class="container">
         <div class="header">
             <h1>จัดการการลา</h1>
-            <div style="display: flex; gap: 10px;">
-                <button onclick="window.location.href='summary.html'" class="btn-back" style="background: #4ecdc4;">📊 สรุปภาพรวม</button>
-                <button onclick="logout()" class="btn-back">ออกจากระบบ</button>
-            </div>
+            <a href="dev.html" class="btn-back">← กลับ</a>
         </div>
 
 ```
-    <!-- แผนกและแพทย์ (ซ่อนไว้ - Auto-select จาก login) -->
-    <div class="form-row" style="display: none;">
+    <!-- Admin: เลือกแพทย์ที่จะลา -->
+    <div class="form-row">
         <div class="form-group">
+            <label>แผนก:</label>
             <select id="departmentSelect" onchange="loadDoctors()">
                 <option value="">-- เลือกแผนก --</option>
             </select>
         </div>
         <div class="form-group">
+            <label>Work Type:</label>
             <select id="workTypeSelect" onchange="loadDoctors()">
                 <option value="full" selected>Full time</option>
                 <option value="part">Part time</option>
@@ -762,15 +772,11 @@
         </div>
     </div>
     
-    <div class="form-group" style="display: none;">
+    <div class="form-group">
+        <label>แพทย์ที่จะลา:</label>
         <select id="doctorSelect" onchange="onDoctorChange()">
             <option value="">-- เลือกแพทย์ที่จะลา --</option>
         </select>
-    </div>
-
-    <!-- แสดงชื่อแพทย์ -->
-    <div class="form-group" style="text-align: center; margin-bottom: 20px;">
-        <h2 id="doctorNameDisplay" style="color: #667eea; font-size: 24px;">กำลังโหลด...</h2>
     </div>
 
     <!-- ปฏิทิน -->
@@ -829,7 +835,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 25 (Step 5: Realtime Selection in Dept Calendars)</span>
+        <span id="versionInfo">Version 14 (Step 4: Light Green with Debug)</span>
     </div>
 </div>
 
@@ -853,37 +859,43 @@
     // โหลดเมื่อเปิดหน้า
     window.onload = async function() {
         const loggedIn = sessionStorage.getItem('loggedIn');
-        const doctorId = sessionStorage.getItem('doctor_id');  
+        const role = sessionStorage.getItem('role');
 
-        // ต้อง login และมี doctor_id เท่านั้น
-        if (!loggedIn || !doctorId) {
+        // Admin เท่านั้น
+        if (!loggedIn || role !== 'admin') {
             window.location.href = 'index.html';
             return;
         }
 
-        // โหลดข้อมูลแพทย์และ auto-select
-        await loadDoctorData(doctorId);
+        // โหลดแผนกเท่านั้น (ไม่ auto-select แพทย์)
+        await loadDepartments();
         
         renderCalendar();
     };
 
-    // โหลดข้อมูลแพทย์และ auto-select
-    async function loadDoctorData(doctorId) {
+    // โหลดแผนก (สำหรับ Admin)
+    async function loadDepartments() {
         try {
-            // 1. โหลดแผนกทั้งหมด
-            const deptResponse = await fetch(`${API_URL}/api/departments`);
-            const deptData = await deptResponse.json();
+            const response = await fetch(`${API_URL}/api/departments`);
+            const data = await response.json();
             
-            if (deptResponse.ok && deptData.success) {
-                const departments = deptData.data;
+            if (response.ok && data.success) {
+                const departments = data.data;
                 const departmentSelect = document.getElementById('departmentSelect');
                 
                 departments.forEach(dept => {
                     departmentSelect.innerHTML += `<option value="${dept.id}">${dept.name}</option>`;
                 });
             }
+        } catch (error) {
+            console.error('Load departments error:', error);
+        }
+    }
 
-            // 2. โหลดแผนกของแพทย์คนนี้ (NEW!)
+    // โหลดข้อมูลแพทย์เมื่อ Admin เลือก (แทน loadDoctorData เดิม)
+    async function loadDoctorDataForAdmin(doctorId) {
+        try {
+            // 2. โหลดแผนกของแพทย์คนนี้
             const doctorDeptsResponse = await fetch(`${API_URL}/api/doctors/${doctorId}/departments`);
             const doctorDeptsData = await doctorDeptsResponse.json();
             
@@ -902,7 +914,6 @@
                 
                 if (!doctor) {
                     alert('ไม่พบข้อมูลแพทย์ ID: ' + doctorId);
-                    window.location.href = 'index.html';
                     return;
                 }
                 
@@ -918,27 +929,14 @@
                 
                 console.log('📍 doctorDepartments:', doctorDepartments);
                 
-                // 4. Auto-select
-                document.getElementById('departmentSelect').value = doctor.department_id;
-                document.getElementById('workTypeSelect').value = doctor.work_type || 'full';
-                
-                // 5. โหลดแพทย์ในแผนก
-                await loadDoctors();
-                
-                // 6. เลือกตัวเอง
-                document.getElementById('doctorSelect').value = doctor.id;
-                
-                // 7. แสดงชื่อ
-                document.getElementById('doctorNameDisplay').textContent = doctor.name;
-                
-                // 8. เก็บข้อมูลแผนก (ไม่แสดงทันที)
+                // เก็บข้อมูลแผนก
                 userDepartments = doctorDepartments;
                 console.log('✅ userDepartments กำหนดแล้ว:', userDepartments);
                 
-                // 9. โหลดการลาของแพทย์
+                // โหลดการลาของแพทย์
                 await loadDoctorLeaves();
                 
-                // 10. โหลด duties
+                // โหลด duties
                 await onDoctorChange();
             } else {
                 alert('ไม่สามารถโหลดรายการแพทย์ได้');
@@ -1015,20 +1013,25 @@
     }
 
     // เมื่อเลือกแพทย์ที่ลา
-    function onDoctorChange() {
-        // ถ้าเลือก "มีคนมาแทน" อยู่แล้ว → โหลดแพทย์มาแทนใหม่
-        const hasReplacementRadio = document.querySelector('input[name="hasReplacement"]:checked');
+    async function onDoctorChange() {
+        const doctorId = document.getElementById('doctorSelect').value;
         
-        // ถ้ายังไม่มี radio (ยังไม่ได้ยืนยันวันที่) → ไม่ต้องทำอะไร
-        if (!hasReplacementRadio) return;
-        
-        const hasReplacement = hasReplacementRadio.value;
-        if (hasReplacement === 'yes') {
-            const filterDept = document.getElementById('filterDepartment').value;
-            if (filterDept) {
-                loadReplacementDoctors();
-            }
+        if (!doctorId) {
+            // ถ้ายังไม่เลือกแพทย์ → ซ่อนทุกอย่าง
+            selectedDates = [];
+            document.getElementById('confirmDatesBtn').style.display = 'none';
+            document.getElementById('departmentDetailsContainer').innerHTML = '';
+            userDepartments = [];
+            renderCalendar();
+            return;
         }
+        
+        // โหลดข้อมูลแพทย์ที่เลือก
+        await loadDoctorDataForAdmin(doctorId);
+        
+        // Reset วันที่
+        selectedDates = [];
+        renderCalendar();
     }
 
     // โหลดแพทย์ที่มาแทน
@@ -1060,10 +1063,6 @@
             // 2. ดึง doctor_duties ของแผนกนี้
             const dutiesResponse = await fetch(`${LEAVE_API_URL}/api/duties/department/${filterDept}`);
             const dutiesData = await dutiesResponse.json();
-            
-            // 3. **สำคัญ! โหลดการลาของแผนกที่ filter**
-            const filterDeptLeavesResponse = await fetch(`${LEAVE_API_URL}/api/leaves/department/${filterDept}`);
-            const filterDeptLeavesData = await filterDeptLeavesResponse.json();
             
             if (doctorsResponse.ok && doctorsData.success && dutiesData.success) {
                 let doctors = doctorsData.data.filter(d => d.department_id == filterDept);
@@ -1122,16 +1121,14 @@
                 
                 console.log('After busy check:', doctors.length);
                 
-                // *** ขั้นตอนที่ 2: กรองแพทย์ที่ลาอยู่แล้ว (ใช้ข้อมูลจากแผนกที่ filter) ***
-                const filterDeptLeaves = filterDeptLeavesData.success ? filterDeptLeavesData.data : [];
-                
+                // *** ขั้นตอนที่ 2: กรองแพทย์ที่ลาอยู่แล้ว ***
                 doctors = doctors.filter(doc => {
                     // เช็คทุกวันที่ลา
                     for (const day of currentDutyData) {
                         const checkDate = day.duty_date;
                         
                         // เช็คว่าแพทย์คนนี้มีการลาในวันนี้หรือไม่
-                        const isOnLeave = filterDeptLeaves.some(leave => {
+                        const isOnLeave = doctorLeaves.some(leave => {
                             if (leave.doctor_id !== doc.id) return false;
                             
                             const leaveStart = new Date(leave.start_date);
@@ -1150,6 +1147,64 @@
                 });
                 
                 console.log('After leave check:', doctors.length);
+                
+                // *** ขั้นตอนที่ 3: กรองแพทย์ที่ได้รับมอบหมายให้มาแทน ***
+                console.log('=== Checking Assignments ===');
+                console.log('Total leaves:', doctorLeaves.length);
+                
+                doctors = doctors.filter(doc => {
+                    // เช็คทุกวันที่ลา
+                    for (const day of currentDutyData) {
+                        if (day.duties.length > 0) {
+                            const checkDate = day.duty_date;
+                            
+                            // เช็คว่าแพทย์คนนี้ได้รับมอบหมายให้มาแทนในวันนี้หรือไม่
+                            for (const duty of day.duties) {
+                                const isAssigned = doctorLeaves.some(leave => {
+                                    // Case 1: Single Delegation
+                                    if (leave.delegation_type === 'single') {
+                                        // เช็คว่าเป็นแพทย์มาแทนหรือไม่ + วันที่ซ้อนทับ
+                                        if (leave.replacement_doctor_id === doc.id) {
+                                            const leaveStart = new Date(leave.start_date);
+                                            const leaveEnd = new Date(leave.end_date);
+                                            const checkDateObj = new Date(checkDate);
+                                            
+                                            const isInRange = checkDateObj >= leaveStart && checkDateObj <= leaveEnd;
+                                            if (isInRange) {
+                                                console.log(`Found Single Assignment: ${doc.name} replacing on ${checkDate}`);
+                                                return true;
+                                            }
+                                        }
+                                    }
+                                    
+                                    // Case 2: Multiple Delegation
+                                    if (leave.delegation_type === 'multiple' && leave.duty_assignments) {
+                                        return leave.duty_assignments.some(assignment => {
+                                            const match = assignment.replacement_doctor_id === doc.id &&
+                                                assignment.duty_date === checkDate &&
+                                                assignment.duty_id === duty.duty_id;
+                                            
+                                            if (match) {
+                                                console.log(`Found Multiple Assignment: ${doc.name} for ${duty.duty_name} on ${checkDate}`);
+                                            }
+                                            return match;
+                                        });
+                                    }
+                                    
+                                    return false;
+                                });
+                                
+                                if (isAssigned) {
+                                    console.log(`❌ ${doc.name} ได้รับมอบหมายแล้ว: ${duty.duty_name} วันที่ ${checkDate}`);
+                                    return false; // กรองออก
+                                }
+                            }
+                        }
+                    }
+                    return true; // ไม่มีการมอบหมาย
+                });
+                
+                console.log('After assignment check:', doctors.length);
                 
                 // เรียงตามชื่อ
                 doctors.sort((a, b) => a.name.localeCompare(b.name, ['en', 'th']));
@@ -1220,11 +1275,6 @@
     // โหลดการลาของแพทย์
     async function loadDoctorLeaves() {
         const departmentId = document.getElementById('departmentSelect').value;
-        const doctorId = sessionStorage.getItem('doctor_id');
-        
-        console.log('🔍 === loadDoctorLeaves START ===');
-        console.log('  departmentId:', departmentId);
-        console.log('  doctorId:', doctorId);
         
         if (!departmentId) {
             doctorLeaves = [];
@@ -1234,93 +1284,40 @@
         }
 
         try {
-            // *** ใหม่: โหลดการลาทุกแผนกของแพทย์ ***
-            console.log('📡 Loading leaves for all departments...');
+            // โหลดการลาทั้งแผนก
+            const leavesResponse = await fetch(`${LEAVE_API_URL}/api/leaves/department/${departmentId}`);
+            const leavesData = await leavesResponse.json();
             
-            // 1. ดึงแผนกทั้งหมดของแพทย์
-            const userDeptIds = userDepartments.map(d => d.department_id);
-            console.log('  User departments:', userDeptIds);
-            
-            // 2. โหลดการลาจากทุกแผนก
-            const leavePromises = userDeptIds.map(deptId => 
-                fetch(`${LEAVE_API_URL}/api/leaves/department/${deptId}`)
-                    .then(res => res.json())
-                    .then(data => ({
-                        deptId,
-                        success: data.success,
-                        leaves: data.success ? data.data : []
-                    }))
-            );
-            
-            const allDeptLeaves = await Promise.all(leavePromises);
-            console.log('  Loaded from departments:', allDeptLeaves);
-            
-            // 3. รวมการลาทุกแผนก แล้วกรองเฉพาะของแพทย์คนนี้
-            let allLeaves = [];
-            allDeptLeaves.forEach((deptData, index) => {
-                console.log(`  📦 Department ${deptData.deptId}:`, {
-                    success: deptData.success,
-                    total_leaves: deptData.leaves.length,
-                    all_leaves: deptData.leaves.map(l => ({
-                        id: l.id,
-                        doctor_id: l.doctor_id,
-                        department_id: l.department_id
-                    }))
-                });
-                
-                if (deptData.success) {
-                    // เก็บการลาทั้งแผนกหลัก (สำหรับปฏิทินหลัก)
-                    const primaryDept = userDepartments.find(d => d.is_primary === 1);
-                    if (primaryDept && deptData.deptId == primaryDept.department_id) {
-                        window.primaryDeptLeaves = deptData.leaves;  // เก็บทุกคนในแผนกหลัก
-                        console.log(`  💾 Saved primary dept leaves:`, window.primaryDeptLeaves.length);
-                    }
-                    
-                    // กรองเฉพาะการลาของแพทย์คนนี้
-                    const myLeaves = deptData.leaves.filter(leave => leave.doctor_id == doctorId);
-                    console.log(`    → My leaves in dept ${deptData.deptId}:`, myLeaves.length);
-                    allLeaves = allLeaves.concat(myLeaves);
-                }
-            });
-            
-            console.log('📊 === Data Loaded Successfully ===');
-            console.log('  Total leaves (all departments):', allLeaves.length);
-            
-            // แสดงรายละเอียดแต่ละการลา
-            allLeaves.forEach((leave, index) => {
-                console.log(`  Leave ${index + 1}:`, {
-                    id: leave.id,
-                    doctor_id: leave.doctor_id,
-                    department_id: leave.department_id,
-                    start_date: leave.start_date,
-                    end_date: leave.end_date,
-                    delegation_type: leave.delegation_type
-                });
-            });
-            
-            doctorLeaves = allLeaves;
-            
-            // โหลด doctor_duties ของแผนกหลัก
+            // โหลด doctor_duties ทั้งแผนก
             const dutiesResponse = await fetch(`${LEAVE_API_URL}/api/duties/department/${departmentId}`);
             const dutiesData = await dutiesResponse.json();
             
-            if (dutiesResponse.ok && dutiesData.success) {
+            if (leavesResponse.ok && leavesData.success && dutiesResponse.ok && dutiesData.success) {
+                doctorLeaves = leavesData.data;
+                
+                // เก็บ duties data ไว้ใช้ตอนคำนวณสี
                 window.departmentDuties = dutiesData.data;
-                console.log('  Total duties:', window.departmentDuties.length);
+                
+                console.log('=== Doctor Leaves Data ===');
+                console.log('Leaves:', doctorLeaves.length);
+                console.log('Duties:', window.departmentDuties.length);
+                
+                renderCalendar();
+                displayLeaveRecords();
+            } else {
+                console.warn('API not available');
+                doctorLeaves = [];
+                window.departmentDuties = [];
+                renderCalendar();
+                displayLeaveRecords();
             }
-            
-            renderCalendar();
-            displayLeaveRecords();
-            
         } catch (error) {
-            console.error('❌ Load leaves error:', error);
+            console.error('Load leaves error:', error);
             doctorLeaves = [];
             window.departmentDuties = [];
             renderCalendar();
             displayLeaveRecords();
         }
-        
-        console.log('🔍 === loadDoctorLeaves END ===');
         
         // โหลดแพทย์ที่มาแทนด้วย (ถ้ามีคนมาแทน)
         try {
@@ -1329,6 +1326,7 @@
                 loadReplacementDoctors();
             }
         } catch (error) {
+            // ไม่มี radio button (ยังไม่ได้ยืนยันวันที่) → ไม่ต้องทำอะไร
             console.log('No hasReplacement radio found (normal after delete)');
         }
     }
@@ -1372,16 +1370,12 @@
                     fullText += ` >> ${replacementFullName}`;
                 }
                 
-                // เช็คว่าเป็นการลาของตัวเองหรือไม่
-                const currentDoctorId = parseInt(sessionStorage.getItem('doctor_id'));
-                const isOwnLeave = leave.doctor_id === currentDoctorId;
-                
                 recordDiv.innerHTML = `
                     <div class="leave-record-info" onclick="highlightLeaveDates('${leave.start_date}', '${leave.end_date}'); event.stopPropagation();">
                         <span class="name-short">${shortText}</span>
                         <span class="name-full">${fullText}</span>
                     </div>
-                    ${isOwnLeave ? `<button class="btn-delete" onclick="deleteLeave(${leave.id}); event.stopPropagation();">ลบ</button>` : ''}
+                    <button class="btn-delete" onclick="deleteLeave(${leave.id}); event.stopPropagation();">ลบ</button>
                 `;
                 
             } else if (leave.delegation_type === 'custom' && leave.duty_assignments) {
@@ -1411,14 +1405,10 @@
                     `;
                 });
                 
-                // เช็คว่าเป็นการลาของตัวเองหรือไม่
-                const currentDoctorId = parseInt(sessionStorage.getItem('doctor_id'));
-                const isOwnLeave = leave.doctor_id === currentDoctorId;
-                
                 html += `
                         </div>
                     </div>
-                    ${isOwnLeave ? `<button class="btn-delete" onclick="deleteLeave(${leave.id}); event.stopPropagation();">ลบ</button>` : ''}
+                    <button class="btn-delete" onclick="deleteLeave(${leave.id}); event.stopPropagation();">ลบ</button>
                 `;
                 
                 recordDiv.innerHTML = html;
@@ -1456,16 +1446,12 @@
                     fullText += ` | ไม่ฝากงาน (รออนุมัติ)`;
                 }
                 
-                // เช็คว่าเป็นการลาของตัวเองหรือไม่
-                const currentDoctorId = parseInt(sessionStorage.getItem('doctor_id'));
-                const isOwnLeave = leave.doctor_id === currentDoctorId;
-                
                 recordDiv.innerHTML = `
                     <div class="leave-record-info" onclick="highlightLeaveDates('${leave.start_date}', '${leave.end_date}'); event.stopPropagation();">
                         <span class="name-short">${shortText}</span>
                         <span class="name-full">${fullText}</span>
                     </div>
-                    ${isOwnLeave ? `<button class="btn-delete" onclick="deleteLeave(${leave.id}); event.stopPropagation();">ลบ</button>` : ''}
+                    <button class="btn-delete" onclick="deleteLeave(${leave.id}); event.stopPropagation();">ลบ</button>
                 `;
             }
             
@@ -1564,139 +1550,13 @@
             html += '<div class="calendar-day empty"></div>';
         }
         
-        // ฟังก์ชันคำนวณสี (เหมือนปฏิทินแผนก - แสดงทุกคนในแผนกหลัก)
+        // ฟังก์ชันคำนวณสีตามลำดับความสำคัญ (เฉพาะแผนกหลัก)
         const calculateColorClass = (dateStr, isSelected) => {
-            // ถ้ามี primaryDeptLeaves → ใช้การลาทั้งแผนก
-            if (window.primaryDeptLeaves && window.primaryDeptLeaves.length >= 0) {
-                return calculateColorClassFromDeptLeaves(dateStr, isSelected);
-            }
-            
-            // Fallback: ใช้การลาของตัวเอง
-            return calculateColorClassFromOwnLeaves(dateStr, isSelected);
-        };
-        
-        // คำนวณสีจากการลาทั้งแผนก (เหมือนปฏิทินแผนก)
-        const calculateColorClassFromDeptLeaves = (dateStr, isSelected) => {
-            const allDeptLeaves = window.primaryDeptLeaves;
-            
-            const leaveTypes = {
-                green: 0,
-                yellow: 0,
-                approved: 0,
-                rejected: 0,
-            };
-            
-            allDeptLeaves.forEach(leave => {
-                if (dateStr >= leave.start_date && dateStr <= leave.end_date) {
-                    if (leave.approval_status === 'approved') {
-                        leaveTypes.approved++;
-                    } else if (leave.approval_status === 'rejected') {
-                        leaveTypes.rejected++;
-                    } else if (leave.delegation_type === 'none') {
-                        leaveTypes.yellow++;
-                    } else if (leave.delegation_type === 'single' || leave.delegation_type === 'custom') {
-                        leaveTypes.green++;
-                    }
-                }
-            });
-            
-            // ถ้ากำลังเลือก
-            if (isSelected) {
-                leaveTypes.green++;
-            }
-            
-            // อนุมัติ → สีดำ
-            if (leaveTypes.approved > 0) {
-                return 'approved';
-            }
-            
-            const totalLeaves = leaveTypes.green + leaveTypes.yellow + leaveTypes.rejected;
-            
-            if (totalLeaves === 0) {
-                return null;
-            }
-            
-            // ถ้าเลือกอย่างเดียว → สีฟ้า
-            if (isSelected && totalLeaves === 1 && leaveTypes.green === 1) {
-                return 'selected';
-            }
-            
-            // สีแดง: เขียว >= 2
-            if (leaveTypes.green >= 2) {
-                return isSelected ? 'overlap selected' : 'overlap';
-            }
-            // สีส้ม: เขียว + เหลือง
-            else if ((leaveTypes.green >= 1 && leaveTypes.yellow >= 1) || (leaveTypes.yellow >= 2)) {
-                return isSelected ? 'overlap-no-delegation selected' : 'overlap-no-delegation';
-            }
-            // สีเขียว/เขียวอ่อน: มีแค่ 1 คน
-            else if (leaveTypes.green === 1 && leaveTypes.yellow === 0) {
-                console.log(`🔍 Single green leave on ${dateStr}, checking for light green...`);
-                
-                // หา leave ของตัวเอง (doctor_id ตรงกับที่เลือก)
-                const doctorId = parseInt(document.getElementById('doctorSelect')?.value);
-                const myLeave = allDeptLeaves.find(leave => 
-                    leave.doctor_id === doctorId &&
-                    dateStr >= leave.start_date && 
-                    dateStr <= leave.end_date
-                );
-                
-                if (myLeave && !isSelected) {
-                    // เช็ค Duty
-                    let hasDutyOnThisDay = false;
-                    
-                    if (myLeave.delegation_type === 'custom') {
-                        if (myLeave.duty_assignments && myLeave.duty_assignments.length > 0) {
-                            hasDutyOnThisDay = myLeave.duty_assignments.some(
-                                assignment => assignment.duty_date === dateStr
-                            );
-                        }
-                    } else if (myLeave.delegation_type === 'single' || myLeave.delegation_type === 'none') {
-                        const checkDate = new Date(dateStr);
-                        const dayOfWeek = checkDate.getDay();
-                        const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-                        const dayName = dayNames[dayOfWeek];
-                        
-                        console.log(`  → Checking ${dayName} for doctor ${doctorId}`);
-                        
-                        if (window.departmentDuties && window.departmentDuties.length > 0) {
-                            hasDutyOnThisDay = window.departmentDuties.some(dd => {
-                                const match = dd.doctor_id === doctorId && dd[dayName] === 1;
-                                if (dd.doctor_id === doctorId) {
-                                    console.log(`    → doctor_duties[${dayName}] = ${dd[dayName]}, match=${match}`);
-                                }
-                                return match;
-                            });
-                        } else {
-                            console.log(`  → No departmentDuties! Default to has duty`);
-                            hasDutyOnThisDay = true;
-                        }
-                    }
-                    
-                    if (!hasDutyOnThisDay) {
-                        console.log(`✨ ${dateStr}: ไม่มี Duty → สีเขียวอ่อน`);
-                        return 'on-leave-no-duty';
-                    } else {
-                        console.log(`📌 ${dateStr}: มี Duty → สีเขียวเข้ม`);
-                        return 'on-leave';
-                    }
-                }
-                
-                return isSelected ? 'on-leave selected' : 'on-leave';
-            }
-            // สีเหลือง
-            else if (leaveTypes.yellow === 1) {
-                return isSelected ? 'no-delegation selected' : 'no-delegation';
-            }
-            
-            return 'on-leave';
-        };
-        
-        // Fallback: คำนวณสีจากการลาของตัวเอง
-        const calculateColorClassFromOwnLeaves = (dateStr, isSelected) => {
+            // หาแผนกหลัก (Primary Department)
             const primaryDept = userDepartments.find(d => d.is_primary === 1);
             const primaryDeptId = primaryDept ? primaryDept.department_id : null;
             
+            // กรองเฉพาะการลาของแผนกหลัก
             const primaryLeaves = primaryDeptId 
                 ? doctorLeaves.filter(leave => leave.department_id === primaryDeptId)
                 : doctorLeaves;
@@ -1770,11 +1630,7 @@
             }
             // เขียว/เขียวอ่อน: มีแค่คนเดียว (รวม selected)
             else if (leaveTypes.green === 1 && leaveTypes.yellow === 0) {
-                console.log(`🔍 Checking light green for ${dateStr}:`, {
-                    isSelected,
-                    leavesInDay_length: leavesInDay.length,
-                    condition: !isSelected && leavesInDay.length === 1
-                });
+                console.log(`🔍 Checking light green for ${dateStr} in dep_rest`);
                 
                 // ถ้าไม่ได้ selected และมีการลาที่บันทึกแล้ว
                 if (!isSelected && leavesInDay.length === 1) {
@@ -1783,8 +1639,7 @@
                     
                     console.log(`  → Checking duty for leave:`, {
                         doctor_id: leave.doctor_id,
-                        delegation_type: leave.delegation_type,
-                        dateStr
+                        delegation_type: leave.delegation_type
                     });
                     
                     // เช็คตามประเภทการลา
@@ -1806,29 +1661,21 @@
                         const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
                         const dayName = dayNames[dayOfWeek];
                         
-                        console.log(`  → Checking doctor_duties:`, {
-                            doctorId,
-                            dayName,
-                            has_departmentDuties: !!window.departmentDuties,
-                            departmentDuties_length: window.departmentDuties?.length || 0
-                        });
+                        console.log(`  → Checking ${dayName} for doctor ${doctorId}`);
+                        console.log(`  → window.departmentDuties:`, window.departmentDuties?.length || 0);
                         
                         // เช็คว่าแพทย์คนนี้มี duty ในวันนี้หรือไม่
                         if (window.departmentDuties && window.departmentDuties.length > 0) {
                             hasDutyOnThisDay = window.departmentDuties.some(dd => {
                                 const match = dd.doctor_id === doctorId && dd[dayName] === 1;
                                 if (dd.doctor_id === doctorId) {
-                                    console.log(`    → Found duty record:`, {
-                                        doctor_id: dd.doctor_id,
-                                        [dayName]: dd[dayName],
-                                        match
-                                    });
+                                    console.log(`    → doctor_duties[${dayName}] = ${dd[dayName]}`);
                                 }
                                 return match;
                             });
                         } else {
                             // ถ้าไม่มี duties data → ถือว่ามี duty (safe default)
-                            console.log(`  → No departmentDuties! Using safe default (has duty)`);
+                            console.log(`  → No departmentDuties! Default to has duty`);
                             hasDutyOnThisDay = true;
                         }
                     } else {
@@ -1845,7 +1692,7 @@
                         baseClass = isSelected ? 'on-leave selected' : 'on-leave';
                     }
                 } else {
-                    console.log(`  → Skipped: isSelected=${isSelected}, leavesInDay=${leavesInDay.length}`);
+                    console.log(`  → Skip: isSelected=${isSelected}, leavesInDay=${leavesInDay.length}`);
                     baseClass = isSelected ? 'on-leave selected' : 'on-leave';  // เขียว
                 }
             }
@@ -2075,9 +1922,6 @@
         if (selectedDates.length === 0) {
             rangeDiv.style.display = 'none';
             confirmBtn.style.display = 'none';
-            
-            // *** Step 5: Re-render ปฏิทินแผนกเมื่อยกเลิกการเลือก ***
-            rerenderDepartmentCalendars();
             return;
         }
         
@@ -2090,18 +1934,6 @@
         
         // แสดงปุ่มยืนยัน
         confirmBtn.style.display = 'inline-block';
-        
-        // *** Step 5: Re-render ปฏิทินแผนกเมื่อเลือกวันที่ ***
-        rerenderDepartmentCalendars();
-    }
-    
-    // Re-render ปฏิทินแผนกทั้งหมด (เพื่ออัพเดทสีฟ้า)
-    async function rerenderDepartmentCalendars() {
-        if (userDepartments && userDepartments.length > 0) {
-            for (const dept of userDepartments) {
-                await renderDepartmentCalendar(dept.department_id);
-            }
-        }
     }
 
     // ยืนยันเลือกวันที่ลา → แสดง Duty
@@ -2109,7 +1941,13 @@
         const doctorId = document.getElementById('doctorSelect').value;
         
         if (!doctorId) {
-            alert('⚠️ กรุณาเลือกแพทย์ที่จะลาก่อน');
+            alert('⚠️ กรุณาเลือกแพทย์ที่จะลา เป็นอันดับแรก\n(เลือก แผนก >> แพทย์)');
+            const deptSelect = document.getElementById('departmentSelect');
+            if (!deptSelect.value) {
+                deptSelect.focus();
+            } else {
+                document.getElementById('doctorSelect').focus();
+            }
             return;
         }
         
@@ -2572,29 +2410,19 @@
                 const dutyAssignments = [];
                 const selects = document.querySelectorAll(`.custom-delegation-select[data-dept-id="${deptId}"]`);
                 
-                console.log(`=== Custom Delegation for Dept ${deptId} ===`);
-                console.log('Found selects:', selects.length);
-                
                 for (const select of selects) {
                     const replacementDoctorId = select.value;
-                    const dutyId = select.dataset.dutyId;
-                    const dutyDate = select.dataset.date;
-                    
-                    console.log(`  Select: dutyId=${dutyId}, date=${dutyDate}, replacementId=${replacementDoctorId}`);
-                    
                     if (!replacementDoctorId) {
                         showMessage(`กรุณาเลือกแพทย์ที่มาแทนให้ครบทุก Duty ในแผนก ${dept.department_name}`, 'error');
                         return;
                     }
                     
                     dutyAssignments.push({
-                        dutyId: parseInt(dutyId),
-                        dutyDate: dutyDate,
+                        dutyId: parseInt(select.dataset.dutyId),
+                        dutyDate: select.dataset.date,
                         replacementDoctorId: parseInt(replacementDoctorId)
                     });
                 }
-                
-                console.log('Final dutyAssignments:', dutyAssignments);
                 
                 deptRequestBody.dutyAssignments = dutyAssignments;
                 confirmMessage += `\n📍 ${dept.department_name}: กำหนดเอง (${dutyAssignments.length} งาน)`;
@@ -2679,24 +2507,10 @@
 
                 const data = await response.json();
 
-                console.log('Response:', response.status, data);
-                
-                // แสดง Record ที่ Backend สร้าง
-                if (data.success && data.data) {
-                    console.log('📝 Created leave record:', {
-                        id: data.data.id,
-                        doctor_id: data.data.doctor_id,
-                        department_id: data.data.department_id,
-                        start_date: data.data.start_date,
-                        end_date: data.data.end_date
-                    });
-                }
-
                 if (response.ok && data.success) {
                     successCount++;
                     console.log(`✅ บันทึกแผนก ${item.department.department_name} สำเร็จ`);
                 } else {
-                    console.error(`❌ Error from server:`, data);
                     throw new Error(`แผนก ${item.department.department_name}: ${data.message || 'ไม่สามารถบันทึกได้'}`);
                 }
             }
@@ -2933,13 +2747,21 @@
         }
 
         try {
-            const doctorId = sessionStorage.getItem('doctor_id');
+            // Admin: ดึง doctorId จาก Dropdown แทน sessionStorage
+            const doctorId = document.getElementById('doctorSelect').value;
+            if (!doctorId) {
+                console.warn('⚠️ No doctor selected');
+                return [];
+            }
+            
             const response = await fetch(`${API_URL}/api/doctor-duties/doctor/${doctorId}`);
             const data = await response.json();
             
             if (response.ok && data.success) {
                 // Filter เฉพาะ Duties ของแผนกนี้
-                const allDuties = data.data.filter(d => d.department_id == departmentId);
+                const allDuties = data.data.filter(d => d.department_id === departmentId);
+                
+                console.log(`📍 Duties for dept ${departmentId}:`, allDuties);
                 
                 // จับคู่กับวันที่เลือก
                 const result = [];
@@ -2952,6 +2774,8 @@
                         duties: dutiesOnThisDay
                     });
                 });
+                
+                console.log(`📋 Result for dept ${departmentId}:`, result);
                 
                 return result;
             }
@@ -3157,7 +2981,7 @@
             const data = await response.json();
             
             if (response.ok && data.success) {
-                const currentDoctorId = parseInt(sessionStorage.getItem('doctor_id'));
+                const currentDoctorId = parseInt(document.getElementById('doctorSelect').value);
                 let doctors = data.data.filter(d => 
                     d.id !== currentDoctorId && 
                     d.department_id == selectedDeptId &&
@@ -3229,13 +3053,12 @@
         const workType = filterWorkTypeSelect.value;
         
         try {
-            // โหลดแพทย์ทั้งหมด
-            const doctorsResponse = await fetch(`${API_URL}/api/doctors`);
-            const doctorsData = await doctorsResponse.json();
+            const response = await fetch(`${API_URL}/api/doctors`);
+            const data = await response.json();
             
-            if (doctorsResponse.ok && doctorsData.success) {
-                const currentDoctorId = parseInt(sessionStorage.getItem('doctor_id'));
-                let doctors = doctorsData.data.filter(d => 
+            if (response.ok && data.success) {
+                const currentDoctorId = parseInt(document.getElementById('doctorSelect').value);
+                let doctors = data.data.filter(d => 
                     d.id !== currentDoctorId && 
                     d.department_id == selectedDeptId &&
                     d.work_type === workType
@@ -3271,34 +3094,21 @@
 
     // กรองแพทย์ที่มี Duty ซ้ำกับวันที่ลา (ต้องเป็น Duty ID เดียวกัน)
     async function filterDoctorsWithoutConflicts(doctors, dates, departmentId) {
-        console.log('🔍 filterDoctorsWithoutConflicts called');
-        console.log('  doctors:', doctors.length);
-        console.log('  dates:', dates);
-        console.log('  departmentId:', departmentId);
-        
         if (!doctors || doctors.length === 0 || !dates || dates.length === 0) {
-            console.log('⚠️ Empty input, returning doctors as-is');
             return doctors;
         }
         
         try {
             // 1. หา Duties ของแพทย์ที่กำลังลา (ในแผนกนี้)
-            const currentDoctorId = parseInt(sessionStorage.getItem('doctor_id'));
-            console.log('  currentDoctorId:', currentDoctorId);
+            const currentDoctorId = parseInt(document.getElementById('doctorSelect').value);
+            if (!currentDoctorId) {
+                return doctors; // ถ้ายังไม่เลือกแพทย์ → คืนทั้งหมด
+            }
             
             const currentDoctorDutiesRes = await fetch(`${API_URL}/api/doctor-duties/doctor/${currentDoctorId}`);
             const currentDoctorDutiesData = await currentDoctorDutiesRes.json();
-            
-            console.log('  currentDoctorDutiesData.data (ก่อน filter):', currentDoctorDutiesData.data);
-            console.log('  กำลัง filter ด้วย department_id:', departmentId, typeof departmentId);
-            
             const currentDoctorDuties = currentDoctorDutiesData.success ? 
-                currentDoctorDutiesData.data.filter(d => {
-                    console.log(`    duty: dept=${d.department_id} (${typeof d.department_id}) vs target=${departmentId} (${typeof departmentId}) => ${d.department_id == departmentId}`);
-                    return d.department_id == departmentId;
-                }) : [];
-            
-            console.log('  currentDoctorDuties (หลัง filter):', currentDoctorDuties);
+                currentDoctorDutiesData.data.filter(d => d.department_id == departmentId) : [];
             
             // 2. สร้างแผนที่: วันที่ → Duty IDs ที่แพทย์กำลังลา
             const dateToLeaveDutyIds = {};
@@ -3306,10 +3116,7 @@
                 const dayName = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][new Date(date).getDay()];
                 const dutiesOnThisDay = currentDoctorDuties.filter(duty => duty[dayName] === 1);
                 dateToLeaveDutyIds[date] = dutiesOnThisDay.map(d => d.duty_id);
-                console.log(`  ${date} (${dayName}):`, dateToLeaveDutyIds[date]);
             });
-            
-            console.log('📋 Duties ที่กำลังลา:', dateToLeaveDutyIds);
             
             // 3. โหลด Duties ของแพทย์ทดแทนทั้งหมด
             const doctorIds = doctors.map(d => d.id);
@@ -3323,45 +3130,34 @@
             );
             
             const allDutiesData = await Promise.all(dutiesPromises);
-            console.log('  allDutiesData:', allDutiesData);
             
             // 4. เช็คแต่ละแพทย์ว่ามี Duty ID ชนกันหรือไม่
             const availableDoctors = doctors.filter(doctor => {
                 const doctorDuties = allDutiesData.find(d => d.doctorId === doctor.id)?.duties || [];
-                console.log(`  Checking ${doctor.name} (ID: ${doctor.id}):`, doctorDuties.length, 'duties');
                 
                 // เช็คทุกวันที่ลา
                 for (const date of dates) {
                     const leaveDutyIds = dateToLeaveDutyIds[date] || [];
-                    if (leaveDutyIds.length === 0) {
-                        console.log(`    ${date}: ไม่มี Duty → ข้าม`);
-                        continue;
-                    }
+                    if (leaveDutyIds.length === 0) continue;
                     
                     const dayName = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][new Date(date).getDay()];
                     const replacementDutiesOnThisDay = doctorDuties.filter(duty => duty[dayName] === 1);
                     const replacementDutyIds = replacementDutiesOnThisDay.map(d => d.duty_id);
                     
-                    console.log(`    ${date}: leave=[${leaveDutyIds}] vs replacement=[${replacementDutyIds}]`);
-                    
                     // เช็คว่า Duty ID ชนกันหรือไม่
                     const hasConflict = leaveDutyIds.some(id => replacementDutyIds.includes(id));
                     if (hasConflict) {
-                        const conflictDuty = currentDoctorDuties.find(d => leaveDutyIds.includes(d.duty_id));
-                        console.log(`    ❌ ${doctor.name} มี Duty "${conflictDuty?.duty_name}" ชน → กรองออก`);
                         return false;
                     }
                 }
                 
-                console.log(`    ✅ ${doctor.name} ไม่มีปัญหา → เก็บไว้`);
                 return true;
             });
             
-            console.log(`✅ แพทย์ที่ Available: ${availableDoctors.length}/${doctors.length}`);
             return availableDoctors;
             
         } catch (error) {
-            console.error('❌ Filter doctors error:', error);
+            console.error('Filter doctors error:', error);
             return doctors; // ถ้า error → คืนทั้งหมด
         }
     }
@@ -3409,8 +3205,8 @@
             html += '<div class="calendar-day empty"></div>';
         }
         
-        // ฟังก์ชันคำนวณสี (แสดงการลาทุกคน + วันที่เลือกจากปฏิทินหลัก)
-        const calculateColorClass = (dateStr, isSelected) => {
+        // ฟังก์ชันคำนวณสี (แสดงการลาทุกคน)
+        const calculateColorClass = (dateStr) => {
             const leaveTypes = {
                 green: 0,
                 yellow: 0,
@@ -3432,11 +3228,6 @@
                 }
             });
             
-            // *** Step 5: ถ้าวันนี้ถูกเลือกในปฏิทินหลัก → นับเป็น +1 ***
-            if (isSelected) {
-                leaveTypes.green++;
-            }
-            
             // อนุมัติแล้ว → สีดำ
             if (leaveTypes.approved > 0) {
                 return 'approved';
@@ -3448,26 +3239,21 @@
                 return null;
             }
             
-            // ถ้าเลือกอย่างเดียว (ไม่มีคนลา) → สีฟ้า
-            if (isSelected && totalLeaves === 1 && leaveTypes.green === 1) {
-                return 'selected';
-            }
-            
-            // สีแดง: เขียว >= 2 (รวมที่เลือก)
+            // สีแดง: เขียว >= 2
             if (leaveTypes.green >= 2) {
-                return isSelected ? 'overlap selected' : 'overlap';
+                return 'overlap';
             }
             // สีส้ม: เขียว + เหลือง
             else if ((leaveTypes.green >= 1 && leaveTypes.yellow >= 1) || (leaveTypes.yellow >= 2)) {
-                return isSelected ? 'overlap-no-delegation selected' : 'overlap-no-delegation';
+                return 'overlap-no-delegation';
             }
             // สีเขียว
             else if (leaveTypes.green === 1 && leaveTypes.yellow === 0) {
-                return isSelected ? 'on-leave selected' : 'on-leave';
+                return 'on-leave';
             }
             // สีเหลือง
             else if (leaveTypes.yellow === 1 && leaveTypes.green === 0) {
-                return isSelected ? 'no-delegation selected' : 'no-delegation';
+                return 'no-delegation';
             } else {
                 return 'on-leave';
             }
@@ -3479,9 +3265,6 @@
             const date = new Date(currentYear, currentMonth, day);
             const dateStr = formatDate(date);
             const dayOfWeek = date.getDay();
-            
-            // *** Step 5: เช็คว่าวันนี้ถูกเลือกในปฏิทินหลักหรือไม่ ***
-            const isSelected = selectedDates && selectedDates.includes(dateStr);
             
             let classes = ['calendar-day'];
             
@@ -3497,11 +3280,10 @@
                 classes.push('past-date');
             }
             
-            const colorClass = calculateColorClass(dateStr, isSelected);
+            const colorClass = calculateColorClass(dateStr);
             
             if (colorClass) {
-                const colorClasses = colorClass.split(' ');
-                classes.push(...colorClasses);
+                classes.push(colorClass);
             }
             
             html += `<div class="${classes.join(' ')}">${day}</div>`;
