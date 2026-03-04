@@ -835,7 +835,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 14 (Step 4: Light Green with Debug)</span>
+        <span id="versionInfo">Version 15 (Sync with user.html V30)</span>
     </div>
 </div>
 
@@ -1922,6 +1922,9 @@
         if (selectedDates.length === 0) {
             rangeDiv.style.display = 'none';
             confirmBtn.style.display = 'none';
+            
+            // *** Step 5: Re-render ปฏิทินแผนก ***
+            rerenderDepartmentCalendars();
             return;
         }
         
@@ -1934,6 +1937,18 @@
         
         // แสดงปุ่มยืนยัน
         confirmBtn.style.display = 'inline-block';
+        
+        // *** Step 5: Re-render ปฏิทินแผนก ***
+        rerenderDepartmentCalendars();
+    }
+    
+    // Re-render ปฏิทินแผนกทั้งหมด
+    async function rerenderDepartmentCalendars() {
+        if (userDepartments && userDepartments.length > 0) {
+            for (const dept of userDepartments) {
+                await renderDepartmentCalendar(dept.department_id);
+            }
+        }
     }
 
     // ยืนยันเลือกวันที่ลา → แสดง Duty
@@ -3205,8 +3220,8 @@
             html += '<div class="calendar-day empty"></div>';
         }
         
-        // ฟังก์ชันคำนวณสี (แสดงการลาทุกคน)
-        const calculateColorClass = (dateStr) => {
+        // ฟังก์ชันคำนวณสี (แสดงการลาทุกคน + cursor สีฟ้า)
+        const calculateColorClass = (dateStr, isSelected) => {
             const leaveTypes = {
                 green: 0,
                 yellow: 0,
@@ -3228,6 +3243,11 @@
                 }
             });
             
+            // *** Step 5: ถ้าวันนี้ถูกเลือกในปฏิทินหลัก → นับเป็น +1 ***
+            if (isSelected) {
+                leaveTypes.green++;
+            }
+            
             // อนุมัติแล้ว → สีดำ
             if (leaveTypes.approved > 0) {
                 return 'approved';
@@ -3239,21 +3259,26 @@
                 return null;
             }
             
+            // ถ้าเลือกอย่างเดียว (ไม่มีคนลา) → สีฟ้า
+            if (isSelected && totalLeaves === 1 && leaveTypes.green === 1) {
+                return 'selected';
+            }
+            
             // สีแดง: เขียว >= 2
             if (leaveTypes.green >= 2) {
-                return 'overlap';
+                return isSelected ? 'overlap selected' : 'overlap';
             }
             // สีส้ม: เขียว + เหลือง
             else if ((leaveTypes.green >= 1 && leaveTypes.yellow >= 1) || (leaveTypes.yellow >= 2)) {
-                return 'overlap-no-delegation';
+                return isSelected ? 'overlap-no-delegation selected' : 'overlap-no-delegation';
             }
             // สีเขียว
             else if (leaveTypes.green === 1 && leaveTypes.yellow === 0) {
-                return 'on-leave';
+                return isSelected ? 'on-leave selected' : 'on-leave';
             }
             // สีเหลือง
             else if (leaveTypes.yellow === 1 && leaveTypes.green === 0) {
-                return 'no-delegation';
+                return isSelected ? 'no-delegation selected' : 'no-delegation';
             } else {
                 return 'on-leave';
             }
@@ -3265,6 +3290,9 @@
             const date = new Date(currentYear, currentMonth, day);
             const dateStr = formatDate(date);
             const dayOfWeek = date.getDay();
+            
+            // *** Step 5: เช็คว่าวันนี้ถูกเลือกในปฏิทินหลักหรือไม่ ***
+            const isSelected = selectedDates && selectedDates.includes(dateStr);
             
             let classes = ['calendar-day'];
             
@@ -3280,10 +3308,11 @@
                 classes.push('past-date');
             }
             
-            const colorClass = calculateColorClass(dateStr);
+            const colorClass = calculateColorClass(dateStr, isSelected);
             
             if (colorClass) {
-                classes.push(colorClass);
+                const colorClasses = colorClass.split(' ');
+                classes.push(...colorClasses);
             }
             
             html += `<div class="${classes.join(' ')}">${day}</div>`;
