@@ -829,7 +829,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 30 (Add Leave Records Display)</span>
+        <span id="versionInfo">Version 31 (Debug: Leave Records for 2-dept doctors)</span>
     </div>
 </div>
 
@@ -1321,9 +1321,6 @@
         }
         
         console.log('🔍 === loadDoctorLeaves END ===');
-        
-        // แสดงรายการลาที่บันทึกแล้ว
-        displayLeaveRecords();
         
         // โหลดแพทย์ที่มาแทนด้วย (ถ้ามีคนมาแทน)
         try {
@@ -2885,6 +2882,9 @@
         for (const dept of selectedDepts) {
             await loadReplacementDoctorsForDept(dept.department_id);
         }
+        
+        // *** แสดงรายการลาหลังโหลดแผนกเสร็จ ***
+        displayLeaveRecords();
     }
 
     // โหลด Duties ของแผนก
@@ -3338,11 +3338,17 @@
     // แสดงรายการลาที่บันทึกแล้ว
     function displayLeaveRecords() {
         const container = document.getElementById('leaveRecords');
-        if (!container) return;
+        if (!container) {
+            console.error('❌ leaveRecords container not found!');
+            return;
+        }
+        
+        console.log('📋 displayLeaveRecords called, doctorLeaves:', doctorLeaves.length);
         
         container.innerHTML = '';
 
         if (doctorLeaves.length === 0) {
+            console.log('  → No leaves to display');
             return;
         }
 
