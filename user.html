@@ -829,7 +829,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 35 (Fix: Load departmentDuties for primary dept)</span>
+        <span id="versionInfo">Version 36 (Fix: Load duties for all departments)</span>
     </div>
 </div>
 
@@ -1311,17 +1311,23 @@
             
             doctorLeaves = allLeaves;
             
-            // โหลด doctor_duties ของแผนกหลัก
-            console.log('📡 Loading duties for primary department:', primaryDeptId);
-            const dutiesResponse = await fetch(`${LEAVE_API_URL}/api/duties/department/${primaryDeptId}`);
-            const dutiesData = await dutiesResponse.json();
+            // โหลด doctor_duties ของทุกแผนก
+            console.log('📡 Loading duties for all departments...');
+            window.allDepartmentDuties = {};  // เก็บแยกตามแผนก
             
-            if (dutiesResponse.ok && dutiesData.success) {
-                window.departmentDuties = dutiesData.data;
-                console.log('  ✅ Loaded departmentDuties:', window.departmentDuties.length);
-            } else {
-                window.departmentDuties = [];
-                console.log('  ⚠️ No duties loaded');
+            for (const dept of userDepartments) {
+                const dutiesResponse = await fetch(`${LEAVE_API_URL}/api/duties/department/${dept.department_id}`);
+                const dutiesData = await dutiesResponse.json();
+                
+                if (dutiesResponse.ok && dutiesData.success) {
+                    window.allDepartmentDuties[dept.department_id] = dutiesData.data;
+                    console.log(`  ✅ Dept ${dept.department_id} (${dept.department_name}): ${dutiesData.data.length} duties`);
+                    
+                    // เก็บแผนกหลักไว้ใน window.departmentDuties (สำหรับ backward compatibility)
+                    if (dept.is_primary === 1) {
+                        window.departmentDuties = dutiesData.data;
+                    }
+                }
             }
             
             renderCalendar();
@@ -1670,12 +1676,16 @@
                         const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
                         const dayName = dayNames[dayOfWeek];
                         
-                        if (window.departmentDuties && window.departmentDuties.length > 0) {
-                            hasDutyOnThisDay = window.departmentDuties.some(dd => 
+                        // เช็ค Duty ของแผนกที่ leave นี้อยู่
+                        const leaveDeptId = myLeave.department_id;
+                        const deptDuties = window.allDepartmentDuties?.[leaveDeptId];
+                        
+                        if (deptDuties && deptDuties.length > 0) {
+                            hasDutyOnThisDay = deptDuties.some(dd => 
                                 dd.doctor_id === doctorId && dd[dayName] === 1
                             );
                         } else {
-                            hasDutyOnThisDay = true;
+                            hasDutyOnThisDay = true;  // safe default
                         }
                     }
                     
