@@ -829,7 +829,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 36 (Fix: Load duties for all departments)</span>
+        <span id="versionInfo">Version 37 (Fix: Light green based on who's on leave, not who's logged in)</span>
     </div>
 </div>
 
@@ -1652,37 +1652,38 @@
             }
             // สีเขียว/เขียวอ่อน: มีแค่ 1 คน
             else if (leaveTypes.green === 1 && leaveTypes.yellow === 0) {
-                // หา leave ของตัวเอง
-                const doctorId = parseInt(sessionStorage.getItem('doctor_id'));
-                const myLeave = allDeptLeaves.find(leave => 
-                    leave.doctor_id === doctorId &&
+                // หาคนที่ลาในวันนี้
+                const leavesOnThisDay = allDeptLeaves.filter(leave => 
                     dateStr >= leave.start_date && 
-                    dateStr <= leave.end_date
+                    dateStr <= leave.end_date &&
+                    (leave.delegation_type === 'single' || leave.delegation_type === 'custom')
                 );
                 
-                if (myLeave && !isSelected) {
-                    // เช็ค Duty
+                if (leavesOnThisDay.length === 1 && !isSelected) {
+                    const leave = leavesOnThisDay[0];
+                    const leaveDoctorId = leave.doctor_id;  // ID ของคนที่ลา
                     let hasDutyOnThisDay = false;
                     
-                    if (myLeave.delegation_type === 'custom') {
-                        if (myLeave.duty_assignments && myLeave.duty_assignments.length > 0) {
-                            hasDutyOnThisDay = myLeave.duty_assignments.some(
+                    if (leave.delegation_type === 'custom') {
+                        if (leave.duty_assignments && leave.duty_assignments.length > 0) {
+                            hasDutyOnThisDay = leave.duty_assignments.some(
                                 assignment => assignment.duty_date === dateStr
                             );
                         }
-                    } else if (myLeave.delegation_type === 'single' || myLeave.delegation_type === 'none') {
+                    } else if (leave.delegation_type === 'single') {
                         const checkDate = new Date(dateStr);
                         const dayOfWeek = checkDate.getDay();
                         const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
                         const dayName = dayNames[dayOfWeek];
                         
                         // เช็ค Duty ของแผนกที่ leave นี้อยู่
-                        const leaveDeptId = myLeave.department_id;
+                        const leaveDeptId = leave.department_id;
                         const deptDuties = window.allDepartmentDuties?.[leaveDeptId];
                         
                         if (deptDuties && deptDuties.length > 0) {
+                            // เช็ค Duty ของคนที่ลา (ไม่ใช่คนที่ login)
                             hasDutyOnThisDay = deptDuties.some(dd => 
-                                dd.doctor_id === doctorId && dd[dayName] === 1
+                                dd.doctor_id === leaveDoctorId && dd[dayName] === 1
                             );
                         } else {
                             hasDutyOnThisDay = true;  // safe default
