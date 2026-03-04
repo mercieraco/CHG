@@ -835,7 +835,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 17 (Debug: Light green for Mar 3-5)</span>
+        <span id="versionInfo">Version 17 (Debug: Mar 13=เข้ม, 14=อ่อน)</span>
     </div>
 </div>
 
@@ -3325,7 +3325,7 @@
                             const deptDuties = window.allDepartmentDuties?.[departmentId];
                             
                             // DEBUG
-                            if (dateStr === '2026-03-03' || dateStr === '2026-03-04' || dateStr === '2026-03-05') {
+                            if (dateStr === '2026-03-13' || dateStr === '2026-03-14') {
                                 console.log(`🔍 [Dept ${departmentId}] ${dateStr} (${dayName}):`);
                                 console.log(`  Doctor ID: ${leaveDoctorId}`);
                                 console.log(`  deptDuties available:`, deptDuties?.length || 0);
@@ -3334,7 +3334,7 @@
                             if (deptDuties && deptDuties.length > 0) {
                                 hasDutyOnThisDay = deptDuties.some(dd => {
                                     const match = dd.doctor_id === leaveDoctorId && dd[dayName] === 1;
-                                    if (dateStr === '2026-03-03' || dateStr === '2026-03-04' || dateStr === '2026-03-05') {
+                                    if (dateStr === '2026-03-13' || dateStr === '2026-03-14') {
                                         if (dd.doctor_id === leaveDoctorId) {
                                             console.log(`    Duty record: doctor_id=${dd.doctor_id}, ${dayName}=${dd[dayName]}, match=${match}`);
                                         }
@@ -3346,7 +3346,7 @@
                             }
                             
                             // DEBUG
-                            if (dateStr === '2026-03-03' || dateStr === '2026-03-04' || dateStr === '2026-03-05') {
+                            if (dateStr === '2026-03-13' || dateStr === '2026-03-14') {
                                 console.log(`  → hasDutyOnThisDay: ${hasDutyOnThisDay}`);
                                 console.log(`  → Color: ${hasDutyOnThisDay ? 'เขียวเข้ม' : 'เขียวอ่อน'}`);
                             }
