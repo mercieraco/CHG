@@ -829,7 +829,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 29 (Fix: Light Green with deptDuties)</span>
+        <span id="versionInfo">Version 27 (Step 4+5: Light Green + Blue Cursor)</span>
     </div>
 </div>
 
@@ -2034,7 +2034,7 @@
             rangeDiv.style.display = 'none';
             confirmBtn.style.display = 'none';
             
-            // Re-render ปฏิทินแผนก
+            // *** Step 5: Re-render ปฏิทินแผนกเมื่อยกเลิก ***
             rerenderDepartmentCalendars();
             return;
         }
@@ -2049,11 +2049,11 @@
         // แสดงปุ่มยืนยัน
         confirmBtn.style.display = 'inline-block';
         
-        // Re-render ปฏิทินแผนก
+        // *** Step 5: Re-render ปฏิทินแผนก ***
         rerenderDepartmentCalendars();
     }
     
-    // Re-render ปฏิทินแผนก
+    // Re-render ปฏิทินแผนกทั้งหมด
     async function rerenderDepartmentCalendars() {
         if (userDepartments && userDepartments.length > 0) {
             for (const dept of userDepartments) {
@@ -3390,7 +3390,7 @@
                 }
             });
             
-            // *** Step 5: ถ้าวันนี้ถูกเลือก → นับเป็น +1 ***
+            // *** Step 5: ถ้าวันนี้ถูกเลือกในปฏิทินหลัก → นับเป็น +1 ***
             if (isSelected) {
                 leaveTypes.green++;
             }
@@ -3406,7 +3406,7 @@
                 return null;
             }
             
-            // ถ้าเลือกอย่างเดียว → สีฟ้า
+            // ถ้าเลือกอย่างเดียว (ไม่มีคนลา) → สีฟ้า
             if (isSelected && totalLeaves === 1 && leaveTypes.green === 1) {
                 return 'selected';
             }
@@ -3419,49 +3419,8 @@
             else if ((leaveTypes.green >= 1 && leaveTypes.yellow >= 1) || (leaveTypes.yellow >= 2)) {
                 return isSelected ? 'overlap-no-delegation selected' : 'overlap-no-delegation';
             }
-            // สีเขียว/เขียวอ่อน: มีแค่ 1 คน
+            // สีเขียว
             else if (leaveTypes.green === 1 && leaveTypes.yellow === 0) {
-                // ถ้าไม่ได้เลือก → เช็ค Duty ของคนที่ลา
-                if (!isSelected && allDeptLeaves.length > 0) {
-                    // หาคนที่ลาในวันนี้
-                    const leavesOnThisDay = allDeptLeaves.filter(leave => 
-                        dateStr >= leave.start_date && dateStr <= leave.end_date &&
-                        (leave.delegation_type === 'single' || leave.delegation_type === 'custom')
-                    );
-                    
-                    if (leavesOnThisDay.length === 1) {
-                        const leave = leavesOnThisDay[0];
-                        let hasDutyOnThisDay = false;
-                        
-                        // เช็ค Duty
-                        if (leave.delegation_type === 'custom') {
-                            if (leave.duty_assignments && leave.duty_assignments.length > 0) {
-                                hasDutyOnThisDay = leave.duty_assignments.some(
-                                    assignment => assignment.duty_date === dateStr
-                                );
-                            }
-                        } else if (leave.delegation_type === 'single') {
-                            const checkDate = new Date(dateStr);
-                            const dayOfWeek = checkDate.getDay();
-                            const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-                            const dayName = dayNames[dayOfWeek];
-                            
-                            // *** ใช้ deptDuties ของแผนกนี้ ***
-                            if (deptDuties && deptDuties.length > 0) {
-                                hasDutyOnThisDay = deptDuties.some(dd => 
-                                    dd.doctor_id === leave.doctor_id && dd[dayName] === 1
-                                );
-                            } else {
-                                hasDutyOnThisDay = true;
-                            }
-                        }
-                        
-                        if (!hasDutyOnThisDay) {
-                            return 'on-leave-no-duty'; // สีเขียวอ่อน
-                        }
-                    }
-                }
-                
                 return isSelected ? 'on-leave selected' : 'on-leave';
             }
             // สีเหลือง
@@ -3479,7 +3438,7 @@
             const dateStr = formatDate(date);
             const dayOfWeek = date.getDay();
             
-            // *** เช็คว่าวันนี้ถูกเลือกหรือไม่ ***
+            // *** Step 5: เช็คว่าวันนี้ถูกเลือกในปฏิทินหลักหรือไม่ ***
             const isSelected = selectedDates && selectedDates.includes(dateStr);
             
             let classes = ['calendar-day'];
