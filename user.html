@@ -829,7 +829,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 27 (Step 4+5: Light Green + Blue Cursor)</span>
+        <span id="versionInfo">Version 30 (Add Leave Records Display)</span>
     </div>
 </div>
 
@@ -1321,6 +1321,9 @@
         }
         
         console.log('🔍 === loadDoctorLeaves END ===');
+        
+        // แสดงรายการลาที่บันทึกแล้ว
+        displayLeaveRecords();
         
         // โหลดแพทย์ที่มาแทนด้วย (ถ้ามีคนมาแทน)
         try {
@@ -3330,6 +3333,145 @@
         const month = date.getMonth() + 1;
         const year = date.getFullYear() + 543;
         return `${day}/${month}/${year}`;
+    }
+
+    // แสดงรายการลาที่บันทึกแล้ว
+    function displayLeaveRecords() {
+        const container = document.getElementById('leaveRecords');
+        if (!container) return;
+        
+        container.innerHTML = '';
+
+        if (doctorLeaves.length === 0) {
+            return;
+        }
+
+        doctorLeaves.forEach(leave => {
+            const startDate = formatDateThai(leave.start_date);
+            const endDate = formatDateThai(leave.end_date);
+            
+            const doctorFullName = leave.doctor_name || '';
+            const doctorFirstName = getFirstName(doctorFullName);
+            const doctorLastInitial = getLastNameInitial(doctorFullName);
+            
+            const days = Math.ceil((new Date(leave.end_date) - new Date(leave.start_date)) / (1000 * 60 * 60 * 24)) + 1;
+
+            const recordDiv = document.createElement('div');
+            recordDiv.className = 'leave-record';
+            
+            if (leave.delegation_type === 'single') {
+                recordDiv.classList.add('single-delegation');
+                
+                let shortText = `${startDate} - ${endDate} (${days} วัน) | ${doctorFirstName} (${doctorLastInitial})`;
+                let fullText = `${startDate} - ${endDate} (${days} วัน) | ${doctorFullName}`;
+                
+                if (leave.has_replacement && leave.replacement_doctor_name) {
+                    const replacementFullName = leave.replacement_doctor_name;
+                    const replacementFirstName = getFirstName(replacementFullName);
+                    const replacementLastInitial = getLastNameInitial(replacementFullName);
+                    shortText += ` >> ${replacementFirstName} (${replacementLastInitial})`;
+                    fullText += ` >> ${replacementFullName}`;
+                }
+                
+                recordDiv.innerHTML = `
+                    <div class="leave-record-info">
+                        <span class="name-short">${shortText}</span>
+                        <span class="name-full">${fullText}</span>
+                    </div>
+                    <button class="btn-delete" onclick="deleteLeave(${leave.id}); event.stopPropagation();">ลบ</button>
+                `;
+                
+            } else if (leave.delegation_type === 'custom' && leave.duty_assignments) {
+                recordDiv.classList.add('custom-delegation');
+                
+                let html = `
+                    <div class="leave-record-info">
+                        <div class="leave-header">
+                            <span class="name-short">${startDate} - ${endDate} (${days} วัน) | ${doctorFirstName} (${doctorLastInitial})</span>
+                            <span class="name-full">${startDate} - ${endDate} (${days} วัน) | ${doctorFullName}</span>
+                        </div>
+                        <div class="duty-details">
+                `;
+                
+                leave.duty_assignments.forEach(assignment => {
+                    const assignmentDate = formatDateThai(assignment.duty_date);
+                    const replacementName = assignment.replacement_doctor_name || 'ไม่ระบุ';
+                    const replacementFirstName = getFirstName(replacementName);
+                    const replacementLastInitial = getLastNameInitial(replacementName);
+                    
+                    html += `
+                        <div class="duty-detail-item">
+                            <span class="name-short">${assignmentDate} [${assignment.duty_name}] >> ${replacementFirstName} (${replacementLastInitial})</span>
+                            <span class="name-full">${assignmentDate} [${assignment.duty_name}] >> ${replacementName}</span>
+                        </div>
+                    `;
+                });
+                
+                html += `
+                        </div>
+                    </div>
+                    <button class="btn-delete" onclick="deleteLeave(${leave.id}); event.stopPropagation();">ลบ</button>
+                `;
+                
+                recordDiv.innerHTML = html;
+                
+            } else if (leave.delegation_type === 'none') {
+                recordDiv.classList.add('no-delegation');
+                
+                let shortText = `${startDate} - ${endDate} (${days} วัน) | ${doctorFirstName} (${doctorLastInitial})`;
+                let fullText = `${startDate} - ${endDate} (${days} วัน) | ${doctorFullName}`;
+                
+                if (leave.approval_status === 'approved') {
+                    recordDiv.classList.add('approved');
+                    shortText += ` | ไม่ฝากงาน อนุมัติ <span style="color: #4caf50;">✓</span>`;
+                    fullText += ` | ไม่ฝากงาน อนุมัติ <span style="color: #4caf50;">✓</span>`;
+                } else if (leave.approval_status === 'rejected') {
+                    recordDiv.classList.add('rejected');
+                    shortText = `<span style="text-decoration: line-through;">${startDate} - ${endDate} (${days} วัน) | ${doctorFirstName} (${doctorLastInitial}) | ไม่ฝากงาน</span> <span style="text-decoration: none;">ไม่อนุมัติ <span style="color: #f44336;">✗</span></span>`;
+                    fullText = `<span style="text-decoration: line-through;">${startDate} - ${endDate} (${days} วัน) | ${doctorFullName} | ไม่ฝากงาน</span> <span style="text-decoration: none;">ไม่อนุมัติ <span style="color: #f44336;">✗</span></span>`;
+                } else {
+                    shortText += ` | ไม่ฝากงาน ⏳ รออนุมัติ`;
+                    fullText += ` | ไม่ฝากงาน (รออนุมัติ)`;
+                }
+                
+                recordDiv.innerHTML = `
+                    <div class="leave-record-info">
+                        <span class="name-short">${shortText}</span>
+                        <span class="name-full">${fullText}</span>
+                    </div>
+                    <button class="btn-delete" onclick="deleteLeave(${leave.id}); event.stopPropagation();">ลบ</button>
+                `;
+            }
+            
+            container.appendChild(recordDiv);
+        });
+    }
+
+    // ดึงชื่อ (ไม่เอานามสกุล)
+    function getFirstName(fullName) {
+        if (!fullName) return '';
+        const parts = fullName.trim().split(/\s+/);
+        if (parts.length < 2) return fullName;
+        return parts.slice(0, -1).join(' ');
+    }
+
+    // ดึงตัวอักษรแรกของนามสกุล
+    function getLastNameInitial(fullName) {
+        if (!fullName) return '?';
+        const parts = fullName.trim().split(/\s+/);
+        if (parts.length < 2) return '?';
+        const lastName = parts[parts.length - 1];
+        
+        const thaiVowels = ['เ', 'แ', 'โ', 'ใ', 'ไ', 'ำ', 'ั', 'า', 'ิ', 'ี', 'ึ', 'ื', 'ุ', 'ู', '็', '่', '้', '๊', '๋', '์', 'ํ', 'ๅ'];
+        
+        for (let i = 0; i < lastName.length; i++) {
+            const char = lastName.charAt(i);
+            if (!thaiVowels.includes(char)) {
+                return char;
+            }
+        }
+        
+        return lastName.charAt(0);
     }
 
     // Render ปฏิทินแผนกเสริม (แสดงการลาทุกคนในแผนก)
