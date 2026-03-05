@@ -829,7 +829,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 39 (Fix: Add rejected border for dept calendars)</span>
+        <span id="versionInfo">Version 41 (Fix: Check delegation_type before approval_status)</span>
     </div>
 </div>
 
@@ -1609,13 +1609,19 @@
             
             allDeptLeaves.forEach(leave => {
                 if (dateStr >= leave.start_date && dateStr <= leave.end_date) {
-                    if (leave.approval_status === 'approved') {
-                        leaveTypes.approved++;
-                    } else if (leave.approval_status === 'rejected') {
-                        leaveTypes.rejected++;
-                    } else if (leave.delegation_type === 'none') {
-                        leaveTypes.yellow++;
+                    // เช็คจาก delegation_type ก่อน (ไม่ใช่จากสี)
+                    if (leave.delegation_type === 'none') {
+                        // ต้องอนุมัติ → เช็คสถานะ
+                        if (leave.approval_status === 'approved') {
+                            leaveTypes.approved++;
+                        } else if (leave.approval_status === 'rejected') {
+                            leaveTypes.rejected++;
+                        } else {
+                            // รออนุมัติ
+                            leaveTypes.yellow++;
+                        }
                     } else if (leave.delegation_type === 'single' || leave.delegation_type === 'custom') {
+                        // ไม่ต้องอนุมัติ
                         leaveTypes.green++;
                     }
                 }
@@ -1697,9 +1703,18 @@
                 
                 return isSelected ? 'on-leave selected' : 'on-leave';
             }
-            // สีเหลือง
-            else if (leaveTypes.yellow === 1) {
+            // สีเหลือง (none - ต้องอนุมัติ)
+            else if (leaveTypes.yellow === 1 && leaveTypes.green === 0) {
+                // ถ้าไม่อนุมัติ → ไม่มีสี + กรอบดำ
+                if (leaveTypes.rejected > 0) {
+                    return 'rejected'; // เฉพาะกรอบดำ ไม่มีสีพื้น
+                }
+                // รออนุมัติ → สีเหลือง
                 return isSelected ? 'no-delegation selected' : 'no-delegation';
+            }
+            // ถ้ามีแต่ rejected (ไม่มี green, yellow)
+            else if (leaveTypes.rejected > 0) {
+                return 'rejected'; // เฉพาะกรอบดำ
             }
             
             return 'on-leave';
@@ -1726,18 +1741,22 @@
             const leavesInDay = [];
             primaryLeaves.forEach(leave => {
                 if (dateStr >= leave.start_date && dateStr <= leave.end_date) {
-                    // เช็คสถานะอนุมัติก่อน
-                    if (leave.approval_status === 'approved') {
-                        leaveTypes.approved++;
-                        leavesInDay.push(leave);
-                    } else if (leave.approval_status === 'rejected') {
-                        leaveTypes.rejected++;
-                        leavesInDay.push(leave);
-                    } else if (leave.delegation_type === 'none') {
-                        leaveTypes.yellow++;
-                        leavesInDay.push(leave);
+                    // เช็คจาก delegation_type ก่อน (ไม่ใช่จากสี)
+                    if (leave.delegation_type === 'none') {
+                        // ต้องอนุมัติ → เช็คสถานะ
+                        if (leave.approval_status === 'approved') {
+                            leaveTypes.approved++;
+                            leavesInDay.push(leave);
+                        } else if (leave.approval_status === 'rejected') {
+                            leaveTypes.rejected++;
+                            leavesInDay.push(leave);
+                        } else {
+                            // รออนุมัติ
+                            leaveTypes.yellow++;
+                            leavesInDay.push(leave);
+                        }
                     } else if (leave.delegation_type === 'single' || leave.delegation_type === 'custom') {
-                        // เก็บข้อมูลการลาเพื่อเช็คว่ามี duty หรือไม่
+                        // ไม่ต้องอนุมัติ
                         leavesInDay.push(leave);
                         leaveTypes.green++;
                     }
@@ -3552,13 +3571,19 @@
             
             allDeptLeaves.forEach(leave => {
                 if (dateStr >= leave.start_date && dateStr <= leave.end_date) {
-                    if (leave.approval_status === 'approved') {
-                        leaveTypes.approved++;
-                    } else if (leave.approval_status === 'rejected') {
-                        leaveTypes.rejected++;
-                    } else if (leave.delegation_type === 'none') {
-                        leaveTypes.yellow++;
+                    // เช็คจาก delegation_type ก่อน (ไม่ใช่จากสี)
+                    if (leave.delegation_type === 'none') {
+                        // ต้องอนุมัติ → เช็คสถานะ
+                        if (leave.approval_status === 'approved') {
+                            leaveTypes.approved++;
+                        } else if (leave.approval_status === 'rejected') {
+                            leaveTypes.rejected++;
+                        } else {
+                            // รออนุมัติ
+                            leaveTypes.yellow++;
+                        }
                     } else if (leave.delegation_type === 'single' || leave.delegation_type === 'custom') {
+                        // ไม่ต้องอนุมัติ
                         leaveTypes.green++;
                     }
                 }
