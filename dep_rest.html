@@ -835,7 +835,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 20 (Fix: Use per-dept duties + debug loop)</span>
+        <span id="versionInfo">Version 21 (Fix: Load allDepartmentDuties like user.html)</span>
     </div>
 </div>
 
@@ -1295,8 +1295,28 @@
             if (leavesResponse.ok && leavesData.success && dutiesResponse.ok && dutiesData.success) {
                 doctorLeaves = leavesData.data;
                 
-                // เก็บ duties data ไว้ใช้ตอนคำนวณสี
+                // เก็บ duties ของแผนกหลัก
                 window.departmentDuties = dutiesData.data;
+                
+                // โหลด duties ทุกแผนกของแพทย์
+                console.log('📡 Loading duties for all departments...');
+                window.allDepartmentDuties = {};
+                
+                if (userDepartments && userDepartments.length > 0) {
+                    for (const dept of userDepartments) {
+                        try {
+                            const deptDutiesResponse = await fetch(`${API_URL}/api/duties/department/${dept.department_id}`);
+                            const deptDutiesData = await deptDutiesResponse.json();
+                            
+                            if (deptDutiesResponse.ok && deptDutiesData.success) {
+                                window.allDepartmentDuties[dept.department_id] = deptDutiesData.data;
+                                console.log(`  ✅ Dept ${dept.department_id} (${dept.department_name}): ${deptDutiesData.data.length} duties`);
+                            }
+                        } catch (error) {
+                            console.error(`Error loading duties for dept ${dept.department_id}:`, error);
+                        }
+                    }
+                }
                 
                 console.log('=== Doctor Leaves Data ===');
                 console.log('Leaves:', doctorLeaves.length);
@@ -1308,12 +1328,15 @@
                 console.warn('API not available');
                 doctorLeaves = [];
                 window.departmentDuties = [];
+                window.allDepartmentDuties = {};
                 renderCalendar();
                 displayLeaveRecords();
             }
         } catch (error) {
             console.error('Load leaves error:', error);
             doctorLeaves = [];
+            window.departmentDuties = [];
+            window.allDepartmentDuties = {};
             window.departmentDuties = [];
             renderCalendar();
             displayLeaveRecords();
