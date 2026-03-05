@@ -829,7 +829,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 38 (Fix: Light green in dept calendars 2,3)</span>
+        <span id="versionInfo">Version 39 (Fix: Add rejected border for dept calendars)</span>
     </div>
 </div>
 
@@ -3640,10 +3640,20 @@
                 
                 return isSelected ? 'on-leave selected' : 'on-leave';
             }
-            // สีเหลือง
+            // สีเหลือง (none - ต้องอนุมัติ)
             else if (leaveTypes.yellow === 1 && leaveTypes.green === 0) {
+                // ถ้าไม่อนุมัติ → ไม่มีสี + กรอบดำ
+                if (leaveTypes.rejected > 0) {
+                    return 'rejected'; // เฉพาะกรอบดำ ไม่มีสีพื้น
+                }
+                // รออนุมัติ → สีเหลือง
                 return isSelected ? 'no-delegation selected' : 'no-delegation';
-            } else {
+            }
+            // ถ้ามีแต่ rejected (ไม่มี green, yellow)
+            else if (leaveTypes.rejected > 0) {
+                return 'rejected'; // เฉพาะกรอบดำ
+            }
+            else {
                 return 'on-leave';
             }
         };
