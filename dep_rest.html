@@ -835,7 +835,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 19 (Fix: Remove infinite loop)</span>
+        <span id="versionInfo">Version 20 (Fix: Use per-dept duties + debug loop)</span>
     </div>
 </div>
 
@@ -2653,6 +2653,8 @@
 
     // Event handler เมื่อ Checkbox เปลี่ยน
     async function handleDepartmentSelectionChange() {
+        console.log(`⚡ handleDepartmentSelectionChange called at ${new Date().toISOString()}`);
+        
         const selectedDepts = getSelectedDepartments();
         
         if (selectedDepts.length === 0) {
@@ -3164,6 +3166,17 @@
         console.log(`🔧 Using window.departmentDuties:`, window.departmentDuties?.length || 0);
         console.log(`========================================\n`);
         
+        // โหลด duties ของแผนกนี้
+        let deptDuties = window.departmentDuties; // default
+        
+        // ถ้ามี allDepartmentDuties ให้ใช้ของแผนกนี้
+        if (window.allDepartmentDuties && window.allDepartmentDuties[departmentId]) {
+            deptDuties = window.allDepartmentDuties[departmentId];
+            console.log(`✅ Using duties from allDepartmentDuties[${departmentId}]:`, deptDuties.length);
+        } else {
+            console.log(`⚠️ allDepartmentDuties[${departmentId}] not found, using window.departmentDuties`);
+        }
+        
         const monthNames = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
                           'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
         
@@ -3263,9 +3276,9 @@
                         const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
                         const dayName = dayNames[dayOfWeek];
                         
-                        // เช็ค Duty ของแผนกนี้ (ใช้ window.departmentDuties เหมือนปฏิทิน 1)
-                        if (window.departmentDuties && window.departmentDuties.length > 0) {
-                            hasDutyOnThisDay = window.departmentDuties.some(dd => 
+                        // เช็ค Duty ของแผนกนี้
+                        if (deptDuties && deptDuties.length > 0) {
+                            hasDutyOnThisDay = deptDuties.some(dd => 
                                 dd.doctor_id === leaveDoctorId && dd[dayName] === 1
                             );
                         } else {
