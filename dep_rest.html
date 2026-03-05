@@ -835,7 +835,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 24 (Debug: Add Calendar 1 logs for comparison)</span>
+        <span id="versionInfo">Version 26 (Fix: Rejected only for 'none' delegation)</span>
     </div>
 </div>
 
@@ -3277,7 +3277,7 @@
             else if ((leaveTypes.green >= 1 && leaveTypes.yellow >= 1) || (leaveTypes.yellow >= 2)) {
                 return isSelected ? 'overlap-no-delegation selected' : 'overlap-no-delegation';
             }
-            // สีเขียว/เขียวอ่อน: มีแค่ 1 คน
+            // สีเขียว/เขียวอ่อน: มีแค่ 1 คน (ไม่ต้องอนุมัติ - ไม่มี rejected)
             else if (leaveTypes.green === 1 && leaveTypes.yellow === 0) {
                 // หาคนที่ลาในวันนี้
                 const leavesOnThisDay = allDeptLeaves.filter(leave => 
@@ -3314,16 +3314,26 @@
                     }
                     
                     if (!hasDutyOnThisDay) {
-                        return 'on-leave-no-duty'; // สีเขียวอ่อน
+                        return 'on-leave-no-duty'; // สีเขียวอ่อน (ไม่มี rejected)
                     }
                 }
                 
-                return isSelected ? 'on-leave selected' : 'on-leave';
+                return isSelected ? 'on-leave selected' : 'on-leave'; // สีเขียวเข้ม (ไม่มี rejected)
             }
-            // สีเหลือง
+            // สีเหลือง (none - ต้องอนุมัติ)
             else if (leaveTypes.yellow === 1 && leaveTypes.green === 0) {
+                // ถ้าไม่อนุมัติ → ไม่มีสี + กรอบดำ
+                if (leaveTypes.rejected > 0) {
+                    return 'rejected'; // เฉพาะกรอบดำ ไม่มีสีพื้น
+                }
+                // รออนุมัติ → สีเหลือง
                 return isSelected ? 'no-delegation selected' : 'no-delegation';
-            } else {
+            } 
+            // ถ้ามีแต่ rejected (ไม่มี green, yellow)
+            else if (leaveTypes.rejected > 0) {
+                return 'rejected'; // เฉพาะกรอบดำ
+            }
+            else {
                 return 'on-leave';
             }
         };
