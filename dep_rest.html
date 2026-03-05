@@ -835,7 +835,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 18 (Clean logs - only show dept calendar info)</span>
+        <span id="versionInfo">Version 19 (Fix: Remove infinite loop)</span>
     </div>
 </div>
 
@@ -1898,9 +1898,6 @@
         if (selectedDates.length === 0) {
             rangeDiv.style.display = 'none';
             confirmBtn.style.display = 'none';
-            
-            // *** Step 5: Re-render ปฏิทินแผนก ***
-            rerenderDepartmentCalendars();
             return;
         }
         
@@ -1913,20 +1910,8 @@
         
         // แสดงปุ่มยืนยัน
         confirmBtn.style.display = 'inline-block';
-        
-        // *** Step 5: Re-render ปฏิทินแผนก ***
-        rerenderDepartmentCalendars();
     }
     
-    // Re-render ปฏิทินแผนกทั้งหมด
-    async function rerenderDepartmentCalendars() {
-        if (userDepartments && userDepartments.length > 0) {
-            for (const dept of userDepartments) {
-                await renderDepartmentCalendar(dept.department_id);
-            }
-        }
-    }
-
     // ยืนยันเลือกวันที่ลา → แสดง Duty
     async function confirmSelectedDates() {
         const doctorId = document.getElementById('doctorSelect').value;
@@ -3178,7 +3163,6 @@
         console.log(`📋 Total leaves in dept ${departmentId}:`, allDeptLeaves.length);
         console.log(`🔧 Using window.departmentDuties:`, window.departmentDuties?.length || 0);
         console.log(`========================================\n`);
-        console.log(`  Total leaves in dept ${departmentId}:`, allDeptLeaves.length);
         
         const monthNames = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
                           'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
