@@ -829,7 +829,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 43 (Fix: Show leave records under each department calendar)</span>
+        <span id="versionInfo">Version 44 (Debug: Add detailed logs for displayLeaveRecords)</span>
     </div>
 </div>
 
@@ -1349,9 +1349,16 @@
 
     // แสดงแถบข้อมูลการลา
     function displayLeaveRecords(departmentId = null, containerId = 'leaveRecords') {
-        console.log(`📋 displayLeaveRecords called, departmentId: ${departmentId}, containerId: ${containerId}, doctorLeaves: ${doctorLeaves.length}`);
+        console.log(`📋 displayLeaveRecords called:`);
+        console.log(`  - departmentId: ${departmentId}`);
+        console.log(`  - containerId: ${containerId}`);
+        console.log(`  - doctorLeaves: ${doctorLeaves.length}`);
         
         const container = document.getElementById(containerId);
+        if (!container) {
+            console.log(`  ❌ Container "${containerId}" not found!`);
+            return;
+        }
         container.innerHTML = '';
 
         if (doctorLeaves.length === 0) {
