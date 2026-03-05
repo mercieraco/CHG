@@ -835,7 +835,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 21 (Fix: Load allDepartmentDuties like user.html)</span>
+        <span id="versionInfo">Version 22 (Fix: Remove infinite loop - onDoctorChange)</span>
     </div>
 </div>
 
@@ -935,9 +935,6 @@
                 
                 // โหลดการลาของแพทย์
                 await loadDoctorLeaves();
-                
-                // โหลด duties
-                await onDoctorChange();
             } else {
                 alert('ไม่สามารถโหลดรายการแพทย์ได้');
                 window.location.href = 'index.html';
