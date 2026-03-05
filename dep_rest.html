@@ -835,7 +835,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 28 (Fix: Load leaves from all departments)</span>
+        <span id="versionInfo">Version 29 (Fix: Filter primary dept + hide duplicate records)</span>
     </div>
 </div>
 
@@ -1410,8 +1410,20 @@
             );
             console.log(`  → Filtered for department ${departmentId}: ${leavesToDisplay.length}`);
         } else {
-            // ไม่ระบุแผนก → แสดงทั้งหมด (Admin เลือกแพทย์แล้ว)
-            console.log(`  → Showing all leaves: ${leavesToDisplay.length}`);
+            // ไม่ระบุแผนก → ใช้แผนกหลักของแพทย์ที่เลือก
+            if (userDepartments && userDepartments.length > 0) {
+                const primaryDept = userDepartments.find(d => d.is_primary === 1);
+                if (primaryDept) {
+                    leavesToDisplay = doctorLeaves.filter(leave => 
+                        leave.department_id == primaryDept.department_id
+                    );
+                    console.log(`  → Filtered for primary department ${primaryDept.department_id}: ${leavesToDisplay.length}`);
+                } else {
+                    console.log(`  → Showing all leaves (no primary dept): ${leavesToDisplay.length}`);
+                }
+            } else {
+                console.log(`  → Showing all leaves: ${leavesToDisplay.length}`);
+            }
         }
 
         leavesToDisplay.forEach(leave => {
@@ -2741,8 +2753,15 @@
         if (selectedDepts.length === 0) {
             // ไม่เลือกแผนกเลย → ซ่อนทุกอย่าง
             document.getElementById('departmentDetailsContainer').innerHTML = '';
+            // แสดงแถบด้านบนกลับมา
+            const topLeaveRecords = document.getElementById('leaveRecords');
+            if (topLeaveRecords) topLeaveRecords.style.display = 'block';
             return;
         }
+        
+        // ซ่อนแถบด้านบน (จะใช้แถบใต้ปฏิทินแทน)
+        const topLeaveRecords = document.getElementById('leaveRecords');
+        if (topLeaveRecords) topLeaveRecords.style.display = 'none';
         
         // แสดงรายละเอียดของแผนกที่เลือก
         await loadDepartmentDetails(selectedDepts);
