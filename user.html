@@ -829,7 +829,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 42 (Fix: Show all doctors' leaves in leave records)</span>
+        <span id="versionInfo">Version 43 (Fix: Show leave records under each department calendar)</span>
     </div>
 </div>
 
@@ -1348,15 +1348,38 @@
     }
 
     // แสดงแถบข้อมูลการลา
-    function displayLeaveRecords() {
-        const container = document.getElementById('leaveRecords');
+    function displayLeaveRecords(departmentId = null, containerId = 'leaveRecords') {
+        console.log(`📋 displayLeaveRecords called, departmentId: ${departmentId}, containerId: ${containerId}, doctorLeaves: ${doctorLeaves.length}`);
+        
+        const container = document.getElementById(containerId);
         container.innerHTML = '';
 
         if (doctorLeaves.length === 0) {
+            console.log('  → No leaves to display');
             return;
         }
+        
+        // กรองตามแผนก
+        let leavesToDisplay = doctorLeaves;
+        
+        if (departmentId !== null) {
+            // ระบุแผนก → แสดงเฉพาะแผนกนั้น
+            leavesToDisplay = doctorLeaves.filter(leave => 
+                leave.department_id == departmentId
+            );
+            console.log(`  → Filtered for department ${departmentId}:`, leavesToDisplay.length);
+        } else {
+            // ไม่ระบุแผนก → ใช้แผนกหลัก
+            const primaryDept = userDepartments.find(d => d.is_primary === 1);
+            if (primaryDept) {
+                leavesToDisplay = doctorLeaves.filter(leave => 
+                    leave.department_id == primaryDept.department_id
+                );
+                console.log(`  → Filtered for primary department ${primaryDept.department_id}:`, leavesToDisplay.length);
+            }
+        }
 
-        doctorLeaves.forEach(leave => {
+        leavesToDisplay.forEach(leave => {
             const startDate = formatDateThai(leave.start_date);
             const endDate = formatDateThai(leave.end_date);
             
@@ -2893,6 +2916,12 @@
                         <div class="calendar" id="dept-calendar-${dept.department_id}"></div>
                     </div>
                     
+                    <!-- แถบแสดงการลางาน (ใต้ปฏิทิน) -->
+                    <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                        <h4 style="margin: 0 0 10px 0; color: #667eea;">📋 รายการลางาน</h4>
+                        <div id="leaveRecords-${dept.department_id}"></div>
+                    </div>
+                    
                     <!-- รายละเอียดงานที่ลา -->
                     <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
                         <h4 style="margin: 0 0 10px 0; color: #1976d2;">📋 รายละเอียดงานที่ลา</h4>
@@ -2914,6 +2943,8 @@
         // Render ปฏิทินแผนกเสริมสำหรับแต่ละแผนก
         for (const dept of selectedDepts) {
             await renderDepartmentCalendar(dept.department_id);
+            // แสดงรายการลาใต้ปฏิทินแต่ละแผนก
+            displayLeaveRecords(dept.department_id, `leaveRecords-${dept.department_id}`);
         }
         
         // โหลด Dropdown แพทย์สำหรับแต่ละแผนก
@@ -2921,7 +2952,7 @@
             await loadReplacementDoctorsForDept(dept.department_id);
         }
         
-        // *** แสดงรายการลาหลังโหลดแผนกเสร็จ ***
+        // *** แสดงรายการลาหลังโหลดแผนกเสร็จ (แผนกหลัก) ***
         displayLeaveRecords();
     }
 
