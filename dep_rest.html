@@ -835,7 +835,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 17 (Debug: Show dept calendar info clearly)</span>
+        <span id="versionInfo">Version 15 (Sync with user.html V30)</span>
     </div>
 </div>
 
@@ -3190,18 +3190,13 @@
         const calendar = document.getElementById(`dept-calendar-${departmentId}`);
         if (!calendar) return;
         
-        console.log(`\n========================================`);
-        console.log(`🎨 RENDERING CALENDAR FOR DEPARTMENT ${departmentId}`);
-        console.log(`========================================`);
+        console.log(`🎨 Rendering calendar for department ${departmentId}`);
         
         // โหลดการลาทั้งแผนก
         const response = await fetch(`${LEAVE_API_URL}/api/leaves/department/${departmentId}`);
         const data = await response.json();
         
         const allDeptLeaves = data.success ? data.data : [];
-        console.log(`📋 Total leaves in dept ${departmentId}:`, allDeptLeaves.length);
-        console.log(`🔧 Using window.departmentDuties:`, window.departmentDuties?.length || 0);
-        console.log(`========================================\n`);
         console.log(`  Total leaves in dept ${departmentId}:`, allDeptLeaves.length);
         
         const monthNames = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
@@ -3277,47 +3272,8 @@
             else if ((leaveTypes.green >= 1 && leaveTypes.yellow >= 1) || (leaveTypes.yellow >= 2)) {
                 return isSelected ? 'overlap-no-delegation selected' : 'overlap-no-delegation';
             }
-            // สีเขียว/เขียวอ่อน: มีแค่ 1 คน
+            // สีเขียว
             else if (leaveTypes.green === 1 && leaveTypes.yellow === 0) {
-                // หาคนที่ลาในวันนี้
-                const leavesOnThisDay = allDeptLeaves.filter(leave => 
-                    dateStr >= leave.start_date && 
-                    dateStr <= leave.end_date &&
-                    (leave.delegation_type === 'single' || leave.delegation_type === 'custom')
-                );
-                
-                if (!isSelected && leavesOnThisDay.length === 1) {
-                    const leave = leavesOnThisDay[0];
-                    const leaveDoctorId = leave.doctor_id;
-                    let hasDutyOnThisDay = false;
-                    
-                    if (leave.delegation_type === 'custom') {
-                        if (leave.duty_assignments && leave.duty_assignments.length > 0) {
-                            hasDutyOnThisDay = leave.duty_assignments.some(
-                                assignment => assignment.duty_date === dateStr
-                            );
-                        }
-                    } else if (leave.delegation_type === 'single') {
-                        const checkDate = new Date(dateStr);
-                        const dayOfWeek = checkDate.getDay();
-                        const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-                        const dayName = dayNames[dayOfWeek];
-                        
-                        // เช็ค Duty ของแผนกนี้ (ใช้ window.departmentDuties เหมือนปฏิทิน 1)
-                        if (window.departmentDuties && window.departmentDuties.length > 0) {
-                            hasDutyOnThisDay = window.departmentDuties.some(dd => 
-                                dd.doctor_id === leaveDoctorId && dd[dayName] === 1
-                            );
-                        } else {
-                            hasDutyOnThisDay = true;
-                        }
-                    }
-                    
-                    if (!hasDutyOnThisDay) {
-                        return 'on-leave-no-duty'; // สีเขียวอ่อน
-                    }
-                }
-                
                 return isSelected ? 'on-leave selected' : 'on-leave';
             }
             // สีเหลือง
