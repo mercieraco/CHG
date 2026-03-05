@@ -829,7 +829,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 41 (Fix: Check delegation_type before approval_status)</span>
+        <span id="versionInfo">Version 42 (Fix: Show all doctors' leaves in leave records)</span>
     </div>
 </div>
 
@@ -1281,16 +1281,9 @@
                         console.log(`  💾 Saved primary dept leaves:`, window.primaryDeptLeaves.length);
                     }
                     
-                    // กรองเฉพาะการลาของแพทย์คนนี้
-                    const myLeaves = deptData.leaves.filter(leave => {
-                        const match = leave.doctor_id == doctorId;
-                        if (!match && deptData.leaves.length > 0) {
-                            console.log(`    ⚠️ Leave doctor_id ${leave.doctor_id} != ${doctorId} (type: ${typeof leave.doctor_id} vs ${typeof doctorId})`);
-                        }
-                        return match;
-                    });
-                    console.log(`    → My leaves in dept ${deptData.deptId}:`, myLeaves.length, `(Total in dept: ${deptData.leaves.length})`);
-                    allLeaves = allLeaves.concat(myLeaves);
+                    // เก็บการลาของทุกคนในแผนกนี้ (ไม่กรอง doctor_id)
+                    console.log(`    → All leaves in dept ${deptData.deptId}:`, deptData.leaves.length);
+                    allLeaves = allLeaves.concat(deptData.leaves);
                 }
             });
             
