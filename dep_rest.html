@@ -835,7 +835,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 22 (Fix: Remove infinite loop - onDoctorChange)</span>
+        <span id="versionInfo">Version 24 (Debug: Add Calendar 1 logs for comparison)</span>
     </div>
 </div>
 
@@ -1302,7 +1302,7 @@
                 if (userDepartments && userDepartments.length > 0) {
                     for (const dept of userDepartments) {
                         try {
-                            const deptDutiesResponse = await fetch(`${API_URL}/api/duties/department/${dept.department_id}`);
+                            const deptDutiesResponse = await fetch(`${LEAVE_API_URL}/api/duties/department/${dept.department_id}`);
                             const deptDutiesData = await deptDutiesResponse.json();
                             
                             if (deptDutiesResponse.ok && deptDutiesData.success) {
@@ -1544,6 +1544,13 @@
 
     // สร้างปฏิทิน
     function renderCalendar() {
+        console.log(`\n========================================`);
+        console.log(`📅 RENDERING MAIN CALENDAR (Calendar 1)`);
+        console.log(`========================================`);
+        console.log(`📋 Total leaves:`, doctorLeaves.length);
+        console.log(`🔧 window.departmentDuties:`, window.departmentDuties?.length || 0);
+        console.log(`========================================\n`);
+        
         const calendar = document.getElementById('calendar');
         const monthYear = document.getElementById('currentMonth');
         
@@ -3174,7 +3181,7 @@
         if (!calendar) return;
         
         console.log(`\n========================================`);
-        console.log(`🎨 RENDERING CALENDAR FOR DEPARTMENT ${departmentId}`);
+        console.log(`📅 RENDERING DEPARTMENT CALENDAR ${departmentId} (Calendar 2/3)`);
         console.log(`========================================`);
         
         // โหลดการลาทั้งแผนก
