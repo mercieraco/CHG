@@ -594,6 +594,17 @@
         }
     }
 
+    /* มือถือแนวตั้ง - ปฏิทินแผนกเสริมย้ายออกนอกกรอบ */
+    @media (max-width: 579px) {
+        .mobile-calendar-container {
+            margin-left: -20px !important;
+            margin-right: -20px !important;
+            border-radius: 0 !important;
+            border-left: none !important;
+            border-right: none !important;
+        }
+    }
+
     .leave-record-info strong {
         color: #2e7d32;
     }
@@ -829,7 +840,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 52 (Fix: Parse is_primary from checkbox correctly)</span>
+        <span id="versionInfo">Version 53 (Fix: Calendar 3 overflow on mobile portrait < 580px)</span>
     </div>
 </div>
 
@@ -2935,7 +2946,7 @@
                     <h3 style="color: #667eea; margin: 0 0 15px 0;">📍 ${dept.department_name}</h3>
                     
                     <!-- ปฏิทินแผนกเสริม (แสดงการลาทุกคนในแผนก) -->
-                    <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 2px solid #667eea; display: ${calendarDisplayStyle};">
+                    <div class="mobile-calendar-container" style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 2px solid #667eea; display: ${calendarDisplayStyle};">
                         <h4 style="margin: 0 0 10px 0; color: #667eea;">📅 ปฏิทินแผนก ${dept.department_name}</h4>
                         <p style="margin: 0 0 10px 0; font-size: 13px; color: #666;">
                             แสดงการลาของทุกคนในแผนกนี้
