@@ -829,7 +829,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 45 (Fix: Remove duplicate displayLeaveRecords function)</span>
+        <span id="versionInfo">Version 46 (Hide calendar 2 - keep for debug)</span>
     </div>
 </div>
 
@@ -2910,8 +2910,12 @@
             // โหลด Duties ของแผนกนี้
             const duties = await loadDutiesForDepartment(dept.department_id);
             
+            // ซ่อนปฏิทินแผนกหลัก (เก็บไว้ debug)
+            const isPrimary = dept.is_primary === 1;
+            const displayStyle = isPrimary ? 'none' : 'block';
+            
             html += `
-                <div class="department-section" data-dept-id="${dept.department_id}" style="margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #667eea;">
+                <div class="department-section" data-dept-id="${dept.department_id}" style="margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #667eea; display: ${displayStyle};">
                     <h3 style="color: #667eea; margin: 0 0 15px 0;">📍 ${dept.department_name}</h3>
                     
                     <!-- ปฏิทินแผนกเสริม (แสดงการลาทุกคนในแผนก) -->
