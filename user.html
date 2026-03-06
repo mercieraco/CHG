@@ -850,7 +850,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 57 (Fix: Pass containerId to highlight correct calendar only)</span>
+        <span id="versionInfo">Version 58 (Fix: Calendar 2 (hidden) uses Calendar 1 instead)</span>
     </div>
 </div>
 
@@ -2805,14 +2805,24 @@
         let targetScrollElement;
         
         if (containerId.startsWith('leaveRecords-')) {
-            // ปฏิทิน 3: หา department section
+            // ปฏิทิน 2/3: หา department calendar
             const deptId = containerId.replace('leaveRecords-', '');
             targetCalendar = document.getElementById(`dept-calendar-${deptId}`);
-            const leaveContainer = document.getElementById(containerId);
-            if (leaveContainer) {
-                targetScrollElement = leaveContainer.closest('.department-section');
+            
+            // เช็คว่าปฏิทินนี้แสดงอยู่หรือไม่ (ปฏิทิน 2 อาจถูกซ่อน)
+            if (targetCalendar && window.getComputedStyle(targetCalendar.parentElement).display === 'none') {
+                // ปฏิทิน 2 (แผนกหลัก) ถูกซ่อน → ใช้ปฏิทิน 1 แทน
+                console.log(`  📍 dept-calendar-${deptId} is hidden, using Calendar 1 instead`);
+                targetCalendar = document.getElementById('calendar');
+                targetScrollElement = targetCalendar;
+            } else {
+                // ปฏิทิน 3 (แผนกเสริม) แสดงอยู่
+                const leaveContainer = document.getElementById(containerId);
+                if (leaveContainer) {
+                    targetScrollElement = leaveContainer.closest('.department-section');
+                }
+                console.log(`  📍 Target: Calendar 3 (dept-calendar-${deptId})`);
             }
-            console.log(`  📍 Target: Calendar 3 (dept-calendar-${deptId})`);
         } else {
             // ปฏิทิน 1
             targetCalendar = document.getElementById('calendar');
