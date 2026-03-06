@@ -596,9 +596,19 @@
 
     /* มือถือแนวตั้ง - ปฏิทินแผนกเสริมย้ายออกนอกกรอบ */
     @media (max-width: 579px) {
-        .mobile-calendar-container {
+        /* กรอบแผนก - ลบ padding ข้าง */
+        .department-section {
+            padding-left: 0 !important;
+            padding-right: 0 !important;
             margin-left: -20px !important;
             margin-right: -20px !important;
+            border-radius: 0 !important;
+        }
+        
+        /* ปฏิทินแผนกเสริม - ขยายเต็มจอ */
+        .mobile-calendar-container {
+            margin-left: 0 !important;
+            margin-right: 0 !important;
             border-radius: 0 !important;
             border-left: none !important;
             border-right: none !important;
@@ -840,7 +850,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 53 (Fix: Calendar 3 overflow on mobile portrait < 580px)</span>
+        <span id="versionInfo">Version 54 (Fix: Remove all dept section padding on mobile)</span>
     </div>
 </div>
 
