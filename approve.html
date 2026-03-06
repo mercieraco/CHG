@@ -955,7 +955,7 @@
     }
 
     // ดูแผนก - เลือก dropdown อัตโนมัติ
-    function viewDepartment(departmentId, startDate) {
+    async function viewDepartment(departmentId, startDate) {
         const select = document.getElementById('departmentSelect');
         select.value = departmentId;
         
@@ -967,18 +967,18 @@
             renderCalendar();
         }
         
-        // โหลดข้อมูลแผนกนั้น
-        loadDepartmentData();
+        // โหลดข้อมูลแผนกนั้น (รอให้เสร็จ)
+        await loadDepartmentData();
         
         // Scroll ไปที่ปฏิทิน
         const calendar = document.getElementById('calendar');
         calendar.scrollIntoView({ behavior: 'smooth', block: 'center' });
         
-        // Highlight วันที่ในปฏิทิน
+        // Highlight วันที่ในปฏิทิน (หลังโหลดข้อมูลเสร็จแล้ว)
         if (startDate) {
             setTimeout(() => {
                 highlightLeaveDates(startDate);
-            }, 500); // รอ render เสร็จก่อน
+            }, 300); // รอ scroll เสร็จ
         }
     }
     
@@ -1098,7 +1098,7 @@
 
 <!-- Version Info -->
 <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-    <span id="versionInfo">Version 6 (Debug: Add try-catch + check undefined)</span>
+    <span id="versionInfo">Version 7 (Fix: await loadDepartmentData before highlight)</span>
 </div>
 ```
 
