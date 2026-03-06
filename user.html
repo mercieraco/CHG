@@ -829,7 +829,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 51 (Fix: Hide calendar 2 for multi-dept doctors)</span>
+        <span id="versionInfo">Version 52 (Fix: Parse is_primary from checkbox correctly)</span>
     </div>
 </div>
 
@@ -2881,11 +2881,16 @@
         
         // ถ้ามีหลายแผนก → อ่านจาก Checkbox
         const checkboxes = document.querySelectorAll('#departmentCheckboxes input[type="checkbox"]:checked');
-        const result = Array.from(checkboxes).map(cb => ({
-            department_id: parseInt(cb.value),
-            department_name: cb.getAttribute('data-name'),
-            is_primary: cb.getAttribute('data-is-primary') === 'true'
-        }));
+        const result = Array.from(checkboxes).map(cb => {
+            const isPrimaryAttr = cb.getAttribute('data-is-primary');
+            // รองรับทั้ง '1', 'true', 1, true
+            const isPrimary = isPrimaryAttr === '1' || isPrimaryAttr === 'true' || isPrimaryAttr === true || isPrimaryAttr === 1;
+            return {
+                department_id: parseInt(cb.value),
+                department_name: cb.getAttribute('data-name'),
+                is_primary: isPrimary
+            };
+        });
         console.log('✅ หลายแผนก → คืนจาก Checkbox:', result);
         return result;
     }
