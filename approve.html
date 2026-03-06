@@ -987,27 +987,27 @@
         try {
             console.log('🔍 highlightLeaveDates called, startDate:', startDate);
             
-            // เช็คว่า currentLeaves มีหรือไม่
-            if (typeof currentLeaves === 'undefined') {
-                console.error('❌ ERROR: currentLeaves is undefined!');
+            // เช็คว่า departmentLeaves มีหรือไม่
+            if (typeof departmentLeaves === 'undefined') {
+                console.error('❌ ERROR: departmentLeaves is undefined!');
                 return;
             }
             
-            if (!Array.isArray(currentLeaves)) {
-                console.error('❌ ERROR: currentLeaves is not an array!', typeof currentLeaves);
+            if (!Array.isArray(departmentLeaves)) {
+                console.error('❌ ERROR: departmentLeaves is not an array!', typeof departmentLeaves);
                 return;
             }
             
-            console.log('📦 currentLeaves:', currentLeaves);
-            console.log('📊 currentLeaves.length:', currentLeaves.length);
+            console.log('📦 departmentLeaves:', departmentLeaves);
+            console.log('📊 departmentLeaves.length:', departmentLeaves.length);
             
-            // แสดงทุก start_date ใน currentLeaves
-            currentLeaves.forEach((leave, idx) => {
+            // แสดงทุก start_date ใน departmentLeaves
+            departmentLeaves.forEach((leave, idx) => {
                 console.log(`  Leave ${idx}: start_date="${leave.start_date}" (type: ${typeof leave.start_date})`);
             });
             
             // หา leave record ที่ตรงกับ startDate
-            const leaveRecord = currentLeaves.find(leave => leave.start_date === startDate);
+            const leaveRecord = departmentLeaves.find(leave => leave.start_date === startDate);
             if (!leaveRecord) {
                 console.log('❌ No leave record found for startDate:', startDate);
                 console.log('   startDate type:', typeof startDate);
@@ -1098,7 +1098,7 @@
 
 <!-- Version Info -->
 <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-    <span id="versionInfo">Version 7 (Fix: await loadDepartmentData before highlight)</span>
+    <span id="versionInfo">Version 8 (Fix: Use departmentLeaves instead of currentLeaves)</span>
 </div>
 ```
 
