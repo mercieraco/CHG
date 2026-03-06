@@ -984,31 +984,50 @@
     
     // Function highlight วันที่ลา
     function highlightLeaveDates(startDate) {
+        console.log('🔍 highlightLeaveDates called, startDate:', startDate);
+        
         // หา leave record ที่ตรงกับ startDate
         const leaveRecord = currentLeaves.find(leave => leave.start_date === startDate);
-        if (!leaveRecord) return;
+        if (!leaveRecord) {
+            console.log('❌ No leave record found for startDate:', startDate);
+            return;
+        }
+        
+        console.log('✅ Found leave record:', leaveRecord);
         
         const start = new Date(leaveRecord.start_date);
         const end = new Date(leaveRecord.end_date);
+        
+        let highlightedCount = 0;
         
         // Loop ทุกวันในช่วงลา
         for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
             const dateStr = formatDate(d);
             const dayCell = document.querySelector(`.calendar-day[data-date="${dateStr}"]`);
             
+            console.log(`  📅 Checking ${dateStr}:`, dayCell ? 'Found' : 'Not found');
+            
             if (dayCell) {
-                // เพิ่มกรอบสีฟ้า
-                dayCell.style.outline = '3px solid #2196F3';
-                dayCell.style.outlineOffset = '-3px';
-                dayCell.style.zIndex = '10';
+                // เพิ่มกรอบสีฟ้าหนา + box-shadow
+                dayCell.style.outline = '4px solid #2196F3';
+                dayCell.style.outlineOffset = '-4px';
+                dayCell.style.boxShadow = '0 0 0 4px rgba(33, 150, 243, 0.3)';
+                dayCell.style.position = 'relative';
+                dayCell.style.zIndex = '100';
+                highlightedCount++;
             }
         }
         
+        console.log(`✅ Highlighted ${highlightedCount} days`);
+        
         // ลบ highlight หลัง 3 วินาที
         setTimeout(() => {
+            console.log('🧹 Removing highlights');
             document.querySelectorAll('.calendar-day[data-date]').forEach(cell => {
                 cell.style.outline = '';
                 cell.style.outlineOffset = '';
+                cell.style.boxShadow = '';
+                cell.style.position = '';
                 cell.style.zIndex = '';
             });
         }, 3000);
@@ -1053,7 +1072,7 @@
 
 <!-- Version Info -->
 <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-    <span id="versionInfo">Version 2 (Fix Color Logic + 75% Lighter Green)</span>
+    <span id="versionInfo">Version 4 (Fix: Blue border highlight on leave dates)</span>
 </div>
 ```
 
