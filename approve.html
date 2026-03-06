@@ -985,11 +985,19 @@
     // Function highlight วันที่ลา
     function highlightLeaveDates(startDate) {
         console.log('🔍 highlightLeaveDates called, startDate:', startDate);
+        console.log('📦 currentLeaves:', currentLeaves);
+        console.log('📊 currentLeaves.length:', currentLeaves.length);
+        
+        // แสดงทุก start_date ใน currentLeaves
+        currentLeaves.forEach((leave, idx) => {
+            console.log(`  Leave ${idx}: start_date="${leave.start_date}" (type: ${typeof leave.start_date})`);
+        });
         
         // หา leave record ที่ตรงกับ startDate
         const leaveRecord = currentLeaves.find(leave => leave.start_date === startDate);
         if (!leaveRecord) {
             console.log('❌ No leave record found for startDate:', startDate);
+            console.log('   startDate type:', typeof startDate);
             return;
         }
         
@@ -1072,7 +1080,7 @@
 
 <!-- Version Info -->
 <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-    <span id="versionInfo">Version 4 (Fix: Blue border highlight on leave dates)</span>
+    <span id="versionInfo">Version 5 (Debug: Log currentLeaves array)</span>
 </div>
 ```
 
