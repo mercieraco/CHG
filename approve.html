@@ -603,7 +603,7 @@
                 classes.push(colorClass);
             }
             
-            html += `<div class="${classes.join(' ')}">${day}</div>`;
+            html += `<div class="${classes.join(' ')}" data-date="${dateStr}">${day}</div>`;
         }
         
         calendar.innerHTML = html;
@@ -967,17 +967,51 @@
             renderCalendar();
         }
         
-        // Scroll ขึ้นไปดู dropdown
-        select.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        
-        // Highlight dropdown
-        select.style.outline = '3px solid #667eea';
-        setTimeout(() => {
-            select.style.outline = '';
-        }, 2000);
-        
         // โหลดข้อมูลแผนกนั้น
         loadDepartmentData();
+        
+        // Scroll ไปที่ปฏิทิน
+        const calendar = document.getElementById('calendar');
+        calendar.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
+        // Highlight วันที่ในปฏิทิน
+        if (startDate) {
+            setTimeout(() => {
+                highlightLeaveDates(startDate);
+            }, 500); // รอ render เสร็จก่อน
+        }
+    }
+    
+    // Function highlight วันที่ลา
+    function highlightLeaveDates(startDate) {
+        // หา leave record ที่ตรงกับ startDate
+        const leaveRecord = currentLeaves.find(leave => leave.start_date === startDate);
+        if (!leaveRecord) return;
+        
+        const start = new Date(leaveRecord.start_date);
+        const end = new Date(leaveRecord.end_date);
+        
+        // Loop ทุกวันในช่วงลา
+        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+            const dateStr = formatDate(d);
+            const dayCell = document.querySelector(`.calendar-day[data-date="${dateStr}"]`);
+            
+            if (dayCell) {
+                // เพิ่มกรอบสีฟ้า
+                dayCell.style.outline = '3px solid #2196F3';
+                dayCell.style.outlineOffset = '-3px';
+                dayCell.style.zIndex = '10';
+            }
+        }
+        
+        // ลบ highlight หลัง 3 วินาที
+        setTimeout(() => {
+            document.querySelectorAll('.calendar-day[data-date]').forEach(cell => {
+                cell.style.outline = '';
+                cell.style.outlineOffset = '';
+                cell.style.zIndex = '';
+            });
+        }, 3000);
     }
 
     // ========================================
