@@ -835,7 +835,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 31 (Hide calendar 1 leave records + fix calendar 2)</span>
+        <span id="versionInfo">Version 32 (Fix: Parse is_primary from checkbox correctly)</span>
     </div>
 </div>
 
@@ -2735,11 +2735,16 @@
         
         // ถ้ามีหลายแผนก → อ่านจาก Checkbox
         const checkboxes = document.querySelectorAll('#departmentCheckboxes input[type="checkbox"]:checked');
-        const result = Array.from(checkboxes).map(cb => ({
-            department_id: parseInt(cb.value),
-            department_name: cb.getAttribute('data-name'),
-            is_primary: cb.getAttribute('data-is-primary') === 'true'
-        }));
+        const result = Array.from(checkboxes).map(cb => {
+            const isPrimaryAttr = cb.getAttribute('data-is-primary');
+            // รองรับทั้ง '1', 'true', 1, true
+            const isPrimary = isPrimaryAttr === '1' || isPrimaryAttr === 'true' || isPrimaryAttr === true || isPrimaryAttr === 1;
+            return {
+                department_id: parseInt(cb.value),
+                department_name: cb.getAttribute('data-name'),
+                is_primary: isPrimary
+            };
+        });
         console.log('✅ หลายแผนก → คืนจาก Checkbox:', result);
         return result;
     }
@@ -2779,6 +2784,7 @@
             // ซ่อนเฉพาะปฏิทินแผนกหลัก (เก็บไว้ debug)
             const isPrimary = dept.is_primary === true || dept.is_primary === 1;
             const calendarDisplayStyle = isPrimary ? 'none' : 'block';
+            console.log(`  📍 ${dept.department_name}: is_primary=${dept.is_primary} (${typeof dept.is_primary}) → isPrimary=${isPrimary} → display=${calendarDisplayStyle}`);
             
             html += `
                 <div class="department-section" data-dept-id="${dept.department_id}" style="margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #667eea;">
