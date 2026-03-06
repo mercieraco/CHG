@@ -850,7 +850,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 56 (Fix: Scroll to correct calendar by department)</span>
+        <span id="versionInfo">Version 55 (Add blue border + scroll on leave record click)</span>
     </div>
 </div>
 
@@ -1442,7 +1442,7 @@
                 const isOwnLeave = leave.doctor_id === currentDoctorId;
                 
                 recordDiv.innerHTML = `
-                    <div class="leave-record-info" onclick="highlightLeaveDates('${leave.start_date}', '${leave.end_date}', ${leave.department_id}); event.stopPropagation();">
+                    <div class="leave-record-info" onclick="highlightLeaveDates('${leave.start_date}', '${leave.end_date}'); event.stopPropagation();">
                         <span class="name-short">${shortText}</span>
                         <span class="name-full">${fullText}</span>
                     </div>
@@ -1492,7 +1492,7 @@
                 const infoDiv = recordDiv.querySelector('.leave-record-info');
                 if (infoDiv) {
                     infoDiv.onclick = function(e) {
-                        highlightLeaveDates(leave.start_date, leave.end_date, leave.department_id);
+                        highlightLeaveDates(leave.start_date, leave.end_date);
                         e.stopPropagation();
                     };
                     infoDiv.style.cursor = 'pointer';
@@ -1526,7 +1526,7 @@
                 const isOwnLeave = leave.doctor_id === currentDoctorId;
                 
                 recordDiv.innerHTML = `
-                    <div class="leave-record-info" onclick="highlightLeaveDates('${leave.start_date}', '${leave.end_date}', ${leave.department_id}); event.stopPropagation();">
+                    <div class="leave-record-info" onclick="highlightLeaveDates('${leave.start_date}', '${leave.end_date}'); event.stopPropagation();">
                         <span class="name-short">${shortText}</span>
                         <span class="name-full">${fullText}</span>
                     </div>
@@ -2785,8 +2785,8 @@
     }
 
     // Highlight วันที่ลาในปฏิทิน (toggle on/off)
-    function highlightLeaveDates(startDate, endDate, departmentId) {
-        console.log('🔍 highlightLeaveDates called, startDate:', startDate, 'endDate:', endDate, 'departmentId:', departmentId);
+    function highlightLeaveDates(startDate, endDate) {
+        console.log('🔍 highlightLeaveDates called, startDate:', startDate, 'endDate:', endDate);
         
         // สร้าง array วันที่
         const start = new Date(startDate);
@@ -2850,22 +2850,10 @@
                 }
             });
             
-            // Scroll ไปที่ปฏิทินที่ถูกต้อง
-            let targetElement;
-            if (departmentId) {
-                // มี departmentId → หา department section ของแผนกนั้น
-                targetElement = document.querySelector(`.department-section[data-dept-id="${departmentId}"]`);
-                console.log(`📍 Scrolling to department section ${departmentId}:`, targetElement ? 'Found' : 'Not found');
-            }
-            
-            // ถ้าไม่เจอ → ใช้ปฏิทินหลัก
-            if (!targetElement) {
-                targetElement = document.getElementById('calendar');
-                console.log('📍 Scrolling to main calendar');
-            }
-            
-            if (targetElement) {
-                targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Scroll ไปที่ปฏิทินหลัก
+            const calendar = document.getElementById('calendar');
+            if (calendar) {
+                calendar.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
             
             // ลบกรอบสีฟ้าหลัง 3 วินาที (แต่ยังเก็บ class highlight)
