@@ -856,7 +856,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 33 (Fix: Remove all dept section padding on mobile)</span>
+        <span id="versionInfo">Version 34 (Add blue border + scroll on leave record click)</span>
     </div>
 </div>
 
@@ -2640,6 +2640,8 @@
 
     // Highlight วันที่ลาในปฏิทิน (toggle on/off)
     function highlightLeaveDates(startDate, endDate) {
+        console.log('🔍 highlightLeaveDates called, startDate:', startDate, 'endDate:', endDate);
+        
         // สร้าง array วันที่
         const start = new Date(startDate);
         const end = new Date(endDate);
@@ -2689,6 +2691,36 @@
                     }
                 });
             });
+            
+            // === เพิ่ม: กรอบสีฟ้า 3 วินาที ===
+            dates.forEach(dateStr => {
+                const dayCell = document.querySelector(`.calendar-day[data-date="${dateStr}"]`);
+                if (dayCell) {
+                    dayCell.style.outline = '4px solid #2196F3';
+                    dayCell.style.outlineOffset = '-4px';
+                    dayCell.style.boxShadow = '0 0 0 4px rgba(33, 150, 243, 0.3)';
+                    dayCell.style.position = 'relative';
+                    dayCell.style.zIndex = '100';
+                }
+            });
+            
+            // Scroll ไปที่ปฏิทินหลัก
+            const calendar = document.getElementById('calendar');
+            if (calendar) {
+                calendar.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            
+            // ลบกรอบสีฟ้าหลัง 3 วินาที (แต่ยังเก็บ class highlight)
+            setTimeout(() => {
+                console.log('🧹 Removing blue borders');
+                document.querySelectorAll('.calendar-day[data-date]').forEach(cell => {
+                    cell.style.outline = '';
+                    cell.style.outlineOffset = '';
+                    cell.style.boxShadow = '';
+                    cell.style.position = '';
+                    cell.style.zIndex = '';
+                });
+            }, 3000);
         }
     }
 
