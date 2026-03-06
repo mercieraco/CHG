@@ -829,7 +829,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 48 (Hide only calendar 2, keep everything else)</span>
+        <span id="versionInfo">Version 50 (Hide calendar 1 leave records after selecting dates)</span>
     </div>
 </div>
 
@@ -2742,6 +2742,9 @@
                 endDate = null;
                 currentDutyData = [];
                 document.getElementById('departmentDetailsContainer').innerHTML = '';
+                // แสดงแถบรายการลางานปฏิทิน 1 กลับมา
+                const topLeaveRecords = document.getElementById('leaveRecords');
+                if (topLeaveRecords) topLeaveRecords.style.display = 'block';
                 document.getElementById('confirmDatesBtn').style.display = 'none';
                 loadDoctorLeaves();
                 updateSelectedRange();
@@ -2894,6 +2897,9 @@
         if (selectedDepts.length === 0) {
             // ไม่เลือกแผนกเลย → ซ่อนทุกอย่าง
             document.getElementById('departmentDetailsContainer').innerHTML = '';
+            // แสดงแถบรายการลางานปฏิทิน 1 กลับมา
+            const topLeaveRecords = document.getElementById('leaveRecords');
+            if (topLeaveRecords) topLeaveRecords.style.display = 'block';
             return;
         }
         
@@ -2905,6 +2911,10 @@
     async function loadDepartmentDetails(selectedDepts) {
         const container = document.getElementById('departmentDetailsContainer');
         let html = '';
+        
+        // ซ่อนแถบรายการลางานปฏิทิน 1 (จะใช้แถบใต้ปฏิทินแทน)
+        const topLeaveRecords = document.getElementById('leaveRecords');
+        if (topLeaveRecords) topLeaveRecords.style.display = 'none';
         
         for (const dept of selectedDepts) {
             // โหลด Duties ของแผนกนี้
