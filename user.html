@@ -829,7 +829,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 46 (Hide calendar 2 - keep for debug)</span>
+        <span id="versionInfo">Version 48 (Hide only calendar 2, keep everything else)</span>
     </div>
 </div>
 
@@ -2910,16 +2910,16 @@
             // โหลด Duties ของแผนกนี้
             const duties = await loadDutiesForDepartment(dept.department_id);
             
-            // ซ่อนปฏิทินแผนกหลัก (เก็บไว้ debug)
+            // ซ่อนเฉพาะปฏิทินแผนกหลัก (เก็บไว้ debug)
             const isPrimary = dept.is_primary === 1;
-            const displayStyle = isPrimary ? 'none' : 'block';
+            const calendarDisplayStyle = isPrimary ? 'none' : 'block';
             
             html += `
-                <div class="department-section" data-dept-id="${dept.department_id}" style="margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #667eea; display: ${displayStyle};">
+                <div class="department-section" data-dept-id="${dept.department_id}" style="margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #667eea;">
                     <h3 style="color: #667eea; margin: 0 0 15px 0;">📍 ${dept.department_name}</h3>
                     
                     <!-- ปฏิทินแผนกเสริม (แสดงการลาทุกคนในแผนก) -->
-                    <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 2px solid #667eea;">
+                    <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 2px solid #667eea; display: ${calendarDisplayStyle};">
                         <h4 style="margin: 0 0 10px 0; color: #667eea;">📅 ปฏิทินแผนก ${dept.department_name}</h4>
                         <p style="margin: 0 0 10px 0; font-size: 13px; color: #666;">
                             แสดงการลาของทุกคนในแผนกนี้
