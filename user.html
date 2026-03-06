@@ -850,7 +850,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 57 (Fix: Wait for calendar 3 to render before adding blue border)</span>
+        <span id="versionInfo">Version 56 (Fix: Add data-date to calendar 3)</span>
     </div>
 </div>
 
@@ -1442,7 +1442,7 @@
                 const isOwnLeave = leave.doctor_id === currentDoctorId;
                 
                 recordDiv.innerHTML = `
-                    <div class="leave-record-info" onclick="highlightLeaveDates('${leave.start_date}', '${leave.end_date}', '${containerId}'); event.stopPropagation();">
+                    <div class="leave-record-info" onclick="highlightLeaveDates('${leave.start_date}', '${leave.end_date}'); event.stopPropagation();">
                         <span class="name-short">${shortText}</span>
                         <span class="name-full">${fullText}</span>
                     </div>
@@ -1492,7 +1492,7 @@
                 const infoDiv = recordDiv.querySelector('.leave-record-info');
                 if (infoDiv) {
                     infoDiv.onclick = function(e) {
-                        highlightLeaveDates(leave.start_date, leave.end_date, containerId);
+                        highlightLeaveDates(leave.start_date, leave.end_date);
                         e.stopPropagation();
                     };
                     infoDiv.style.cursor = 'pointer';
@@ -1526,7 +1526,7 @@
                 const isOwnLeave = leave.doctor_id === currentDoctorId;
                 
                 recordDiv.innerHTML = `
-                    <div class="leave-record-info" onclick="highlightLeaveDates('${leave.start_date}', '${leave.end_date}', '${containerId}'); event.stopPropagation();">
+                    <div class="leave-record-info" onclick="highlightLeaveDates('${leave.start_date}', '${leave.end_date}'); event.stopPropagation();">
                         <span class="name-short">${shortText}</span>
                         <span class="name-full">${fullText}</span>
                     </div>
@@ -2785,11 +2785,8 @@
     }
 
     // Highlight วันที่ลาในปฏิทิน (toggle on/off)
-    function highlightLeaveDates(startDate, endDate, containerId = 'leaveRecords') {
-        console.log('🔍 highlightLeaveDates called:');
-        console.log('  - startDate:', startDate);
-        console.log('  - endDate:', endDate);
-        console.log('  - containerId:', containerId);
+    function highlightLeaveDates(startDate, endDate) {
+        console.log('🔍 highlightLeaveDates called, startDate:', startDate, 'endDate:', endDate);
         
         // สร้าง array วันที่
         const start = new Date(startDate);
@@ -2842,41 +2839,21 @@
             });
             
             // === เพิ่ม: กรอบสีฟ้า 3 วินาที ===
-            // รอให้ปฏิทินถูก render ก่อน (สำหรับปฏิทิน 3)
-            setTimeout(() => {
-                dates.forEach(dateStr => {
-                    const dayCell = document.querySelector(`.calendar-day[data-date="${dateStr}"]`);
-                    console.log(`  🔍 Looking for ${dateStr}:`, dayCell ? 'Found' : 'Not found');
-                    if (dayCell) {
-                        dayCell.style.outline = '4px solid #2196F3';
-                        dayCell.style.outlineOffset = '-4px';
-                        dayCell.style.boxShadow = '0 0 0 4px rgba(33, 150, 243, 0.3)';
-                        dayCell.style.position = 'relative';
-                        dayCell.style.zIndex = '100';
-                    }
-                });
-            }, 500); // รอ 500ms ให้ปฏิทิน render
-            
-            // Scroll ไปที่ปฏิทินที่ถูกต้อง
-            let targetElement;
-            
-            if (containerId.startsWith('leaveRecords-')) {
-                // ปฏิทิน 3: containerId = 'leaveRecords-12' → หา parent department section
-                const leaveContainer = document.getElementById(containerId);
-                if (leaveContainer) {
-                    targetElement = leaveContainer.closest('.department-section');
-                    console.log('  📍 Scrolling to department section (calendar 3)');
+            dates.forEach(dateStr => {
+                const dayCell = document.querySelector(`.calendar-day[data-date="${dateStr}"]`);
+                if (dayCell) {
+                    dayCell.style.outline = '4px solid #2196F3';
+                    dayCell.style.outlineOffset = '-4px';
+                    dayCell.style.boxShadow = '0 0 0 4px rgba(33, 150, 243, 0.3)';
+                    dayCell.style.position = 'relative';
+                    dayCell.style.zIndex = '100';
                 }
-            } else {
-                // ปฏิทิน 1: containerId = 'leaveRecords' → หาปฏิทินหลัก
-                targetElement = document.getElementById('calendar');
-                console.log('  📍 Scrolling to main calendar (calendar 1)');
-            }
+            });
             
-            if (targetElement) {
-                targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            } else {
-                console.log('  ❌ Target element not found');
+            // Scroll ไปที่ปฏิทินหลัก
+            const calendar = document.getElementById('calendar');
+            if (calendar) {
+                calendar.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
             
             // ลบกรอบสีฟ้าหลัง 3 วินาที (แต่ยังเก็บ class highlight)
@@ -3724,7 +3701,7 @@
                 classes.push(...colorClasses);
             }
             
-            html += `<div class="${classes.join(' ')}">${day}</div>`;
+            html += `<div class="${classes.join(' ')}" data-date="${dateStr}">${day}</div>`;
         }
         
         calendar.innerHTML = html;
