@@ -829,7 +829,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 50 (Hide calendar 1 leave records after selecting dates)</span>
+        <span id="versionInfo">Version 51 (Fix: Hide calendar 2 for multi-dept doctors)</span>
     </div>
 </div>
 
@@ -2921,8 +2921,9 @@
             const duties = await loadDutiesForDepartment(dept.department_id);
             
             // ซ่อนเฉพาะปฏิทินแผนกหลัก (เก็บไว้ debug)
-            const isPrimary = dept.is_primary === 1;
+            const isPrimary = dept.is_primary === true || dept.is_primary === 1;
             const calendarDisplayStyle = isPrimary ? 'none' : 'block';
+            console.log(`  📍 ${dept.department_name}: is_primary=${dept.is_primary} (${typeof dept.is_primary}) → isPrimary=${isPrimary} → display=${calendarDisplayStyle}`);
             
             html += `
                 <div class="department-section" data-dept-id="${dept.department_id}" style="margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #667eea;">
