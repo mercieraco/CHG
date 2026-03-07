@@ -850,7 +850,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 59 (Add: Restrict leave - Day 20 rule + current month block)</span>
+        <span id="versionInfo">Version 60 (Fix: Show day 20 popup immediately on calendar click)</span>
     </div>
 </div>
 
@@ -2040,6 +2040,39 @@
             return;
         }
 
+        // ========================================
+        // เช็คกฎการลา: วันที่ 20 และเดือนปัจจุบัน
+        // ========================================
+        const todayDay = today.getDate();
+        const todayMonth = today.getMonth();
+        const todayYear = today.getFullYear();
+        
+        const selectedMonth = selectedDate.getMonth();
+        const selectedYear = selectedDate.getFullYear();
+        
+        // เช็คว่าลาเดือนไหน
+        const isSameMonth = (selectedYear === todayYear && selectedMonth === todayMonth);
+        const isNextMonth = (selectedYear === todayYear && selectedMonth === todayMonth + 1) || 
+                           (selectedYear === todayYear + 1 && todayMonth === 11 && selectedMonth === 0);
+        
+        const monthNames = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+                          'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+        
+        // กรณีที่ 1: ลาในเดือนนี้ → ห้ามลาเลย
+        if (isSameMonth) {
+            const currentMonthName = monthNames[todayMonth];
+            alert(`❌ ลาไม่ได้\nเดือน${currentMonthName}ได้จัดตารางไปแล้ว\nกรุณาลางานเดือนถัดไป`);
+            return;
+        }
+        
+        // กรณีที่ 2: ลาเดือนหน้า แต่วันนี้เกิน 20 แล้ว
+        if (isNextMonth && todayDay > 20) {
+            const currentMonthName = monthNames[todayMonth];
+            const shortMonthName = currentMonthName.substring(0, 3) + '.';
+            alert(`❌ ไม่สามารถลางานได้\nเลยวันที่ 20 ${shortMonthName} แล้ว\nจัดตารางเวรไม่ทัน\nกรุณาเลือกวันลาในเดือนถัดไป`);
+            return;
+        }
+
         if (isDateOnLeaveBySelectedDoctor(dateStr)) {
             alert('⚠️ แพทย์ท่านนี้ลาวันนี้อยู่แล้ว');
             return;
@@ -2567,47 +2600,6 @@
 
         const startDateStr = selectedDates[0];
         const endDateStr = selectedDates[selectedDates.length - 1];
-
-        // ========================================
-        // เช็คกฎการลา: วันที่ 20 และเดือนปัจจุบัน
-        // ========================================
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        
-        const startDate = new Date(startDateStr);
-        startDate.setHours(0, 0, 0, 0);
-        
-        const todayDay = today.getDate();
-        const todayMonth = today.getMonth();
-        const todayYear = today.getFullYear();
-        
-        const startMonth = startDate.getMonth();
-        const startYear = startDate.getFullYear();
-        
-        // เช็คว่าลาเดือนไหน
-        const isSameMonth = (startYear === todayYear && startMonth === todayMonth);
-        const isNextMonth = (startYear === todayYear && startMonth === todayMonth + 1) || 
-                           (startYear === todayYear + 1 && todayMonth === 11 && startMonth === 0);
-        
-        // กรณีที่ 1: ลาในเดือนนี้ → ห้ามลาเลย
-        if (isSameMonth) {
-            const monthNames = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
-                              'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
-            const currentMonthName = monthNames[todayMonth];
-            
-            alert(`❌ ลาไม่ได้\nเดือน${currentMonthName}ได้จัดตารางไปแล้ว\nกรุณาลางานเดือนถัดไป`);
-            return;
-        }
-        
-        // กรณีที่ 2: ลาเดือนหน้า แต่วันนี้เกิน 20 แล้ว
-        if (isNextMonth && todayDay > 20) {
-            const monthNames = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
-                              'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
-            const currentMonthName = monthNames[todayMonth];
-            
-            alert(`❌ ไม่สามารถลางานได้\nเลยวันที่ 20 ${currentMonthName.substring(0, 3)}. แล้ว\nจัดตารางเวรไม่ทัน\nกรุณาเลือกวันลาในเดือนถัดไป`);
-            return;
-        }
 
         let confirmMessage = `📋 ยืนยันการบันทึก\n\n` +
             `แพทย์ที่ลา: ${doctorName}\n` +
