@@ -850,7 +850,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 60 (Fix: Show day 20 popup immediately on calendar click)</span>
+        <span id="versionInfo">Version 61 (Fix: Correct Thai month abbreviations)</span>
     </div>
 </div>
 
@@ -2057,6 +2057,8 @@
         
         const monthNames = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
                           'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+        const monthShortNames = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
+                               'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
         
         // กรณีที่ 1: ลาในเดือนนี้ → ห้ามลาเลย
         if (isSameMonth) {
@@ -2067,9 +2069,8 @@
         
         // กรณีที่ 2: ลาเดือนหน้า แต่วันนี้เกิน 20 แล้ว
         if (isNextMonth && todayDay > 20) {
-            const currentMonthName = monthNames[todayMonth];
-            const shortMonthName = currentMonthName.substring(0, 3) + '.';
-            alert(`❌ ไม่สามารถลางานได้\nเลยวันที่ 20 ${shortMonthName} แล้ว\nจัดตารางเวรไม่ทัน\nกรุณาเลือกวันลาในเดือนถัดไป`);
+            const currentMonthShort = monthShortNames[todayMonth];
+            alert(`❌ ไม่สามารถลางานได้\nเลยวันที่ 20 ${currentMonthShort} แล้ว\nจัดตารางเวรไม่ทัน\nกรุณาเลือกวันลาในเดือนถัดไป`);
             return;
         }
 
