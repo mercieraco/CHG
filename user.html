@@ -1456,6 +1456,12 @@
                     fullText += ` >> ${replacementFullName}`;
                 }
                 
+                // ⭐ เพิ่มเหตุผลการลา (ถ้ามี)
+                if (leave.reason && leave.reason.trim()) {
+                    shortText += ` : ${leave.reason}`;
+                    fullText += ` : ${leave.reason}`;
+                }
+                
                 // เช็คว่าเป็นการลาของตัวเองหรือไม่
                 const currentDoctorId = parseInt(sessionStorage.getItem('doctor_id'));
                 const isOwnLeave = leave.doctor_id === currentDoctorId;
@@ -1475,8 +1481,8 @@
                 let html = `
                     <div class="leave-record-info">
                         <div class="leave-header">
-                            <span class="name-short">${startDate} - ${endDate} (${days} วัน) | ${doctorFirstName} (${doctorLastInitial})</span>
-                            <span class="name-full">${startDate} - ${endDate} (${days} วัน) | ${doctorFullName}</span>
+                            <span class="name-short">${startDate} - ${endDate} (${days} วัน) | ${doctorFirstName} (${doctorLastInitial})${leave.reason && leave.reason.trim() ? ` : ${leave.reason}` : ''}</span>
+                            <span class="name-full">${startDate} - ${endDate} (${days} วัน) | ${doctorFullName}${leave.reason && leave.reason.trim() ? ` : ${leave.reason}` : ''}</span>
                         </div>
                         <div class="duty-details">
                 `;
@@ -1538,6 +1544,12 @@
                     // pending
                     shortText += ` | ไม่ฝากงาน ⏳ รออนุมัติ`;
                     fullText += ` | ไม่ฝากงาน (รออนุมัติ)`;
+                }
+                
+                // ⭐ เพิ่มเหตุผลการลา (ถ้ามี)
+                if (leave.reason && leave.reason.trim()) {
+                    shortText += ` : ${leave.reason}`;
+                    fullText += ` : ${leave.reason}`;
                 }
                 
                 // เช็คว่าเป็นการลาของตัวเองหรือไม่
