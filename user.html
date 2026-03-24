@@ -1457,9 +1457,9 @@
                 }
                 
                 // ⭐ เพิ่มเหตุผลการลา (ถ้ามี)
-                if (leave.reason && leave.reason.trim()) {
-                    shortText += ` : ${leave.reason}`;
-                    fullText += ` : ${leave.reason}`;
+                if (leave.no_delegation_reason && leave.no_delegation_reason.trim()) {
+                    shortText += ` : ${leave.no_delegation_reason}`;
+                    fullText += ` : ${leave.no_delegation_reason}`;
                 }
                 
                 // เช็คว่าเป็นการลาของตัวเองหรือไม่
@@ -1481,8 +1481,8 @@
                 let html = `
                     <div class="leave-record-info">
                         <div class="leave-header">
-                            <span class="name-short">${startDate} - ${endDate} (${days} วัน) | ${doctorFirstName} (${doctorLastInitial})${leave.reason && leave.reason.trim() ? ` : ${leave.reason}` : ''}</span>
-                            <span class="name-full">${startDate} - ${endDate} (${days} วัน) | ${doctorFullName}${leave.reason && leave.reason.trim() ? ` : ${leave.reason}` : ''}</span>
+                            <span class="name-short">${startDate} - ${endDate} (${days} วัน) | ${doctorFirstName} (${doctorLastInitial})${leave.no_delegation_reason && leave.no_delegation_reason.trim() ? ` : ${leave.no_delegation_reason}` : ''}</span>
+                            <span class="name-full">${startDate} - ${endDate} (${days} วัน) | ${doctorFullName}${leave.no_delegation_reason && leave.no_delegation_reason.trim() ? ` : ${leave.no_delegation_reason}` : ''}</span>
                         </div>
                         <div class="duty-details">
                 `;
@@ -1547,9 +1547,9 @@
                 }
                 
                 // ⭐ เพิ่มเหตุผลการลา (ถ้ามี)
-                if (leave.reason && leave.reason.trim()) {
-                    shortText += ` : ${leave.reason}`;
-                    fullText += ` : ${leave.reason}`;
+                if (leave.no_delegation_reason && leave.no_delegation_reason.trim()) {
+                    shortText += ` : ${leave.no_delegation_reason}`;
+                    fullText += ` : ${leave.no_delegation_reason}`;
                 }
                 
                 // เช็คว่าเป็นการลาของตัวเองหรือไม่
