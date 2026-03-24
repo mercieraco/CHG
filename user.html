@@ -2837,6 +2837,24 @@
             dates.push(formatDate(d));
         }
 
+        // ⭐ เพิ่ม: เปลี่ยนปฏิทินไปเดือนที่เริ่มลา
+        const startMonth = start.getMonth(); // 0-11
+        const startYear = start.getFullYear();
+        console.log(`  📅 Changing calendar to: ${startMonth + 1}/${startYear}`);
+        
+        currentMonth = startMonth;
+        currentYear = startYear;
+        renderCalendar();
+        
+        // รอ Render เสร็จ (50ms) แล้วค่อย Highlight
+        setTimeout(() => {
+            performHighlight(dates, containerId);
+        }, 50);
+    }
+    
+    function performHighlight(dates, containerId) {
+        // ฟังก์ชันช่วยทำ Highlight หลังจาก Render เสร็จ
+
         // หา calendar ที่ถูกต้อง
         let targetCalendar;
         let targetScrollElement;
