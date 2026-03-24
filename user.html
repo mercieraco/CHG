@@ -1407,6 +1407,14 @@
             }
         }
 
+        // ⭐ เรียงลำดับตามวันที่ยื่นเรื่อง (created_at) - เก่าสุดก่อน (ยื่นก่อนอยู่บน)
+        leavesToDisplay.sort((a, b) => {
+            const dateA = new Date(a.created_at);
+            const dateB = new Date(b.created_at);
+            return dateA - dateB; // เก่าสุดก่อน (ASC)
+        });
+        console.log('  ✅ Sorted by created_at (oldest first - ยื่นก่อนอยู่บน)');
+
         leavesToDisplay.forEach(leave => {
             const startDate = formatDateThai(leave.start_date);
             const endDate = formatDateThai(leave.end_date);
