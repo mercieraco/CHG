@@ -1407,6 +1407,17 @@
             }
         }
 
+        // ⭐ กรองเฉพาะการลาที่ยังไม่สิ้นสุด (end_date >= วันนี้)
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // เอาเวลาออก เหลือแค่วันที่
+        
+        leavesToDisplay = leavesToDisplay.filter(leave => {
+            const endDate = new Date(leave.end_date);
+            endDate.setHours(0, 0, 0, 0);
+            return endDate >= today; // แสดงเฉพาะที่ end_date >= วันนี้
+        });
+        console.log(`  ✅ Filtered for active/future leaves (end_date >= today): ${leavesToDisplay.length}`);
+
         // ⭐ เรียงลำดับตามวันที่ยื่นเรื่อง (created_at) - เก่าสุดก่อน (ยื่นก่อนอยู่บน)
         leavesToDisplay.sort((a, b) => {
             const dateA = new Date(a.created_at);
