@@ -1447,6 +1447,25 @@
             }
         }
 
+        // ⭐ Feature 3: กรองเฉพาะการลาที่ยังไม่สิ้นสุด (end_date >= วันนี้)
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        leavesToDisplay = leavesToDisplay.filter(leave => {
+            const endDate = new Date(leave.end_date);
+            endDate.setHours(0, 0, 0, 0);
+            return endDate >= today;
+        });
+        console.log(`  ✅ Filtered for active/future leaves (end_date >= today): ${leavesToDisplay.length}`);
+
+        // ⭐ Feature 2: เรียงลำดับตามวันที่ยื่นเรื่อง (created_at) - เก่าสุดก่อน
+        leavesToDisplay.sort((a, b) => {
+            const dateA = new Date(a.created_at);
+            const dateB = new Date(b.created_at);
+            return dateA - dateB;
+        });
+        console.log('  ✅ Sorted by created_at (oldest first - ยื่นก่อนอยู่บน)');
+
         leavesToDisplay.forEach(leave => {
             const startDate = formatDateThai(leave.start_date);
             const endDate = formatDateThai(leave.end_date);
@@ -1477,6 +1496,12 @@
                     fullText += ` >> ${replacementFullName}`;
                 }
                 
+                // ⭐ Feature 4: เพิ่มเหตุผลการลา
+                if (leave.no_delegation_reason && leave.no_delegation_reason.trim()) {
+                    shortText += ` : ${leave.no_delegation_reason}`;
+                    fullText += ` : ${leave.no_delegation_reason}`;
+                }
+                
                 recordDiv.innerHTML = `
                     <div class="leave-record-info" onclick="highlightLeaveDates('${leave.start_date}', '${leave.end_date}', '${containerId}'); event.stopPropagation();">
                         <span class="name-short">${shortText}</span>
@@ -1492,8 +1517,8 @@
                 let html = `
                     <div class="leave-record-info">
                         <div class="leave-header">
-                            <span class="name-short">${startDate} - ${endDate} (${days} วัน) | ${doctorFirstName} (${doctorLastInitial})</span>
-                            <span class="name-full">${startDate} - ${endDate} (${days} วัน) | ${doctorFullName}</span>
+                            <span class="name-short">${startDate} - ${endDate} (${days} วัน) | ${doctorFirstName} (${doctorLastInitial})${leave.no_delegation_reason && leave.no_delegation_reason.trim() ? ` : ${leave.no_delegation_reason}` : ''}</span>
+                            <span class="name-full">${startDate} - ${endDate} (${days} วัน) | ${doctorFullName}${leave.no_delegation_reason && leave.no_delegation_reason.trim() ? ` : ${leave.no_delegation_reason}` : ''}</span>
                         </div>
                         <div class="duty-details">
                 `;
@@ -1551,6 +1576,12 @@
                     // pending
                     shortText += ` | ไม่ฝากงาน ⏳ รออนุมัติ`;
                     fullText += ` | ไม่ฝากงาน (รออนุมัติ)`;
+                }
+                
+                // ⭐ Feature 4: เพิ่มเหตุผลการลา
+                if (leave.no_delegation_reason && leave.no_delegation_reason.trim()) {
+                    shortText += ` : ${leave.no_delegation_reason}`;
+                    fullText += ` : ${leave.no_delegation_reason}`;
                 }
                 
                 recordDiv.innerHTML = `
@@ -2653,6 +2684,24 @@
         for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
             dates.push(formatDate(d));
         }
+
+        // ⭐ Feature 1: เปลี่ยนปฏิทินไปเดือนที่เริ่มลา
+        const startMonth = start.getMonth();
+        const startYear = start.getFullYear();
+        console.log(`  📅 Changing calendar to: ${startMonth + 1}/${startYear}`);
+        
+        currentMonth = startMonth;
+        currentYear = startYear;
+        renderCalendar();
+        
+        // รอ Render เสร็จ (50ms) แล้วค่อย Highlight
+        setTimeout(() => {
+            performHighlight(dates, containerId);
+        }, 50);
+    }
+    
+    function performHighlight(dates, containerId) {
+        // ฟังก์ชันช่วยทำ Highlight หลังจาก Render เสร็จ
 
         // หา calendar ที่ถูกต้อง
         let targetCalendar;
