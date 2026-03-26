@@ -609,9 +609,11 @@
         }
     }
 
-    .highlight {
-        background-color: #fff3cd !important;
-        border: 2px solid #ffc107 !important;
+    .calendar-day.highlight {
+        outline: 8px solid #00bcd4 !important;  /* เส้นประสีฟ้า (Cyan) 8px */
+        outline-offset: -8px !important;
+        position: relative;
+        z-index: 10;
     }
 </style>
 ```
