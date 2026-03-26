@@ -3168,6 +3168,11 @@
             displayLeaveRecords(dept.department_id, `leaveRecords-${dept.department_id}`);
         }
         
+        // ⭐ Phase 2: ซ่อนแถบรายการลางานในแผนก (หลังสร้างเสร็จ)
+        document.querySelectorAll('.dept-leave-records').forEach(el => {
+            el.style.display = 'none';
+        });
+        
         // โหลด Dropdown แพทย์สำหรับแต่ละแผนก
         for (const dept of selectedDepts) {
             await loadReplacementDoctorsForDept(dept.department_id);
