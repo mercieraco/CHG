@@ -2247,8 +2247,11 @@
                 // ซ่อนปุ่มยืนยัน
                 document.getElementById('confirmDatesBtn').style.display = 'none';
                 
-                // ⭐ Phase 2: ซ่อนแถบรายการลางาน + แสดงปุ่มบันทึก
-                document.getElementById('leaveRecords').style.display = 'none';
+                // ⭐ Phase 2: ซ่อนแถบรายการลางานทั้งหมด + แสดงปุ่มบันทึก
+                document.getElementById('leaveRecords').style.display = 'none'; // แถบหลัก
+                document.querySelectorAll('.dept-leave-records').forEach(el => {
+                    el.style.display = 'none'; // แถบในแผนก
+                });
                 document.querySelector('.btn-submit').style.display = 'block';
                 
                 // แสดง Checkbox เลือกแผนก (ถ้ามีหลายแผนก)
@@ -2829,7 +2832,7 @@
                 
                 showMessage(message, 'success');
                 
-                // ⭐ Phase 3: กลับเป็น Phase 1 - ซ่อนปุ่มบันทึก + แสดงแถบรายการลางาน
+                // ⭐ Phase 3: กลับเป็น Phase 1 - ซ่อนปุ่มบันทึก + แสดงแถบรายการลางานทั้งหมด
                 document.querySelector('.btn-submit').style.display = 'none';
                 
                 // รีเซ็ตสถานะ
@@ -2840,9 +2843,12 @@
                 currentDutyData = [];
                 document.getElementById('departmentDetailsContainer').innerHTML = '';
                 
-                // แสดงแถบรายการลางานปฏิทิน 1 กลับมา
+                // แสดงแถบรายการลางานทั้งหมดกลับมา
                 const topLeaveRecords = document.getElementById('leaveRecords');
-                if (topLeaveRecords) topLeaveRecords.style.display = 'block';
+                if (topLeaveRecords) topLeaveRecords.style.display = 'block'; // แถบหลัก
+                document.querySelectorAll('.dept-leave-records').forEach(el => {
+                    el.style.display = 'block'; // แถบในแผนก
+                });
                 
                 document.getElementById('confirmDatesBtn').style.display = 'none';
                 loadDoctorLeaves();
@@ -3132,7 +3138,7 @@
                     </div>
                     
                     <!-- แถบแสดงการลางาน (ใต้ปฏิทิน) -->
-                    <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                    <div class="dept-leave-records" style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
                         <h4 style="margin: 0 0 10px 0; color: #667eea;">📋 รายการลางาน</h4>
                         <div id="leaveRecords-${dept.department_id}"></div>
                     </div>
