@@ -843,9 +843,10 @@
     <!-- Message แสดงผล (ย้ายมาอยู่เหนือปุ่มบันทึก) -->
     <div id="message" class="message"></div>
 
-    <button class="btn-submit" onclick="submitLeave()">💾 บันทึกการลา</button>
+    <!-- ⭐ Phase 1: ซ่อนปุ่มบันทึกตั้งแต่แรก -->
+    <button class="btn-submit" onclick="submitLeave()" style="display: none;">💾 บันทึกการลา</button>
 
-    <!-- แสดงข้อมูลการลาที่บันทึกแล้ว (ย้ายมาข้างล่างสุด) -->
+    <!-- แสดงข้อมูลการลาที่บันทึกแล้ว -->
     <div id="leaveRecords" class="leave-records"></div>
     
     <!-- Version Info -->
@@ -2246,6 +2247,10 @@
                 // ซ่อนปุ่มยืนยัน
                 document.getElementById('confirmDatesBtn').style.display = 'none';
                 
+                // ⭐ Phase 2: ซ่อนแถบรายการลางาน + แสดงปุ่มบันทึก
+                document.getElementById('leaveRecords').style.display = 'none';
+                document.querySelector('.btn-submit').style.display = 'block';
+                
                 // แสดง Checkbox เลือกแผนก (ถ้ามีหลายแผนก)
                 if (userDepartments.length > 1) {
                     showDepartmentSelection(userDepartments);
@@ -2824,6 +2829,9 @@
                 
                 showMessage(message, 'success');
                 
+                // ⭐ Phase 3: กลับเป็น Phase 1 - ซ่อนปุ่มบันทึก + แสดงแถบรายการลางาน
+                document.querySelector('.btn-submit').style.display = 'none';
+                
                 // รีเซ็ตสถานะ
                 selectedDates = [];
                 selectionStep = 0;
@@ -2831,9 +2839,11 @@
                 endDate = null;
                 currentDutyData = [];
                 document.getElementById('departmentDetailsContainer').innerHTML = '';
+                
                 // แสดงแถบรายการลางานปฏิทิน 1 กลับมา
                 const topLeaveRecords = document.getElementById('leaveRecords');
                 if (topLeaveRecords) topLeaveRecords.style.display = 'block';
+                
                 document.getElementById('confirmDatesBtn').style.display = 'none';
                 loadDoctorLeaves();
                 updateSelectedRange();
