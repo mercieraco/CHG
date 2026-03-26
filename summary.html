@@ -1411,9 +1411,13 @@
                                     </div>
                                 `;
                             } else {
+                                // ⭐ เพิ่มเหตุผลการลา
+                                const reasonText = leave.no_delegation_reason && leave.no_delegation_reason.trim() 
+                                    ? ` : ${leave.no_delegation_reason}` 
+                                    : '';
                                 html += `
                                     <div class="doctor-item replacement">
-                                        <span class="doctor-name">${doc.name} (ลางาน - ไม่ฝากงาน)</span>
+                                        <span class="doctor-name">${doc.name} (ลางาน - ไม่ฝากงาน)${reasonText}</span>
                                     </div>
                                 `;
                             }
