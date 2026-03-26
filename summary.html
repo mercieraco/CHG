@@ -1129,14 +1129,24 @@
         return parts[0] || '';
     }
 
-    // Helper: ดึงตัวอักษรแรกนามสกุล
+    // Helper: ดึงตัวอักษรแรกนามสกุล (ข้ามสระ)
     function getLastNameInitial(fullName) {
-        if (!fullName) return '';
-        const parts = fullName.trim().split(' ');
-        if (parts.length > 1) {
-            return parts[parts.length - 1].charAt(0);
+        if (!fullName) return '?';
+        const parts = fullName.trim().split(/\s+/);
+        if (parts.length < 2) return '?';
+        const lastName = parts[parts.length - 1];
+        
+        // ข้ามสระไทย (เอาแค่พยัญชนะตัวแรก)
+        const thaiVowels = ['เ', 'แ', 'โ', 'ใ', 'ไ', 'ำ', 'ั', 'า', 'ิ', 'ี', 'ึ', 'ื', 'ุ', 'ู', '็', '่', '้', '๊', '๋', '์', 'ํ', 'ๅ'];
+        
+        for (let i = 0; i < lastName.length; i++) {
+            const char = lastName.charAt(i);
+            if (!thaiVowels.includes(char)) {
+                return char;
+            }
         }
-        return '';
+        
+        return lastName.charAt(0); // fallback
     }
 
     // Render Calendar
