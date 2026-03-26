@@ -1099,6 +1099,8 @@
     }
     
     function performHighlight(dates) {
+        console.log('🎯 performHighlight called with dates:', dates);
+        
         // ลบ highlight เก่า
         document.querySelectorAll('.calendar-day.highlight').forEach(el => {
             el.classList.remove('highlight');
@@ -1107,12 +1109,21 @@
         // เพิ่ม highlight ใหม่
         dates.forEach(dateStr => {
             const dayElements = document.querySelectorAll('.calendar-day');
+            console.log(`  Searching for date: ${dateStr}, found ${dayElements.length} calendar days`);
+            
+            let found = false;
             dayElements.forEach(el => {
                 const dateAttribute = el.getAttribute('data-date');
                 if (dateAttribute === dateStr) {
                     el.classList.add('highlight');
+                    found = true;
+                    console.log(`    ✅ Highlighted: ${dateStr}`);
                 }
             });
+            
+            if (!found) {
+                console.log(`    ❌ Not found: ${dateStr}`);
+            }
         });
 
         // Scroll ไปที่ปฏิทิน
