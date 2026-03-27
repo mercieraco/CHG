@@ -1927,8 +1927,8 @@
             const primaryDeptData = await primaryDeptResponse.json();
             const primaryDeptName = primaryDeptData.success ? primaryDeptData.data.name : 'ไม่ระบุ';
             
-            // 3. โหลดแผนกเสริมจาก doctor_departments
-            const deptsResponse = await fetch(`${API_URL}/api/doctor-departments?doctor_id=${doctorId}`);
+            // 3. โหลดแผนกเสริมจาก doctors/:id/departments (API ที่ถูกต้อง)
+            const deptsResponse = await fetch(`${API_URL}/api/doctors/${doctorId}/departments`);
             const deptsData = await deptsResponse.json();
             
             console.log('📦 Doctor departments from API:', deptsData);
