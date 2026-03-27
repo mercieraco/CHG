@@ -1922,10 +1922,15 @@
             const doctor = doctorData.data;
             console.log('👤 Doctor data:', doctor);
             
-            // 2. โหลดชื่อแผนกหลัก
-            const primaryDeptResponse = await fetch(`${API_URL}/api/departments/${doctor.department_id}`);
-            const primaryDeptData = await primaryDeptResponse.json();
-            const primaryDeptName = primaryDeptData.success ? primaryDeptData.data.name : 'ไม่ระบุ';
+            // 2. โหลดชื่อแผนกหลัก (ใช้ GET /api/departments แล้วหาจาก ID)
+            const allDeptsResponse = await fetch(`${API_URL}/api/departments`);
+            const allDeptsData = await allDeptsResponse.json();
+            const allDepartments = allDeptsData.success ? allDeptsData.data : [];
+            
+            const primaryDept = allDepartments.find(d => d.id === doctor.department_id);
+            const primaryDeptName = primaryDept ? primaryDept.name : 'ไม่ระบุ';
+            
+            console.log('🏥 Primary department:', primaryDeptName);
             
             // 3. โหลดแผนกเสริมจาก doctors/:id/departments (API ที่ถูกต้อง)
             const deptsResponse = await fetch(`${API_URL}/api/doctors/${doctorId}/departments`);
@@ -1940,18 +1945,17 @@
                 const allDeptIds = [...new Set(deptsData.data.map(d => d.department_id))];
                 const secondaryDeptIds = allDeptIds.filter(id => id !== doctor.department_id);
                 
-                // โหลดชื่อแผนกเสริม
-                const deptNamesPromises = secondaryDeptIds.map(id => 
-                    fetch(`${API_URL}/api/departments/${id}`)
-                        .then(res => res.json())
-                        .then(data => ({
-                            department_id: id,
-                            department_name: data.success ? data.data.name : 'ไม่ระบุ',
-                            is_primary: false
-                        }))
-                );
+                // โหลดชื่อแผนกเสริม (ใช้ allDepartments ที่โหลดไว้แล้ว)
+                secondaryDepartments = secondaryDeptIds.map(id => {
+                    const dept = allDepartments.find(d => d.id === id);
+                    return {
+                        department_id: id,
+                        department_name: dept ? dept.name : 'ไม่ระบุ',
+                        is_primary: false
+                    };
+                });
                 
-                secondaryDepartments = await Promise.all(deptNamesPromises);
+                console.log('➕ Secondary departments:', secondaryDepartments);
             }
             
             console.log('📦 Secondary departments:', secondaryDepartments);
