@@ -2450,9 +2450,13 @@
             const data = await response.json();
             
             if (response.ok && data.success) {
+                // ⭐ เก็บ ID ไว้ก่อน (ก่อนปิด Modal ที่จะ clear ค่า)
+                const doctorId = currentDoctorId;
+                const deptId = currentDoctorDepartmentId;
+                
                 closeDoctorDutyModal();
                 
-                // แสดงข้อความสำเร็จทันที
+                // แสดงข้อความสำเร็จ
                 const doctorListMessage = document.getElementById('doctorListMessage');
                 if (doctorListMessage) {
                     doctorListMessage.className = 'message success show';
@@ -2460,8 +2464,16 @@
                     setTimeout(() => doctorListMessage.classList.remove('show'), 3000);
                 }
                 
-                // ⭐ Reload รายการแพทย์ทั้งหมด (แทนที่จะ Reload แค่คนเดียว)
-                await loadDoctors();
+                // ⭐ Reload Duties ของแพทย์คนนี้
+                await loadDoctorDepartmentsAndDuties(doctorId, deptId);
+                
+                // Scroll ไปที่แพทย์คนนั้น
+                setTimeout(() => {
+                    const dutiesContainer = document.getElementById(`duties-${doctorId}`);
+                    if (dutiesContainer) {
+                        dutiesContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }, 100);
             } else {
                 throw new Error(data.message || 'ไม่สามารถเพิ่ม Duty ได้');
             }
