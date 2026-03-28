@@ -1517,16 +1517,8 @@
                     fullText = `<span style="text-decoration: line-through;">${startDate} - ${endDate} (${days} วัน) | ${doctorFullName} | ไม่ฝากงาน</span> <span style="text-decoration: none;">ไม่อนุมัติ <span style="color: #f44336;">✗</span></span>`;
                 } else {
                     // pending
-                    const ORTHO_DEPT_ID = 11;
-                    if (leave.department_id === ORTHO_DEPT_ID) {
-                        // Ortho: ไม่แสดง "รออนุมัติ"
-                        shortText += ` | ไม่ฝากงาน`;
-                        fullText += ` | ไม่ฝากงาน`;
-                    } else {
-                        // แผนกอื่น: แสดง "รออนุมัติ" ปกติ
-                        shortText += ` | ไม่ฝากงาน ⏳ รออนุมัติ`;
-                        fullText += ` | ไม่ฝากงาน (รออนุมัติ)`;
-                    }
+                    shortText += ` | ไม่ฝากงาน ⏳ รออนุมัติ`;
+                    fullText += ` | ไม่ฝากงาน (รออนุมัติ)`;
                 }
                 
                 // เช็คว่าเป็นการลาของตัวเองหรือไม่
