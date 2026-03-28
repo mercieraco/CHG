@@ -852,8 +852,7 @@
     <!-- Message แสดงผล (ย้ายมาอยู่เหนือปุ่มบันทึก) -->
     <div id="message" class="message"></div>
 
-    <!-- ⭐ Phase 1: ซ่อนปุ่มบันทึกตั้งแต่แรก -->
-    <button class="btn-submit" onclick="submitLeave()" style="display: none;">💾 บันทึกการลา</button>
+    <button class="btn-submit" onclick="submitLeave()">💾 บันทึกการลา</button>
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
@@ -1448,25 +1447,6 @@
             }
         }
 
-        // ⭐ Feature 3: กรองเฉพาะการลาที่ยังไม่สิ้นสุด (end_date >= วันนี้)
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        
-        leavesToDisplay = leavesToDisplay.filter(leave => {
-            const endDate = new Date(leave.end_date);
-            endDate.setHours(0, 0, 0, 0);
-            return endDate >= today;
-        });
-        console.log(`  ✅ Filtered for active/future leaves (end_date >= today): ${leavesToDisplay.length}`);
-
-        // ⭐ Feature 2: เรียงลำดับตามวันที่ยื่นเรื่อง (created_at) - เก่าสุดก่อน
-        leavesToDisplay.sort((a, b) => {
-            const dateA = new Date(a.created_at);
-            const dateB = new Date(b.created_at);
-            return dateA - dateB;
-        });
-        console.log('  ✅ Sorted by created_at (oldest first - ยื่นก่อนอยู่บน)');
-
         leavesToDisplay.forEach(leave => {
             const startDate = formatDateThai(leave.start_date);
             const endDate = formatDateThai(leave.end_date);
@@ -1497,12 +1477,6 @@
                     fullText += ` >> ${replacementFullName}`;
                 }
                 
-                // ⭐ Feature 4: เพิ่มเหตุผลการลา
-                if (leave.no_delegation_reason && leave.no_delegation_reason.trim()) {
-                    shortText += ` : ${leave.no_delegation_reason}`;
-                    fullText += ` : ${leave.no_delegation_reason}`;
-                }
-                
                 recordDiv.innerHTML = `
                     <div class="leave-record-info" onclick="highlightLeaveDates('${leave.start_date}', '${leave.end_date}', '${containerId}'); event.stopPropagation();">
                         <span class="name-short">${shortText}</span>
@@ -1518,8 +1492,8 @@
                 let html = `
                     <div class="leave-record-info">
                         <div class="leave-header">
-                            <span class="name-short">${startDate} - ${endDate} (${days} วัน) | ${doctorFirstName} (${doctorLastInitial})${leave.no_delegation_reason && leave.no_delegation_reason.trim() ? ` : ${leave.no_delegation_reason}` : ''}</span>
-                            <span class="name-full">${startDate} - ${endDate} (${days} วัน) | ${doctorFullName}${leave.no_delegation_reason && leave.no_delegation_reason.trim() ? ` : ${leave.no_delegation_reason}` : ''}</span>
+                            <span class="name-short">${startDate} - ${endDate} (${days} วัน) | ${doctorFirstName} (${doctorLastInitial})</span>
+                            <span class="name-full">${startDate} - ${endDate} (${days} วัน) | ${doctorFullName}</span>
                         </div>
                         <div class="duty-details">
                 `;
@@ -1575,14 +1549,16 @@
                     fullText = `<span style="text-decoration: line-through;">${startDate} - ${endDate} (${days} วัน) | ${doctorFullName} | ไม่ฝากงาน</span> <span style="text-decoration: none;">ไม่อนุมัติ <span style="color: #f44336;">✗</span></span>`;
                 } else {
                     // pending
-                    shortText += ` | ไม่ฝากงาน ⏳ รออนุมัติ`;
-                    fullText += ` | ไม่ฝากงาน (รออนุมัติ)`;
-                }
-                
-                // ⭐ Feature 4: เพิ่มเหตุผลการลา
-                if (leave.no_delegation_reason && leave.no_delegation_reason.trim()) {
-                    shortText += ` : ${leave.no_delegation_reason}`;
-                    fullText += ` : ${leave.no_delegation_reason}`;
+                    const ORTHO_DEPT_ID = 11;
+                    if (leave.department_id === ORTHO_DEPT_ID) {
+                        // Ortho: ไม่แสดง "รออนุมัติ"
+                        shortText += ` | ไม่ฝากงาน`;
+                        fullText += ` | ไม่ฝากงาน`;
+                    } else {
+                        // แผนกอื่น: แสดง "รออนุมัติ" ปกติ
+                        shortText += ` | ไม่ฝากงาน ⏳ รออนุมัติ`;
+                        fullText += ` | ไม่ฝากงาน (รออนุมัติ)`;
+                    }
                 }
                 
                 recordDiv.innerHTML = `
@@ -2093,13 +2069,6 @@
                 
                 // ซ่อนปุ่มยืนยัน
                 document.getElementById('confirmDatesBtn').style.display = 'none';
-                
-                // ⭐ Phase 2: ซ่อนแถบรายการลางานทั้งหมด + แสดงปุ่มบันทึก
-                document.getElementById('leaveRecords').style.display = 'none';
-                document.querySelectorAll('.dept-leave-records').forEach(el => {
-                    el.style.display = 'none';
-                });
-                document.querySelector('.btn-submit').style.display = 'block';
                 
                 // แสดง Checkbox เลือกแผนก (ถ้ามีหลายแผนก)
                 if (userDepartments.length > 1) {
@@ -2652,9 +2621,6 @@
                 
                 showMessage(message, 'success');
                 
-                // ⭐ Phase 3: กลับเป็น Phase 1 - ซ่อนปุ่มบันทึก + แสดงแถบรายการลางาน
-                document.querySelector('.btn-submit').style.display = 'none';
-                
                 // รีเซ็ตสถานะ
                 selectedDates = [];
                 selectionStep = 0;
@@ -2662,10 +2628,6 @@
                 endDate = null;
                 currentDutyData = [];
                 document.getElementById('departmentDetailsContainer').innerHTML = '';
-                
-                // แสดงแถบรายการลางานกลับมา
-                document.getElementById('leaveRecords').style.display = 'block';
-                
                 document.getElementById('confirmDatesBtn').style.display = 'none';
                 loadDoctorLeaves();
                 updateSelectedRange();
@@ -2699,24 +2661,6 @@
         for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
             dates.push(formatDate(d));
         }
-
-        // ⭐ Feature 1: เปลี่ยนปฏิทินไปเดือนที่เริ่มลา
-        const startMonth = start.getMonth();
-        const startYear = start.getFullYear();
-        console.log(`  📅 Changing calendar to: ${startMonth + 1}/${startYear}`);
-        
-        currentMonth = startMonth;
-        currentYear = startYear;
-        renderCalendar();
-        
-        // รอ Render เสร็จ (50ms) แล้วค่อย Highlight
-        setTimeout(() => {
-            performHighlight(dates, containerId);
-        }, 50);
-    }
-    
-    function performHighlight(dates, containerId) {
-        // ฟังก์ชันช่วยทำ Highlight หลังจาก Render เสร็จ
 
         // หา calendar ที่ถูกต้อง
         let targetCalendar;
@@ -2956,7 +2900,7 @@
                     </div>
                     
                     <!-- แถบแสดงการลางาน (ใต้ปฏิทิน) -->
-                    <div class="dept-leave-records" style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                    <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
                         <h4 style="margin: 0 0 10px 0; color: #667eea;">📋 รายการลางาน</h4>
                         <div id="leaveRecords-${dept.department_id}"></div>
                     </div>
@@ -2985,11 +2929,6 @@
             // แสดงรายการลาใต้ปฏิทินแต่ละแผนก
             displayLeaveRecords(dept.department_id, `leaveRecords-${dept.department_id}`);
         }
-        
-        // ⭐ Phase 2: ซ่อนแถบรายการลางานในแผนก (หลังสร้างเสร็จ)
-        document.querySelectorAll('.dept-leave-records').forEach(el => {
-            el.style.display = 'none';
-        });
         
         // โหลด Dropdown แพทย์สำหรับแต่ละแผนก
         for (const dept of selectedDepts) {
