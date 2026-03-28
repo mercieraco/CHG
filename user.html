@@ -2082,36 +2082,43 @@
 
         // ========================================
         // เช็คกฎการลา: วันที่ 20 และเดือนปัจจุบัน
+        // (ยกเว้นแผนก Ortho - ลาได้เมื่อไหร่ก็ได้)
         // ========================================
-        const todayDay = today.getDate();
-        const todayMonth = today.getMonth();
-        const todayYear = today.getFullYear();
+        const userDeptId = parseInt(sessionStorage.getItem('department_id'));
+        const ORTHO_DEPT_ID = 11;
         
-        const selectedMonth = selectedDate.getMonth();
-        const selectedYear = selectedDate.getFullYear();
-        
-        // เช็คว่าลาเดือนไหน
-        const isSameMonth = (selectedYear === todayYear && selectedMonth === todayMonth);
-        const isNextMonth = (selectedYear === todayYear && selectedMonth === todayMonth + 1) || 
-                           (selectedYear === todayYear + 1 && todayMonth === 11 && selectedMonth === 0);
-        
-        const monthNames = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
-                          'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
-        const monthShortNames = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
-                               'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
-        
-        // กรณีที่ 1: ลาในเดือนนี้ → ห้ามลาเลย
-        if (isSameMonth) {
-            const currentMonthName = monthNames[todayMonth];
-            alert(`❌ ลาไม่ได้\nเดือน${currentMonthName}ได้จัดตารางไปแล้ว\nกรุณาลางานเดือนถัดไป`);
-            return;
-        }
-        
-        // กรณีที่ 2: ลาเดือนหน้า แต่วันนี้เกิน 20 แล้ว
-        if (isNextMonth && todayDay > 20) {
-            const currentMonthShort = monthShortNames[todayMonth];
-            alert(`❌ ไม่สามารถลางานได้\nเลยวันที่ 20 ${currentMonthShort} แล้ว\nจัดตารางเวรไม่ทัน\nกรุณาเลือกวันลาในเดือนถัดไป`);
-            return;
+        // Ortho สามารถลาได้เมื่อไหร่ก็ได้ - ข้ามการเช็ควันที่
+        if (userDeptId !== ORTHO_DEPT_ID) {
+            const todayDay = today.getDate();
+            const todayMonth = today.getMonth();
+            const todayYear = today.getFullYear();
+            
+            const selectedMonth = selectedDate.getMonth();
+            const selectedYear = selectedDate.getFullYear();
+            
+            // เช็คว่าลาเดือนไหน
+            const isSameMonth = (selectedYear === todayYear && selectedMonth === todayMonth);
+            const isNextMonth = (selectedYear === todayYear && selectedMonth === todayMonth + 1) || 
+                               (selectedYear === todayYear + 1 && todayMonth === 11 && selectedMonth === 0);
+            
+            const monthNames = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+                              'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+            const monthShortNames = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
+                                   'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+            
+            // กรณีที่ 1: ลาในเดือนนี้ → ห้ามลาเลย
+            if (isSameMonth) {
+                const currentMonthName = monthNames[todayMonth];
+                alert(`❌ ลาไม่ได้\nเดือน${currentMonthName}ได้จัดตารางไปแล้ว\nกรุณาลางานเดือนถัดไป`);
+                return;
+            }
+            
+            // กรณีที่ 2: ลาเดือนหน้า แต่วันนี้เกิน 20 แล้ว
+            if (isNextMonth && todayDay > 20) {
+                const currentMonthShort = monthShortNames[todayMonth];
+                alert(`❌ ไม่สามารถลางานได้\nเลยวันที่ 20 ${currentMonthShort} แล้ว\nจัดตารางเวรไม่ทัน\nกรุณาเลือกวันลาในเดือนถัดไป`);
+                return;
+            }
         }
 
         if (isDateOnLeaveBySelectedDoctor(dateStr)) {
