@@ -1136,12 +1136,6 @@
     }
 
     // Helper: ดึงชื่อ
-    function getFirstName(fullName) {
-        if (!fullName) return '';
-        const parts = fullName.trim().split(' ');
-        return parts[0] || '';
-    }
-
     // Helper: ดึงตัวอักษรแรกนามสกุล (ข้ามสระ)
     function getLastNameInitial(fullName) {
         if (!fullName) return '?';
