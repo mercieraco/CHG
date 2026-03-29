@@ -798,6 +798,9 @@
         const currentYearNow = new Date().getFullYear();
         const currentYearBE = currentYearNow + 543; // พ.ศ.
         
+        // ⭐ อัพเดท currentYear ให้เป็นปีปัจจุบัน
+        currentYear = currentYearNow;
+        
         // 4 ปี: ปีที่แล้ว, ปีนี้, ปีหน้า, อีก 2 ปี
         const years = [
             currentYearBE - 1,  // ปีที่แล้ว
@@ -1703,15 +1706,35 @@
         <p style="color: #666; text-align: center; margin: 10px 0;">กรอกตัวเลข 2 หลักสุดท้าย (69-99)</p>
         <p style="color: #999; font-size: 14px; text-align: center;">ปี 2569-2599 (ค.ศ. 2026-2056)</p>
         
-        <div style="display: flex; align-items: center; justify-content: center; margin: 25px 0; gap: 5px;">
+        <div style="display: flex; align-items: center; justify-content: center; margin: 25px 0; gap: 2px;">
             <span style="font-size: 36px; font-weight: bold; color: #333;">25</span>
             <input type="number" 
                    id="yearSuffixInput" 
                    min="69" 
                    max="99" 
                    placeholder="69"
-                   style="width: 80px; font-size: 36px; font-weight: bold; text-align: center; padding: 10px; border: 2px solid #4CAF50; border-radius: 8px;">
+                   style="width: 80px; font-size: 36px; font-weight: bold; text-align: left; padding: 10px 10px 10px 5px; border: 2px solid #4CAF50; border-radius: 8px; font-family: inherit;">
         </div>
+        
+        <style>
+            /* Placeholder styling - เดียวกับ "25" แต่จาง 50% */
+            #yearSuffixInput::placeholder {
+                color: #333;
+                opacity: 0.5;
+                font-weight: bold;
+                font-size: 36px;
+            }
+            #yearSuffixInput::-webkit-input-placeholder {
+                color: #333;
+                opacity: 0.5;
+                font-weight: bold;
+            }
+            #yearSuffixInput::-moz-placeholder {
+                color: #333;
+                opacity: 0.5;
+                font-weight: bold;
+            }
+        </style>
         
         <div id="yearResult" style="text-align: center; margin: 20px 0; min-height: 30px;">
             <span id="yearResultText" style="font-size: 18px; font-weight: bold;"></span>
