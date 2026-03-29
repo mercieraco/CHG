@@ -868,13 +868,15 @@
     }
 
     // ปิด Modal
-    function closeYearModal() {
+    function closeYearModal(resetDropdown = true) {
         const modal = document.getElementById('yearModal');
         modal.style.display = 'none';
         
-        // Reset dropdown กลับไปปีปัจจุบัน
-        const currentYearBE = new Date().getFullYear() + 543;
-        document.getElementById('yearSelect').value = currentYearBE - 543;
+        // Reset dropdown กลับไปปีปัจจุบัน (เฉพาะตอนยกเลิก)
+        if (resetDropdown) {
+            const currentYearBE = new Date().getFullYear() + 543;
+            document.getElementById('yearSelect').value = currentYearBE - 543;
+        }
     }
 
     // Validate input แบบ real-time
@@ -953,8 +955,8 @@
             currentYear = yearCE;
             renderCalendar();
             
-            // ปิด Modal
-            closeYearModal();
+            // ปิด Modal (ไม่ reset dropdown)
+            closeYearModal(false);
         }
     }
 
