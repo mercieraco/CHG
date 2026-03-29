@@ -794,17 +794,36 @@
             monthSelect.appendChild(option);
         });
         
-        // สร้าง dropdown ปี (3 ปีย้อนหลัง + ปีนี้ + 3 ปีข้างหน้า)
+        // สร้าง dropdown ปี (ปีที่แล้ว + ปีนี้ + 2 ปีข้างหน้า + "เลือก...")
         const currentYearNow = new Date().getFullYear();
-        for (let year = currentYearNow - 3; year <= currentYearNow + 3; year++) {
+        const currentYearBE = currentYearNow + 543; // พ.ศ.
+        
+        // 4 ปี: ปีที่แล้ว, ปีนี้, ปีหน้า, อีก 2 ปี
+        const years = [
+            currentYearBE - 1,  // ปีที่แล้ว
+            currentYearBE,      // ปีนี้
+            currentYearBE + 1,  // ปีหน้า
+            currentYearBE + 2   // อีก 2 ปี
+        ];
+        
+        years.forEach((yearBE, index) => {
             const option = document.createElement('option');
-            option.value = year;
-            option.textContent = `${year + 543}`;  // แสดงเป็น พ.ศ.
-            if (year === currentYear) {
+            option.value = yearBE - 543; // แปลงเป็น ค.ศ.
+            option.textContent = yearBE;
+            
+            // ปีนี้เป็น default (index = 1)
+            if (index === 1) {
                 option.selected = true;
             }
+            
             yearSelect.appendChild(option);
-        }
+        });
+        
+        // เพิ่มตัวเลือก "เลือก..."
+        const customOption = document.createElement('option');
+        customOption.value = 'custom';
+        customOption.textContent = 'เลือก...';
+        yearSelect.appendChild(customOption);
     }
 
     // เปลี่ยนเดือน/ปีจาก dropdown
@@ -814,9 +833,126 @@
         
         if (monthValue === '' || yearValue === '') return;
         
+        // ถ้าเลือก "เลือก..." → เปิด Modal
+        if (yearValue === 'custom') {
+            openYearModal();
+            return;
+        }
+        
         currentMonth = parseInt(monthValue);
         currentYear = parseInt(yearValue);
         renderCalendar();
+    }
+
+    // เปิด Modal เลือกปี
+    function openYearModal() {
+        const modal = document.getElementById('yearModal');
+        const input = document.getElementById('yearSuffixInput');
+        const resultText = document.getElementById('yearResultText');
+        const confirmBtn = document.getElementById('confirmYearBtn');
+        
+        // Reset
+        input.value = '';
+        resultText.textContent = '';
+        confirmBtn.disabled = true;
+        confirmBtn.style.opacity = '0.5';
+        
+        // แสดง Modal
+        modal.style.display = 'flex';
+        
+        // Focus ที่ input
+        setTimeout(() => input.focus(), 100);
+    }
+
+    // ปิด Modal
+    function closeYearModal() {
+        const modal = document.getElementById('yearModal');
+        modal.style.display = 'none';
+        
+        // Reset dropdown กลับไปปีปัจจุบัน
+        const currentYearBE = new Date().getFullYear() + 543;
+        document.getElementById('yearSelect').value = currentYearBE - 543;
+    }
+
+    // Validate input แบบ real-time
+    document.addEventListener('DOMContentLoaded', () => {
+        const input = document.getElementById('yearSuffixInput');
+        const resultText = document.getElementById('yearResultText');
+        const confirmBtn = document.getElementById('confirmYearBtn');
+        
+        input.addEventListener('input', () => {
+            const suffix = parseInt(input.value);
+            
+            if (input.value.length === 0) {
+                resultText.textContent = '';
+                confirmBtn.disabled = true;
+                confirmBtn.style.opacity = '0.5';
+                return;
+            }
+            
+            if (suffix >= 69 && suffix <= 99) {
+                const yearBE = 2500 + suffix;
+                const yearCE = yearBE - 543;
+                resultText.innerHTML = `✅ ผลลัพธ์: <span style="color: #4CAF50;">${yearBE}</span> (ค.ศ. ${yearCE})`;
+                confirmBtn.disabled = false;
+                confirmBtn.style.opacity = '1';
+                confirmBtn.style.cursor = 'pointer';
+            } else {
+                resultText.innerHTML = `❌ <span style="color: #f44336;">กรุณากรอก 69-99</span>`;
+                confirmBtn.disabled = true;
+                confirmBtn.style.opacity = '0.5';
+            }
+        });
+        
+        // กด Enter ที่ input = กดตกลง
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !confirmBtn.disabled) {
+                confirmCustomYear();
+            }
+        });
+    });
+
+    // ยืนยันปีที่เลือก
+    function confirmCustomYear() {
+        const input = document.getElementById('yearSuffixInput');
+        const suffix = parseInt(input.value);
+        
+        if (suffix >= 69 && suffix <= 99) {
+            const yearBE = 2500 + suffix;
+            const yearCE = yearBE - 543;
+            
+            // อัพเดท dropdown
+            const yearSelect = document.getElementById('yearSelect');
+            
+            // เช็คว่ามีปีนี้ใน dropdown หรือไม่
+            let optionExists = false;
+            for (let i = 0; i < yearSelect.options.length; i++) {
+                if (parseInt(yearSelect.options[i].value) === yearCE) {
+                    yearSelect.value = yearCE;
+                    optionExists = true;
+                    break;
+                }
+            }
+            
+            // ถ้าไม่มี → เพิ่มเข้าไป
+            if (!optionExists) {
+                const newOption = document.createElement('option');
+                newOption.value = yearCE;
+                newOption.textContent = yearBE;
+                newOption.selected = true;
+                
+                // เพิ่มก่อน "เลือก..."
+                const customOption = yearSelect.options[yearSelect.options.length - 1];
+                yearSelect.insertBefore(newOption, customOption);
+            }
+            
+            // อัพเดทปฏิทิน
+            currentYear = yearCE;
+            renderCalendar();
+            
+            // ปิด Modal
+            closeYearModal();
+        }
     }
 
     // โหลดข้อมูลแผนก (Duties + Doctor-Duties + Leaves + Doctors)
@@ -1559,6 +1695,42 @@
         renderCalendar();
     }
 </script>
+
+<!-- Modal สำหรับเลือกปี Custom -->
+<div id="yearModal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;">
+    <div style="background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); max-width: 400px; width: 90%;">
+        <h3 style="margin-top: 0; color: #333; text-align: center;">📅 เลือกปี พ.ศ.</h3>
+        <p style="color: #666; text-align: center; margin: 10px 0;">กรอกตัวเลข 2 หลักสุดท้าย (69-99)</p>
+        <p style="color: #999; font-size: 14px; text-align: center;">ปี 2569-2599 (ค.ศ. 2026-2056)</p>
+        
+        <div style="display: flex; align-items: center; justify-content: center; margin: 25px 0; gap: 5px;">
+            <span style="font-size: 36px; font-weight: bold; color: #333;">25</span>
+            <input type="number" 
+                   id="yearSuffixInput" 
+                   min="69" 
+                   max="99" 
+                   placeholder="69"
+                   style="width: 80px; font-size: 36px; font-weight: bold; text-align: center; padding: 10px; border: 2px solid #4CAF50; border-radius: 8px;">
+        </div>
+        
+        <div id="yearResult" style="text-align: center; margin: 20px 0; min-height: 30px;">
+            <span id="yearResultText" style="font-size: 18px; font-weight: bold;"></span>
+        </div>
+        
+        <div style="display: flex; gap: 10px; justify-content: center;">
+            <button id="confirmYearBtn" 
+                    onclick="confirmCustomYear()" 
+                    disabled
+                    style="padding: 12px 30px; font-size: 16px; background: #4CAF50; color: white; border: none; border-radius: 8px; cursor: pointer; opacity: 0.5;">
+                ✓ ตกลง
+            </button>
+            <button onclick="closeYearModal()" 
+                    style="padding: 12px 30px; font-size: 16px; background: #f44336; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                ✗ ยกเลิก
+            </button>
+        </div>
+    </div>
+</div>
 ```
 
 </body>
