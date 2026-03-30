@@ -1006,11 +1006,12 @@
         document.getElementById('filterDepartment').value = departmentId;
 
         try {
-            const response = await fetch(`${API_URL}/api/doctors`);
+            // GEN4 V0: ใช้ API ใหม่ที่รวมแผนกเสริม
+            const response = await fetch(`${API_URL}/api/departments/${departmentId}/doctors`);
             const data = await response.json();
             
             if (response.ok && data.success) {
-                let doctors = data.data.filter(d => d.department_id == departmentId);
+                let doctors = data.data; // รวมทั้งแผนกหลักและเสริมแล้ว
                 
                 // กรองตาม work_type
                 if (workType === 'full') {
@@ -1075,8 +1076,8 @@
         }
 
         try {
-            // 1. ดึงรายชื่อแพทย์ทั้งหมด
-            const doctorsResponse = await fetch(`${API_URL}/api/doctors`);
+            // GEN4 V0: ดึงแพทย์ในแผนก (รวมแผนกเสริม)
+            const doctorsResponse = await fetch(`${API_URL}/api/departments/${filterDept}/doctors`);
             const doctorsData = await doctorsResponse.json();
             
             // 2. ดึง doctor_duties ของแผนกนี้
@@ -1088,7 +1089,7 @@
             const filterDeptLeavesData = await filterDeptLeavesResponse.json();
             
             if (doctorsResponse.ok && doctorsData.success && dutiesData.success) {
-                let doctors = doctorsData.data.filter(d => d.department_id == filterDept);
+                let doctors = doctorsData.data; // รวมทั้งแผนกหลักและเสริมแล้ว
                 console.log('Doctors in department:', doctors.length);
                 
                 // กรองตาม work_type
