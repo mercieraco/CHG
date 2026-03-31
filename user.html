@@ -911,7 +911,7 @@
             
             let doctorDepartments = [];
             if (doctorDeptsResponse.ok && doctorDeptsData.success) {
-                doctorDepartments = doctorDeptsData.data;
+                doctorDepartments = doctorDeptsData.data; // แผนกเสริม
             }
 
             // 3. โหลดข้อมูลแพทย์ทั้งหมด
@@ -928,17 +928,34 @@
                     return;
                 }
                 
-                // ถ้าไม่มีข้อมูลแผนก (แพทย์ 1 แผนก) → สร้างจาก doctor
-                if (doctorDepartments.length === 0) {
-                    console.log('📍 แพทย์มี 1 แผนก → สร้างจาก doctor');
-                    doctorDepartments = [{
+                // GEN4 V1: รวมแผนกหลัก + แผนกเสริม
+                const allDepartments = [];
+                
+                // เพิ่มแผนกหลัก (เสมอ)
+                if (doctor.department_id) {
+                    allDepartments.push({
                         department_id: doctor.department_id,
                         department_name: doctor.department_name,
-                        is_primary: true
-                    }];
+                        is_primary: 1
+                    });
+                    console.log('✅ เพิ่มแผนกหลัก:', doctor.department_name);
                 }
                 
-                console.log('📍 doctorDepartments:', doctorDepartments);
+                // เพิ่มแผนกเสริม (ถ้ามี)
+                doctorDepartments.forEach(dept => {
+                    // ไม่เพิ่มซ้ำ
+                    if (!allDepartments.find(d => d.department_id === dept.department_id)) {
+                        allDepartments.push({
+                            department_id: dept.department_id,
+                            department_name: dept.department_name,
+                            is_primary: 0
+                        });
+                        console.log('✅ เพิ่มแผนกเสริม:', dept.department_name);
+                    }
+                });
+                
+                doctorDepartments = allDepartments;
+                console.log('📍 doctorDepartments (รวมแล้ว):', doctorDepartments);
                 
                 // 4. Auto-select
                 document.getElementById('departmentSelect').value = doctor.department_id;
