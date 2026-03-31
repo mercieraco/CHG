@@ -956,11 +956,21 @@
                 // 8. เก็บข้อมูลแผนก (ไม่แสดงทันที)
                 userDepartments = doctorDepartments;
                 console.log('✅ userDepartments กำหนดแล้ว:', userDepartments);
+                console.log('🔍 GEN4 V1: userDepartments.length =', userDepartments.length);
                 
-                // GEN4 V0: สร้าง Checkboxes ถ้ามีหลายแผนก
-                if (userDepartments.length > 1) {
+                // GEN4 V1: สร้าง Checkboxes (แสดงเสมอเพื่อทดสอบ)
+                if (userDepartments.length >= 1) {
+                    console.log('🎯 GEN4 V1: สร้าง Checkboxes สำหรับ', userDepartments.length, 'แผนก');
                     const container = document.getElementById('departmentSelectionContainer');
                     const checkboxDiv = document.getElementById('departmentCheckboxes');
+                    
+                    console.log('🔍 container:', container);
+                    console.log('🔍 checkboxDiv:', checkboxDiv);
+                    
+                    if (!container || !checkboxDiv) {
+                        console.error('❌ ไม่พบ container หรือ checkboxDiv!');
+                        return;
+                    }
                     
                     // สร้าง checkboxes
                     checkboxDiv.innerHTML = '';
