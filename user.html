@@ -957,6 +957,44 @@
                 userDepartments = doctorDepartments;
                 console.log('✅ userDepartments กำหนดแล้ว:', userDepartments);
                 
+                // GEN4 V0: สร้าง Checkboxes ถ้ามีหลายแผนก
+                if (userDepartments.length > 1) {
+                    const container = document.getElementById('departmentSelectionContainer');
+                    const checkboxDiv = document.getElementById('departmentCheckboxes');
+                    
+                    // สร้าง checkboxes
+                    checkboxDiv.innerHTML = '';
+                    userDepartments.forEach((dept, index) => {
+                        const label = document.createElement('label');
+                        label.style.cssText = 'display: flex; align-items: center; padding: 10px; background: white; border-radius: 6px; cursor: pointer; transition: all 0.2s;';
+                        label.onmouseover = function() { this.style.background = '#f0f0f0'; };
+                        label.onmouseout = function() { this.style.background = 'white'; };
+                        
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.value = dept.department_id;
+                        checkbox.setAttribute('data-name', dept.department_name);
+                        checkbox.setAttribute('data-is-primary', dept.is_primary);
+                        checkbox.checked = dept.is_primary === 1; // Default: เลือกแผนกหลัก
+                        checkbox.style.cssText = 'width: 20px; height: 20px; margin-right: 10px; cursor: pointer;';
+                        checkbox.onchange = updateDepartmentDetails;
+                        
+                        const text = document.createElement('span');
+                        text.textContent = `${dept.department_name} ${dept.is_primary === 1 ? '(แผนกหลัก)' : '(แผนกเสริม)'}`;
+                        text.style.cssText = 'font-size: 15px; color: #333;';
+                        
+                        label.appendChild(checkbox);
+                        label.appendChild(text);
+                        checkboxDiv.appendChild(label);
+                    });
+                    
+                    // แสดง container
+                    container.style.display = 'block';
+                    
+                    // โหลด duty/delegation แผนกแรก
+                    updateDepartmentDetails();
+                }
+                
                 // 9. โหลดการลาของแพทย์
                 await loadDoctorLeaves();
                 
@@ -1035,6 +1073,120 @@
         
         // โหลดการลาทั้งแผนก
         loadDoctorLeaves();
+    }
+
+    // GEN4 V0: อัพเดท Duty/Delegation ตามแผนกที่เลือก
+    async function updateDepartmentDetails() {
+        const selectedDepts = Array.from(
+            document.querySelectorAll('#departmentCheckboxes input:checked')
+        ).map(cb => ({
+            department_id: parseInt(cb.value),
+            department_name: userDepartments.find(d => d.department_id == cb.value)?.department_name
+        }));
+        
+        console.log('📍 Selected departments:', selectedDepts);
+        
+        const container = document.getElementById('departmentDetailsContainer');
+        container.innerHTML = '';
+        
+        if (selectedDepts.length === 0) {
+            container.innerHTML = '<p style="color: #f44336; text-align: center;">⚠️ กรุณาเลือกอย่างน้อย 1 แผนก</p>';
+            return;
+        }
+        
+        // Loop แต่ละแผนก
+        for (const dept of selectedDepts) {
+            const deptSection = document.createElement('div');
+            deptSection.className = 'department-section';
+            deptSection.style.cssText = 'margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #667eea;';
+            
+            deptSection.innerHTML = `
+                <h3 style="color: #667eea; margin-top: 0; margin-bottom: 15px;">
+                    📋 แผนก: ${dept.department_name}
+                </h3>
+                
+                <div id="dept-${dept.department_id}-duties" style="margin-bottom: 20px;">
+                    <h4 style="color: #333; font-size: 16px; margin-bottom: 10px;">งานที่รับผิดชอบ:</h4>
+                    <div class="loading">กำลังโหลด...</div>
+                </div>
+                
+                <div id="dept-${dept.department_id}-delegation" style="margin-bottom: 20px;">
+                    <h4 style="color: #333; font-size: 16px; margin-bottom: 10px;">ฝากงาน:</h4>
+                    <div class="loading">กำลังโหลด...</div>
+                </div>
+            `;
+            
+            container.appendChild(deptSection);
+            
+            // โหลด duties
+            await loadDepartmentDuties(dept.department_id);
+            
+            // โหลด delegation options
+            await loadDepartmentDelegation(dept.department_id);
+        }
+    }
+    
+    // โหลด Duties ของแผนก
+    async function loadDepartmentDuties(deptId) {
+        try {
+            const response = await fetch(`${LEAVE_API_URL}/api/duties/department/${deptId}`);
+            const data = await response.json();
+            
+            const container = document.getElementById(`dept-${deptId}-duties`);
+            
+            if (response.ok && data.success && data.data.length > 0) {
+                const doctorId = parseInt(sessionStorage.getItem('id'));
+                const myDuties = data.data.filter(d => d.doctor_id == doctorId);
+                
+                if (myDuties.length > 0) {
+                    container.innerHTML = `
+                        <h4 style="color: #333; font-size: 16px; margin-bottom: 10px;">งานที่รับผิดชอบ:</h4>
+                        <ul style="margin: 0; padding-left: 20px;">
+                            ${myDuties.map(d => `<li>${d.duty_details || d.duty_name || 'ไม่ระบุ'}</li>`).join('')}
+                        </ul>
+                    `;
+                } else {
+                    container.innerHTML = '<p style="color: #999;">ไม่มีงานในแผนกนี้</p>';
+                }
+            } else {
+                container.innerHTML = '<p style="color: #999;">ไม่มีงานในแผนกนี้</p>';
+            }
+        } catch (error) {
+            console.error('Load duties error:', error);
+            document.getElementById(`dept-${deptId}-duties`).innerHTML = '<p style="color: #f44336;">โหลดข้อมูลไม่สำเร็จ</p>';
+        }
+    }
+    
+    // โหลด Delegation options ของแผนก
+    async function loadDepartmentDelegation(deptId) {
+        try {
+            const response = await fetch(`${API_URL}/api/departments/${deptId}/doctors`);
+            const data = await response.json();
+            
+            const container = document.getElementById(`dept-${deptId}-delegation`);
+            
+            if (response.ok && data.success) {
+                const doctorId = parseInt(sessionStorage.getItem('id'));
+                const otherDoctors = data.data.filter(d => d.id != doctorId);
+                
+                if (otherDoctors.length > 0) {
+                    container.innerHTML = `
+                        <h4 style="color: #333; font-size: 16px; margin-bottom: 10px;">ฝากงานให้:</h4>
+                        <select id="delegation-${deptId}" class="delegation-select" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                            <option value="">-- ไม่ฝากงาน --</option>
+                            ${otherDoctors.map(d => `<option value="${d.id}">${d.name}</option>`).join('')}
+                        </select>
+                    `;
+                } else {
+                    container.innerHTML = '<p style="color: #999;">ไม่มีแพทย์อื่นในแผนกนี้</p>';
+                }
+            } else {
+                container.innerHTML = '<p style="color: #999;">ไม่มีแพทย์อื่นในแผนกนี้</p>';
+            }
+        } catch (error) {
+            console.error('Load delegation error:', error);
+            document.getElementById(`dept-${deptId}-delegation`).innerHTML = '<p style="color: #f44336;">โหลดข้อมูลไม่สำเร็จ</p>';
+        }
     }
 
     // เมื่อเลือกแพทย์ที่ลา
@@ -1544,16 +1696,8 @@
                     fullText = `<span style="text-decoration: line-through;">${startDate} - ${endDate} (${days} วัน) | ${doctorFullName} | ไม่ฝากงาน</span> <span style="text-decoration: none;">ไม่อนุมัติ <span style="color: #f44336;">✗</span></span>`;
                 } else {
                     // pending
-                    const ORTHO_DEPT_ID = 11;
-                    if (leave.department_id === ORTHO_DEPT_ID) {
-                        // Ortho: ไม่แสดง "รออนุมัติ"
-                        shortText += ` | ไม่ฝากงาน`;
-                        fullText += ` | ไม่ฝากงาน`;
-                    } else {
-                        // แผนกอื่น: แสดง "รออนุมัติ" ปกติ
-                        shortText += ` | ไม่ฝากงาน ⏳ รออนุมัติ`;
-                        fullText += ` | ไม่ฝากงาน (รออนุมัติ)`;
-                    }
+                    shortText += ` | ไม่ฝากงาน ⏳ รออนุมัติ`;
+                    fullText += ` | ไม่ฝากงาน (รออนุมัติ)`;
                 }
                 
                 // ⭐ เพิ่มเหตุผลการลา (ถ้ามี)
@@ -2083,43 +2227,36 @@
 
         // ========================================
         // เช็คกฎการลา: วันที่ 20 และเดือนปัจจุบัน
-        // (ยกเว้นแผนก Ortho - ลาได้เมื่อไหร่ก็ได้)
         // ========================================
-        const userDeptId = parseInt(sessionStorage.getItem('department_id'));
-        const ORTHO_DEPT_ID = 11;
+        const todayDay = today.getDate();
+        const todayMonth = today.getMonth();
+        const todayYear = today.getFullYear();
         
-        // Ortho สามารถลาได้เมื่อไหร่ก็ได้ - ข้ามการเช็ควันที่
-        if (userDeptId !== ORTHO_DEPT_ID) {
-            const todayDay = today.getDate();
-            const todayMonth = today.getMonth();
-            const todayYear = today.getFullYear();
-            
-            const selectedMonth = selectedDate.getMonth();
-            const selectedYear = selectedDate.getFullYear();
-            
-            // เช็คว่าลาเดือนไหน
-            const isSameMonth = (selectedYear === todayYear && selectedMonth === todayMonth);
-            const isNextMonth = (selectedYear === todayYear && selectedMonth === todayMonth + 1) || 
-                               (selectedYear === todayYear + 1 && todayMonth === 11 && selectedMonth === 0);
-            
-            const monthNames = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
-                              'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
-            const monthShortNames = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
-                                   'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
-            
-            // กรณีที่ 1: ลาในเดือนนี้ → ห้ามลาเลย
-            if (isSameMonth) {
-                const currentMonthName = monthNames[todayMonth];
-                alert(`❌ ลาไม่ได้\nเดือน${currentMonthName}ได้จัดตารางไปแล้ว\nกรุณาลางานเดือนถัดไป`);
-                return;
-            }
-            
-            // กรณีที่ 2: ลาเดือนหน้า แต่วันนี้เกิน 20 แล้ว
-            if (isNextMonth && todayDay > 20) {
-                const currentMonthShort = monthShortNames[todayMonth];
-                alert(`❌ ไม่สามารถลางานได้\nเลยวันที่ 20 ${currentMonthShort} แล้ว\nจัดตารางเวรไม่ทัน\nกรุณาเลือกวันลาในเดือนถัดไป`);
-                return;
-            }
+        const selectedMonth = selectedDate.getMonth();
+        const selectedYear = selectedDate.getFullYear();
+        
+        // เช็คว่าลาเดือนไหน
+        const isSameMonth = (selectedYear === todayYear && selectedMonth === todayMonth);
+        const isNextMonth = (selectedYear === todayYear && selectedMonth === todayMonth + 1) || 
+                           (selectedYear === todayYear + 1 && todayMonth === 11 && selectedMonth === 0);
+        
+        const monthNames = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+                          'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+        const monthShortNames = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
+                               'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+        
+        // กรณีที่ 1: ลาในเดือนนี้ → ห้ามลาเลย
+        if (isSameMonth) {
+            const currentMonthName = monthNames[todayMonth];
+            alert(`❌ ลาไม่ได้\nเดือน${currentMonthName}ได้จัดตารางไปแล้ว\nกรุณาลางานเดือนถัดไป`);
+            return;
+        }
+        
+        // กรณีที่ 2: ลาเดือนหน้า แต่วันนี้เกิน 20 แล้ว
+        if (isNextMonth && todayDay > 20) {
+            const currentMonthShort = monthShortNames[todayMonth];
+            alert(`❌ ไม่สามารถลางานได้\nเลยวันที่ 20 ${currentMonthShort} แล้ว\nจัดตารางเวรไม่ทัน\nกรุณาเลือกวันลาในเดือนถัดไป`);
+            return;
         }
 
         if (isDateOnLeaveBySelectedDoctor(dateStr)) {
