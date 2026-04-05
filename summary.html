@@ -1138,7 +1138,8 @@
                         const uniqueReplacements = [...new Set(dailyAssignments)];
                         html += `<div style="margin-bottom: 3px;">${dayDisplay}: ${uniqueReplacements.join(', ')}</div>`;
                     } else {
-                        html += `<div style="margin-bottom: 3px;">${dayDisplay}: ไม่มีคนมาแทน</div>`;
+                        // GEN4 V0: วันที่ไม่มี duty_assignment = วันนั้นไม่มี duty
+                        html += `<div style="margin-bottom: 3px; color: #999;">${dayDisplay}: no duty</div>`;
                     }
                     
                     currentDate.setDate(currentDate.getDate() + 1);
