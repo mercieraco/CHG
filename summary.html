@@ -1107,25 +1107,49 @@
             } else if (leave.delegation_type === 'custom' && leave.duty_assignments) {
                 recordDiv.classList.add('custom-delegation');
                 
+                // GEN4 V0: แสดงรายละเอียดแต่ละวัน
                 let html = `
                     <div class="leave-record-info">
-                        <div class="leave-header">
+                        <div class="leave-header" style="font-weight: bold; margin-bottom: 5px; cursor: pointer;" onclick="highlightLeaveDates('${leave.start_date}', '${leave.end_date}'); event.stopPropagation();">
                             <span class="name-short">${startDate} - ${endDate} (${days} วัน) | ${doctorFirstName} (${doctorLastInitial})${leave.no_delegation_reason && leave.no_delegation_reason.trim() ? ` : ${leave.no_delegation_reason}` : ''}</span>
                             <span class="name-full">${startDate} - ${endDate} (${days} วัน) | ${doctorFullName}${leave.no_delegation_reason && leave.no_delegation_reason.trim() ? ` : ${leave.no_delegation_reason}` : ''}</span>
+                        </div>
+                        <div class="daily-details" style="font-size: 0.9em; padding-left: 20px; color: #555;">
+                `;
+                
+                // สร้างรายการวัน
+                const leaveStartDate = new Date(leave.start_date);
+                const leaveEndDate = new Date(leave.end_date);
+                const currentDate = new Date(leaveStartDate);
+                
+                while (currentDate <= leaveEndDate) {
+                    const dateStr = currentDate.toISOString().split('T')[0];
+                    const dayDisplay = formatDateThai(dateStr);
+                    
+                    // หาว่าวันนี้มีใครมาแทนบ้าง
+                    const dailyAssignments = leave.duty_assignments
+                        .filter(a => a.duty_date === dateStr)
+                        .map(a => {
+                            const replacementDoc = allDoctors.find(d => d.id === a.replacement_doctor_id);
+                            return replacementDoc ? replacementDoc.name : 'ไม่ระบุ';
+                        });
+                    
+                    if (dailyAssignments.length > 0) {
+                        const uniqueReplacements = [...new Set(dailyAssignments)];
+                        html += `<div style="margin-bottom: 3px;">${dayDisplay}: ${uniqueReplacements.join(', ')}</div>`;
+                    } else {
+                        html += `<div style="margin-bottom: 3px;">${dayDisplay}: ไม่มีคนมาแทน</div>`;
+                    }
+                    
+                    currentDate.setDate(currentDate.getDate() + 1);
+                }
+                
+                html += `
                         </div>
                     </div>
                 `;
                 
                 recordDiv.innerHTML = html;
-                
-                const infoDiv = recordDiv.querySelector('.leave-record-info');
-                if (infoDiv) {
-                    infoDiv.onclick = function(e) {
-                        highlightLeaveDates(leave.start_date, leave.end_date);
-                        e.stopPropagation();
-                    };
-                    infoDiv.style.cursor = 'pointer';
-                }
             } else if (leave.delegation_type === 'none') {
                 recordDiv.classList.add('no-delegation');
                 
