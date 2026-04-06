@@ -3106,57 +3106,159 @@
 
         try {
             // ========================================
-            // Multi-Department: วนลาทีละแผนก
+            // GEN4 V3 Step 5: Multi-Department + Multi-Records
             // ========================================
             const groupId = selectedDepartments.length > 1 
                 ? `grp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
                 : null;
                 
             let successCount = 0;
+            let totalRecords = 0;
 
             for (const item of departmentData) {
-                const deptRequestBody = {
-                    ...item.requestBody,
-                    groupId: groupId
-                };
-
-                console.log(`=== บันทึกการลาแผนก: ${item.department.department_name} ===`);
-                console.log('Body:', deptRequestBody);
-
-                const response = await fetch(`${LEAVE_API_URL}/api/leaves`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(deptRequestBody)
-                });
-
-                const data = await response.json();
-
-                console.log('Response:', response.status, data);
+                const dept = item.department;
+                const requestBody = item.requestBody;
                 
-                // แสดง Record ที่ Backend สร้าง
-                if (data.success && data.data) {
-                    console.log('📝 Created leave record:', {
-                        id: data.data.id,
-                        doctor_id: data.data.doctor_id,
-                        department_id: data.data.department_id,
-                        start_date: data.data.start_date,
-                        end_date: data.data.end_date
-                    });
-                }
-
-                if (response.ok && data.success) {
-                    successCount++;
-                    console.log(`✅ บันทึกแผนก ${item.department.department_name} สำเร็จ`);
+                // เช็คว่าเป็น custom delegation ที่มี delegateGroups/noDelegateItems หรือไม่
+                if (requestBody.delegationType === 'custom' && 
+                    (requestBody.delegateGroups || requestBody.noDelegateItems)) {
+                    
+                    // GEN4 V3 Step 5: แยกบันทึกเป็นหลาย records
+                    const delegateGroups = requestBody.delegateGroups || [];
+                    const noDelegateItems = requestBody.noDelegateItems || [];
+                    
+                    console.log(`=== แผนก ${dept.department_name}: ${delegateGroups.length} กลุ่มฝาก + ${noDelegateItems.length} ไม่ฝาก ===`);
+                    
+                    // 1. บันทึกแต่ละ delegate group
+                    for (const group of delegateGroups) {
+                        // สร้าง dutyAssignments สำหรับ group นี้
+                        const groupDutyAssignments = [];
+                        
+                        for (const duty of group.duties) {
+                            const select = document.querySelector(`.custom-delegation-select[data-unique-id="${duty.uniqueId}"]`);
+                            const replacementDoctorId = select?.value;
+                            
+                            if (replacementDoctorId) {
+                                groupDutyAssignments.push({
+                                    dutyId: parseInt(duty.dutyId),
+                                    dutyDate: duty.date,
+                                    replacementDoctorId: parseInt(replacementDoctorId)
+                                });
+                            }
+                        }
+                        
+                        const groupBody = {
+                            doctorId: requestBody.doctorId,
+                            startDate: group.startDate,
+                            endDate: group.endDate,
+                            delegationType: 'custom',
+                            departmentId: requestBody.departmentId,
+                            dutyAssignments: groupDutyAssignments,
+                            groupId: groupId
+                        };
+                        
+                        console.log(`  → บันทึก delegate group: ${group.startDate} - ${group.endDate}`);
+                        console.log('    Body:', groupBody);
+                        
+                        const response = await fetch(`${LEAVE_API_URL}/api/leaves`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(groupBody)
+                        });
+                        
+                        const data = await response.json();
+                        console.log('    Response:', response.status, data);
+                        
+                        if (response.ok && data.success) {
+                            successCount++;
+                            totalRecords++;
+                            console.log(`    ✅ สำเร็จ (Record ${totalRecords})`);
+                        } else {
+                            throw new Error(`แผนก ${dept.department_name} (ฝาก): ${data.message || 'ไม่สามารถบันทึกได้'}`);
+                        }
+                    }
+                    
+                    // 2. บันทึกแต่ละ no-delegate item (แยกทีละวัน)
+                    for (const noDelItem of noDelegateItems) {
+                        const textarea = document.getElementById(`noDelegationReason_${noDelItem.uniqueId}`);
+                        const reason = textarea?.value.trim() || '';
+                        
+                        const noDelBody = {
+                            doctorId: requestBody.doctorId,
+                            startDate: noDelItem.date,
+                            endDate: noDelItem.date,
+                            delegationType: 'none',
+                            departmentId: requestBody.departmentId,
+                            hasReplacement: false,
+                            noDelegationReason: reason,
+                            groupId: groupId
+                        };
+                        
+                        console.log(`  → บันทึก no-delegate: ${noDelItem.date}`);
+                        console.log('    Body:', noDelBody);
+                        
+                        const response = await fetch(`${LEAVE_API_URL}/api/leaves`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(noDelBody)
+                        });
+                        
+                        const data = await response.json();
+                        console.log('    Response:', response.status, data);
+                        
+                        if (response.ok && data.success) {
+                            successCount++;
+                            totalRecords++;
+                            console.log(`    ✅ สำเร็จ (Record ${totalRecords})`);
+                        } else {
+                            throw new Error(`แผนก ${dept.department_name} (ไม่ฝาก): ${data.message || 'ไม่สามารถบันทึกได้'}`);
+                        }
+                    }
+                    
                 } else {
-                    console.error(`❌ Error from server:`, data);
-                    throw new Error(`แผนก ${item.department.department_name}: ${data.message || 'ไม่สามารถบันทึกได้'}`);
+                    // ไม่ใช่ custom delegation แบบใหม่ → บันทึกแบบเดิม (1 record)
+                    const deptRequestBody = {
+                        ...requestBody,
+                        groupId: groupId
+                    };
+
+                    console.log(`=== บันทึกการลาแผนก: ${dept.department_name} ===`);
+                    console.log('Body:', deptRequestBody);
+
+                    const response = await fetch(`${LEAVE_API_URL}/api/leaves`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(deptRequestBody)
+                    });
+
+                    const data = await response.json();
+                    console.log('Response:', response.status, data);
+                    
+                    if (data.success && data.data) {
+                        console.log('📝 Created leave record:', {
+                            id: data.data.id,
+                            doctor_id: data.data.doctor_id,
+                            department_id: data.data.department_id,
+                            start_date: data.data.start_date,
+                            end_date: data.data.end_date
+                        });
+                    }
+
+                    if (response.ok && data.success) {
+                        successCount++;
+                        totalRecords++;
+                        console.log(`✅ บันทึกแผนก ${dept.department_name} สำเร็จ`);
+                    } else {
+                        console.error(`❌ Error from server:`, data);
+                        throw new Error(`แผนก ${dept.department_name}: ${data.message || 'ไม่สามารถบันทึกได้'}`);
+                    }
                 }
             }
 
             // สำเร็จทั้งหมด
-            if (successCount === selectedDepartments.length) {
-                const message = selectedDepartments.length > 1
-                    ? `✅ บันทึกการลาสำเร็จทั้ง ${successCount} แผนก`
+            if (successCount > 0) {
+                const message = totalRecords > 1
+                    ? `✅ บันทึกการลาสำเร็จทั้งหมด ${totalRecords} records`
                     : '✅ บันทึกการลาสำเร็จ';
                 
                 showMessage(message, 'success');
