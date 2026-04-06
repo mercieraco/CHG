@@ -2812,9 +2812,17 @@
     // บันทึกการลา
     // GEN4 V3 Step 4: ฟังก์ชัน Group วันติดกันที่ฝากงาน
     function groupConsecutiveDelegateDays(allDuties) {
+        // Debug: แสดงข้อมูลที่รับเข้ามา
+        console.log('=== groupConsecutiveDelegateDays ===');
+        console.log('Input allDuties:', allDuties);
+        
         // แยกตาม state
         const delegateItems = allDuties.filter(d => d.state === 'delegate');
         const noDelegateItems = allDuties.filter(d => d.state === 'no-delegate');
+        
+        console.log('After filter:');
+        console.log('- delegateItems:', delegateItems);
+        console.log('- noDelegateItems:', noDelegateItems);
         
         // Sort ตามวันที่
         delegateItems.sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -2957,11 +2965,17 @@
                 // หา duties ทั้งหมดจาก DOM
                 const allSelects = document.querySelectorAll(`.custom-delegation-select[data-dept-id="${deptId}"]`);
                 
+                console.log(`=== Collecting duties for Dept ${deptId} ===`);
+                console.log('Found selects:', allSelects.length);
+                console.log('dutyDelegationStates:', dutyDelegationStates);
+                
                 allSelects.forEach(select => {
                     const uniqueId = select.dataset.uniqueId;
                     const dutyId = select.dataset.dutyId;
                     const date = select.dataset.date;
                     const state = dutyDelegationStates[uniqueId] || 'delegate'; // default: ฝาก
+                    
+                    console.log(`  - uniqueId: ${uniqueId}, state: ${state} (from dutyDelegationStates[${uniqueId}] = ${dutyDelegationStates[uniqueId]})`);
                     
                     allDuties.push({
                         uniqueId,
@@ -2971,6 +2985,8 @@
                         select  // เก็บ reference ไว้ใช้ภายหลัง
                     });
                 });
+                
+                console.log('Total allDuties:', allDuties.length);
                 
                 // Validation: ต้องมีอย่างน้อย 1 duty
                 if (allDuties.length === 0) {
