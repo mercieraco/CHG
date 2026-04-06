@@ -679,7 +679,7 @@
             📝 เรียงวันลา
         </button>
         <button id="toggleDetailsBtn" style="padding: 10px 20px; font-size: 14px; border: 2px solid #999; background: white; color: #666; border-radius: 8px; cursor: pointer; font-weight: bold; transition: all 0.3s;">
-            👁️ ซ่อน
+            ซ่อน
         </button>
     </div>
 
@@ -1137,12 +1137,12 @@
     function toggleDetails() {
         showDetails = !showDetails;
         
-        // GEN4 V2: เปลี่ยนชื่อปุ่ม
+        // GEN4 V2: เปลี่ยนชื่อปุ่ม (ไม่มี icon)
         const btn = document.getElementById('toggleDetailsBtn');
         if (showDetails) {
-            btn.textContent = '👁️ แสดง';
+            btn.textContent = 'แสดง';
         } else {
-            btn.textContent = '👁️ ซ่อน';
+            btn.textContent = 'ซ่อน';
         }
         
         // แสดงผลใหม่
