@@ -2897,28 +2897,27 @@
                 const delegateDuties = [];    // duty ที่เลือก "ฝาก"
                 const noDelegateDuties = [];  // duty ที่เลือก "ไม่ฝาก"
                 
-                // หา duties ทั้งหมดของแผนกนี้
-                const dutiesForDept = currentDutyData.filter(d => d.department_id === deptId);
+                // หา duties ทั้งหมดจาก DOM (ใช้ data-dept-id)
+                const allSelects = document.querySelectorAll(`.custom-delegation-select[data-dept-id="${deptId}"]`);
                 
-                dutiesForDept.forEach(item => {
-                    item.duties.forEach(duty => {
-                        const uniqueId = `${deptId}_${duty.duty_id}_${item.date}`;
-                        const state = dutyDelegationStates[uniqueId] || 'delegate'; // default: ฝาก
-                        
-                        allDuties.push({
-                            uniqueId,
-                            date: item.date,
-                            dutyId: duty.duty_id,
-                            dutyName: duty.duty_name,
-                            state
-                        });
-                        
-                        if (state === 'delegate') {
-                            delegateDuties.push({ uniqueId, date: item.date, dutyId: duty.duty_id });
-                        } else {
-                            noDelegateDuties.push({ uniqueId, date: item.date, dutyId: duty.duty_id });
-                        }
+                allSelects.forEach(select => {
+                    const uniqueId = select.dataset.uniqueId;
+                    const dutyId = select.dataset.dutyId;
+                    const date = select.dataset.date;
+                    const state = dutyDelegationStates[uniqueId] || 'delegate'; // default: ฝาก
+                    
+                    allDuties.push({
+                        uniqueId,
+                        date,
+                        dutyId,
+                        state
                     });
+                    
+                    if (state === 'delegate') {
+                        delegateDuties.push({ uniqueId, date, dutyId });
+                    } else {
+                        noDelegateDuties.push({ uniqueId, date, dutyId });
+                    }
                 });
                 
                 console.log(`=== Custom Delegation for Dept ${deptId} ===`);
