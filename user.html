@@ -3786,6 +3786,8 @@
                 <select 
                     class="custom-delegation-select" 
                     data-dept-id="${uniqueId.split('_')[0]}" 
+                    data-duty-id="${uniqueId.split('_')[1]}"
+                    data-date="${uniqueId.split('_')[2]}"
                     data-unique-id="${uniqueId}"
                     style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
                     <option value="">-- เลือกแพทย์ที่จะมาแทน --</option>
@@ -3798,8 +3800,24 @@
                 window.loadDoctorsForCustomDuty(uniqueId, deptId);
             }
         } else {
-            // แสดง Textarea (เหตุผล)
+            // GEN4 V3 Step 4 Fix: ซ่อน select แต่ไม่ลบ (เก็บ data-* attributes)
+            const existingSelect = contentContainer.querySelector('.custom-delegation-select');
+            const deptId = uniqueId.split('_')[0];
+            const dutyId = uniqueId.split('_')[1];
+            const date = uniqueId.split('_')[2];
+            
             contentContainer.innerHTML = `
+                <!-- Hidden select เพื่อเก็บ data attributes -->
+                <select 
+                    class="custom-delegation-select" 
+                    data-dept-id="${deptId}" 
+                    data-duty-id="${dutyId}"
+                    data-date="${date}"
+                    data-unique-id="${uniqueId}"
+                    style="display: none;">
+                </select>
+                
+                <!-- Textarea (เหตุผล) -->
                 <div style="margin-top: 10px;">
                     <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #333;">
                         เหตุผลที่ไม่ฝากงาน
