@@ -2810,6 +2810,65 @@
     }
 
     // บันทึกการลา
+    // GEN4 V3 Step 4: ฟังก์ชัน Group วันติดกันที่ฝากงาน
+    function groupConsecutiveDelegateDays(allDuties) {
+        // แยกตาม state
+        const delegateItems = allDuties.filter(d => d.state === 'delegate');
+        const noDelegateItems = allDuties.filter(d => d.state === 'no-delegate');
+        
+        // Sort ตามวันที่
+        delegateItems.sort((a, b) => new Date(a.date) - new Date(b.date));
+        noDelegateItems.sort((a, b) => new Date(a.date) - new Date(b.date));
+        
+        // Group วันติดกัน (เฉพาะ delegate)
+        const delegateGroups = [];
+        let currentGroup = null;
+        
+        for (const item of delegateItems) {
+            if (!currentGroup) {
+                // เริ่ม group ใหม่
+                currentGroup = {
+                    startDate: item.date,
+                    endDate: item.date,
+                    duties: [item]
+                };
+            } else {
+                // เช็คว่าวันนี้ติดกับวันก่อนหน้าไหม
+                const prevDate = new Date(currentGroup.endDate);
+                const currDate = new Date(item.date);
+                const diffDays = Math.floor((currDate - prevDate) / (1000 * 60 * 60 * 24));
+                
+                if (diffDays === 1) {
+                    // ติดกัน → เพิ่มเข้า group เดิม
+                    currentGroup.endDate = item.date;
+                    currentGroup.duties.push(item);
+                } else {
+                    // ไม่ติดกัน → บันทึก group เดิม และเริ่ม group ใหม่
+                    delegateGroups.push(currentGroup);
+                    currentGroup = {
+                        startDate: item.date,
+                        endDate: item.date,
+                        duties: [item]
+                    };
+                }
+            }
+        }
+        
+        // บันทึก group สุดท้าย
+        if (currentGroup) {
+            delegateGroups.push(currentGroup);
+        }
+        
+        console.log('=== Grouping Result ===');
+        console.log('Delegate groups:', delegateGroups.length);
+        console.log('No-delegate items:', noDelegateItems.length);
+        
+        return {
+            delegateGroups,    // [{startDate, endDate, duties: [...]}]
+            noDelegateItems    // [{uniqueId, date, dutyId, state}]
+        };
+    }
+
     async function submitLeave() {
         const doctorId = document.getElementById('doctorSelect').value;
         const doctorName = document.getElementById('doctorSelect').selectedOptions[0]?.text || '';
@@ -2890,14 +2949,12 @@
                 confirmMessage += `\n📍 ${dept.department_name}: แพทย์ ${replacementDoctorName}`;
 
             } else if (delegationType === 'custom') {
-                // GEN4 V3 Step 3: Custom Delegation with "ไม่ฝาก" support
+                // GEN4 V3 Step 4: Custom Delegation with Grouping
                 
                 // รวบรวมข้อมูลทั้งหมด
                 const allDuties = [];
-                const delegateDuties = [];    // duty ที่เลือก "ฝาก"
-                const noDelegateDuties = [];  // duty ที่เลือก "ไม่ฝาก"
                 
-                // หา duties ทั้งหมดจาก DOM (ใช้ data-dept-id)
+                // หา duties ทั้งหมดจาก DOM
                 const allSelects = document.querySelectorAll(`.custom-delegation-select[data-dept-id="${deptId}"]`);
                 
                 allSelects.forEach(select => {
@@ -2910,20 +2967,10 @@
                         uniqueId,
                         date,
                         dutyId,
-                        state
+                        state,
+                        select  // เก็บ reference ไว้ใช้ภายหลัง
                     });
-                    
-                    if (state === 'delegate') {
-                        delegateDuties.push({ uniqueId, date, dutyId });
-                    } else {
-                        noDelegateDuties.push({ uniqueId, date, dutyId });
-                    }
                 });
-                
-                console.log(`=== Custom Delegation for Dept ${deptId} ===`);
-                console.log('All duties:', allDuties.length);
-                console.log('Delegate:', delegateDuties.length);
-                console.log('No delegate:', noDelegateDuties.length);
                 
                 // Validation: ต้องมีอย่างน้อย 1 duty
                 if (allDuties.length === 0) {
@@ -2932,45 +2979,61 @@
                 }
                 
                 // Validation: เช็คว่าเลือกแพทย์ครบทุก duty ที่ "ฝาก"
-                const dutyAssignments = [];
-                for (const item of delegateDuties) {
-                    const select = document.querySelector(`.custom-delegation-select[data-unique-id="${item.uniqueId}"]`);
-                    const replacementDoctorId = select?.value;
-                    
-                    if (!replacementDoctorId) {
-                        showMessage(`กรุณาเลือกแพทย์ที่มาแทนให้ครบทุก Duty ที่เลือก "ฝาก" ในแผนก ${dept.department_name}`, 'error');
-                        return;
+                for (const item of allDuties) {
+                    if (item.state === 'delegate') {
+                        const select = document.querySelector(`.custom-delegation-select[data-unique-id="${item.uniqueId}"]`);
+                        const replacementDoctorId = select?.value;
+                        
+                        if (!replacementDoctorId) {
+                            showMessage(`กรุณาเลือกแพทย์ที่มาแทนให้ครบทุก Duty ที่เลือก "ฝาก" ในแผนก ${dept.department_name}`, 'error');
+                            return;
+                        }
                     }
-                    
-                    dutyAssignments.push({
-                        dutyId: parseInt(item.dutyId),
-                        dutyDate: item.date,
-                        replacementDoctorId: parseInt(replacementDoctorId)
-                    });
                 }
                 
                 // Validation: เช็คว่าใส่เหตุผลครบทุก duty ที่ "ไม่ฝาก"
-                for (const item of noDelegateDuties) {
-                    const textarea = document.getElementById(`noDelegationReason_${item.uniqueId}`);
-                    const reason = textarea?.value.trim() || '';
-                    
-                    if (!reason) {
-                        showMessage(`กรุณาระบุเหตุผลให้ครบทุก Duty ที่เลือก "ไม่ฝาก" ในแผนก ${dept.department_name}`, 'error');
-                        textarea?.focus();
-                        return;
+                for (const item of allDuties) {
+                    if (item.state === 'no-delegate') {
+                        const textarea = document.getElementById(`noDelegationReason_${item.uniqueId}`);
+                        const reason = textarea?.value.trim() || '';
+                        
+                        if (!reason) {
+                            showMessage(`กรุณาระบุเหตุผลให้ครบทุก Duty ที่เลือก "ไม่ฝาก" ในแผนก ${dept.department_name}`, 'error');
+                            textarea?.focus();
+                            return;
+                        }
                     }
                 }
                 
-                // บันทึกข้อมูล
+                // GEN4 V3 Step 4: Group วันติดกัน
+                const { delegateGroups, noDelegateItems } = groupConsecutiveDelegateDays(allDuties);
+                
+                console.log(`=== Dept ${deptId}: ${delegateGroups.length} delegate groups, ${noDelegateItems.length} no-delegate items ===`);
+                
+                // บันทึกข้อมูล (ยังใช้แบบเดิมก่อน - จะแยกใน Step 5)
+                const dutyAssignments = [];
+                for (const item of allDuties.filter(d => d.state === 'delegate')) {
+                    const select = document.querySelector(`.custom-delegation-select[data-unique-id="${item.uniqueId}"]`);
+                    dutyAssignments.push({
+                        dutyId: parseInt(item.dutyId),
+                        dutyDate: item.date,
+                        replacementDoctorId: parseInt(select.value)
+                    });
+                }
+                
                 deptRequestBody.dutyAssignments = dutyAssignments;
-                deptRequestBody.noDelegateInfo = noDelegateDuties.map(item => ({
+                deptRequestBody.noDelegateInfo = noDelegateItems.map(item => ({
                     uniqueId: item.uniqueId,
                     date: item.date,
                     dutyId: item.dutyId,
                     reason: document.getElementById(`noDelegationReason_${item.uniqueId}`)?.value.trim() || ''
                 }));
                 
-                confirmMessage += `\n📍 ${dept.department_name}: กำหนดเอง (ฝาก ${delegateDuties.length} งาน, ไม่ฝาก ${noDelegateDuties.length} งาน)`;
+                // GEN4 V3 Step 4: เก็บ grouping info (จะใช้ใน Step 5)
+                deptRequestBody.delegateGroups = delegateGroups;
+                deptRequestBody.noDelegateItems = noDelegateItems;
+                
+                confirmMessage += `\n📍 ${dept.department_name}: กำหนดเอง (${delegateGroups.length} กลุ่มฝาก, ${noDelegateItems.length} ไม่ฝาก)`;
                 
             } else if (delegationType === 'none') {
                 // No Delegation
