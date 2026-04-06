@@ -670,6 +670,19 @@
         <div class="calendar" id="calendar"></div>
     </div>
 
+    <!-- GEN4 V2: ปุ่มจัดเรียง และ ซ่อน/แสดง -->
+    <div style="display: flex; gap: 10px; margin: 20px 0; padding: 0 20px; justify-content: center; flex-wrap: wrap;">
+        <button id="sortByDateBtn" style="padding: 10px 20px; font-size: 14px; border: 2px solid #667eea; background: white; color: #667eea; border-radius: 8px; cursor: pointer; font-weight: bold; transition: all 0.3s;">
+            📅 เรียงวันที่
+        </button>
+        <button id="sortByCreatedBtn" style="padding: 10px 20px; font-size: 14px; border: 2px solid #667eea; background: #667eea; color: white; border-radius: 8px; cursor: pointer; font-weight: bold; transition: all 0.3s;">
+            📝 เรียงวันลา
+        </button>
+        <button id="toggleDetailsBtn" style="padding: 10px 20px; font-size: 14px; border: 2px solid #999; background: white; color: #666; border-radius: 8px; cursor: pointer; font-weight: bold; transition: all 0.3s;">
+            👁️ ซ่อนรายละเอียด
+        </button>
+    </div>
+
     <!-- ⭐ รายการลางาน (ย้ายมาไว้ใต้ปฏิทิน) -->
     <div class="leave-records-section">
         <h3>📋 รายการลางาน</h3>
@@ -879,6 +892,24 @@
         }
     }
 
+    // GEN4 V2: Event Listeners สำหรับปุ่มจัดเรียง
+    document.addEventListener('DOMContentLoaded', () => {
+        // ปุ่มเรียงวันที่
+        document.getElementById('sortByDateBtn')?.addEventListener('click', () => {
+            sortLeaveRecords('date');
+        });
+        
+        // ปุ่มเรียงวันลา
+        document.getElementById('sortByCreatedBtn')?.addEventListener('click', () => {
+            sortLeaveRecords('created');
+        });
+        
+        // ปุ่มซ่อน/แสดง
+        document.getElementById('toggleDetailsBtn')?.addEventListener('click', () => {
+            toggleDetails();
+        });
+    });
+
     // Validate input แบบ real-time
     document.addEventListener('DOMContentLoaded', () => {
         const input = document.getElementById('yearSuffixInput');
@@ -1054,6 +1085,69 @@
         await loadDepartmentData();
     }
 
+    // GEN4 V2: State สำหรับการจัดเรียงและซ่อน/แสดง
+    let currentSortMode = 'created'; // 'created' หรือ 'date'
+    let showDetails = false; // false = ซ่อน, true = แสดง
+
+    // GEN4 V2: ฟังก์ชันจัดเรียง
+    function sortLeaveRecords(mode) {
+        currentSortMode = mode;
+        
+        if (mode === 'created') {
+            // เรียงตาม created_at (ลาก่อน → ลาทีหลัง)
+            doctorLeaves.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+        } else if (mode === 'date') {
+            // เรียงตาม start_date (ใกล้วันนี้ → ไกลวันนี้)
+            const today = new Date();
+            doctorLeaves.sort((a, b) => {
+                const dateA = new Date(a.start_date);
+                const dateB = new Date(b.start_date);
+                const diffA = Math.abs(dateA - today);
+                const diffB = Math.abs(dateB - today);
+                return diffA - diffB;
+            });
+        }
+        
+        // อัพเดทปุ่ม
+        updateSortButtons();
+        
+        // แสดงผลใหม่
+        displayLeaveRecords();
+    }
+
+    // GEN4 V2: อัพเดทสถานะปุ่ม
+    function updateSortButtons() {
+        const sortByDateBtn = document.getElementById('sortByDateBtn');
+        const sortByCreatedBtn = document.getElementById('sortByCreatedBtn');
+        
+        if (currentSortMode === 'created') {
+            sortByCreatedBtn.style.background = '#667eea';
+            sortByCreatedBtn.style.color = 'white';
+            sortByDateBtn.style.background = 'white';
+            sortByDateBtn.style.color = '#667eea';
+        } else {
+            sortByDateBtn.style.background = '#667eea';
+            sortByDateBtn.style.color = 'white';
+            sortByCreatedBtn.style.background = 'white';
+            sortByCreatedBtn.style.color = '#667eea';
+        }
+    }
+
+    // GEN4 V2: Toggle รายละเอียด
+    function toggleDetails() {
+        showDetails = !showDetails;
+        
+        const btn = document.getElementById('toggleDetailsBtn');
+        if (showDetails) {
+            btn.textContent = '👁️ แสดงรายละเอียด';
+        } else {
+            btn.textContent = '👁️ ซ่อนรายละเอียด';
+        }
+        
+        // แสดงผลใหม่
+        displayLeaveRecords();
+    }
+
     // ⭐ Feature 1 & 4: แสดงแถบการลา
     function displayLeaveRecords() {
         const container = document.getElementById('leaveRecords');
@@ -1107,48 +1201,51 @@
             } else if (leave.delegation_type === 'custom' && leave.duty_assignments) {
                 recordDiv.classList.add('custom-delegation');
                 
-                // GEN4 V0: แสดงรายละเอียดแต่ละวัน
+                // GEN4 V2: แสดงรายละเอียดแต่ละวัน (ถ้า showDetails = true)
                 let html = `
                     <div class="leave-record-info">
                         <div class="leave-header" style="font-weight: bold; margin-bottom: 5px; cursor: pointer;" onclick="highlightLeaveDates('${leave.start_date}', '${leave.end_date}'); event.stopPropagation();">
                             <span class="name-short">${startDate} - ${endDate} (${days} วัน) | ${doctorFirstName} (${doctorLastInitial})${leave.no_delegation_reason && leave.no_delegation_reason.trim() ? ` : ${leave.no_delegation_reason}` : ''}</span>
                             <span class="name-full">${startDate} - ${endDate} (${days} วัน) | ${doctorFullName}${leave.no_delegation_reason && leave.no_delegation_reason.trim() ? ` : ${leave.no_delegation_reason}` : ''}</span>
                         </div>
-                        <div class="daily-details" style="font-size: 0.9em; padding-left: 20px; color: #555;">
                 `;
                 
-                // สร้างรายการวัน
-                const leaveStartDate = new Date(leave.start_date);
-                const leaveEndDate = new Date(leave.end_date);
-                const currentDate = new Date(leaveStartDate);
-                
-                while (currentDate <= leaveEndDate) {
-                    const dateStr = currentDate.toISOString().split('T')[0];
-                    const dayDisplay = formatDateThai(dateStr);
+                // GEN4 V2: แสดงรายละเอียดเฉพาะเมื่อ showDetails = true
+                if (showDetails) {
+                    html += `<div class="daily-details" style="font-size: 0.9em; padding-left: 20px; color: #555;">`;
                     
-                    // หาว่าวันนี้มีใครมาแทนบ้าง
-                    const dailyAssignments = leave.duty_assignments
-                        .filter(a => a.duty_date === dateStr)
-                        .map(a => {
-                            const replacementDoc = allDoctors.find(d => d.id === a.replacement_doctor_id);
-                            return replacementDoc ? replacementDoc.name : 'ไม่ระบุ';
-                        });
+                    // สร้างรายการวัน
+                    const leaveStartDate = new Date(leave.start_date);
+                    const leaveEndDate = new Date(leave.end_date);
+                    const currentDate = new Date(leaveStartDate);
                     
-                    if (dailyAssignments.length > 0) {
-                        const uniqueReplacements = [...new Set(dailyAssignments)];
-                        html += `<div style="margin-bottom: 3px;">${dayDisplay}: ${uniqueReplacements.join(', ')}</div>`;
-                    } else {
-                        // GEN4 V0: วันที่ไม่มี duty_assignment = วันนั้นไม่มี duty
-                        html += `<div style="margin-bottom: 3px; color: #999;">${dayDisplay}: no duty</div>`;
+                    while (currentDate <= leaveEndDate) {
+                        const dateStr = currentDate.toISOString().split('T')[0];
+                        const dayDisplay = formatDateThai(dateStr);
+                        
+                        // หาว่าวันนี้มีใครมาแทนบ้าง
+                        const dailyAssignments = leave.duty_assignments
+                            .filter(a => a.duty_date === dateStr)
+                            .map(a => {
+                                const replacementDoc = allDoctors.find(d => d.id === a.replacement_doctor_id);
+                                return replacementDoc ? replacementDoc.name : 'ไม่ระบุ';
+                            });
+                        
+                        if (dailyAssignments.length > 0) {
+                            const uniqueReplacements = [...new Set(dailyAssignments)];
+                            html += `<div style="margin-bottom: 3px;">${dayDisplay}: ${uniqueReplacements.join(', ')}</div>`;
+                        } else {
+                            // GEN4 V0: วันที่ไม่มี duty_assignment = วันนั้นไม่มี duty
+                            html += `<div style="margin-bottom: 3px; color: #999;">${dayDisplay}: no duty</div>`;
+                        }
+                        
+                        currentDate.setDate(currentDate.getDate() + 1);
                     }
                     
-                    currentDate.setDate(currentDate.getDate() + 1);
+                    html += `</div>`;
                 }
                 
-                html += `
-                        </div>
-                    </div>
-                `;
+                html += `</div>`;
                 
                 recordDiv.innerHTML = html;
             } else if (leave.delegation_type === 'none') {
