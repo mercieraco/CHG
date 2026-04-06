@@ -680,11 +680,11 @@
     <div class="menu-grid" style="grid-template-columns: repeat(2, 1fr);">
         <div class="menu-card" onclick="showDepartmentForm()">
             <div class="icon">🏥</div>
-            <h3>แผนก</h3>
+            <h3>เพิ่มแผนก</h3>
         </div>
         <div class="menu-card" onclick="showDoctorForm()">
             <div class="icon">👤</div>
-            <h3>แพทย์</h3>
+            <h3>เพิ่มแพทย์</h3>
         </div>
     </div>
 
@@ -1431,6 +1431,13 @@
                     `;
                     
                     if (duties.length > 0) {
+                        // GEN4 V0: เรียง duties ตามตัวอักษร (A-Z)
+                        duties.sort((a, b) => {
+                            const nameA = a.duty_name || '';
+                            const nameB = b.duty_name || '';
+                            return nameA.localeCompare(nameB, ['en', 'th']);
+                        });
+                        
                         html += '<div class="duty-list">';
                         duties.forEach(duty => {
                             // ฟังก์ชันแสดงจำนวน (0 = สีแดง, ≥1 = สีดำ)
@@ -1587,6 +1594,25 @@
         }
 
         if (!currentDepartmentId) return;
+
+        // GEN4 V0: เช็คชื่อซ้ำ
+        try {
+            const dutiesResponse = await fetch(`${API_URL}/api/duties/department/${currentDepartmentId}`);
+            const dutiesData = await dutiesResponse.json();
+            
+            if (dutiesData.success && dutiesData.data) {
+                const existingDuty = dutiesData.data.find(d => 
+                    d.duty_name.toLowerCase() === dutyName.toLowerCase()
+                );
+                
+                if (existingDuty) {
+                    alert(`❌ ชื่อ "${dutyName}" มีอยู่แล้ว\nกรุณาใช้ชื่ออื่น`);
+                    return;
+                }
+            }
+        } catch (error) {
+            console.error('Check duplicate error:', error);
+        }
 
         try {
             const response = await fetch(`${API_URL}/api/duties`, {
@@ -1922,18 +1948,13 @@
             const doctor = doctorData.data;
             console.log('👤 Doctor data:', doctor);
             
-            // 2. โหลดชื่อแผนกหลัก (ใช้ GET /api/departments แล้วหาจาก ID)
-            const allDeptsResponse = await fetch(`${API_URL}/api/departments`);
-            const allDeptsData = await allDeptsResponse.json();
-            const allDepartments = allDeptsData.success ? allDeptsData.data : [];
+            // 2. โหลดชื่อแผนกหลัก
+            const primaryDeptResponse = await fetch(`${API_URL}/api/departments/${doctor.department_id}`);
+            const primaryDeptData = await primaryDeptResponse.json();
+            const primaryDeptName = primaryDeptData.success ? primaryDeptData.data.name : 'ไม่ระบุ';
             
-            const primaryDept = allDepartments.find(d => d.id === doctor.department_id);
-            const primaryDeptName = primaryDept ? primaryDept.name : 'ไม่ระบุ';
-            
-            console.log('🏥 Primary department:', primaryDeptName);
-            
-            // 3. โหลดแผนกเสริมจาก doctors/:id/departments (API ที่ถูกต้อง)
-            const deptsResponse = await fetch(`${API_URL}/api/doctors/${doctorId}/departments`);
+            // 3. โหลดแผนกเสริมจาก doctor_departments
+            const deptsResponse = await fetch(`${API_URL}/api/doctor-departments?doctor_id=${doctorId}`);
             const deptsData = await deptsResponse.json();
             
             console.log('📦 Doctor departments from API:', deptsData);
@@ -1945,17 +1966,18 @@
                 const allDeptIds = [...new Set(deptsData.data.map(d => d.department_id))];
                 const secondaryDeptIds = allDeptIds.filter(id => id !== doctor.department_id);
                 
-                // โหลดชื่อแผนกเสริม (ใช้ allDepartments ที่โหลดไว้แล้ว)
-                secondaryDepartments = secondaryDeptIds.map(id => {
-                    const dept = allDepartments.find(d => d.id === id);
-                    return {
-                        department_id: id,
-                        department_name: dept ? dept.name : 'ไม่ระบุ',
-                        is_primary: false
-                    };
-                });
+                // โหลดชื่อแผนกเสริม
+                const deptNamesPromises = secondaryDeptIds.map(id => 
+                    fetch(`${API_URL}/api/departments/${id}`)
+                        .then(res => res.json())
+                        .then(data => ({
+                            department_id: id,
+                            department_name: data.success ? data.data.name : 'ไม่ระบุ',
+                            is_primary: false
+                        }))
+                );
                 
-                console.log('➕ Secondary departments:', secondaryDepartments);
+                secondaryDepartments = await Promise.all(deptNamesPromises);
             }
             
             console.log('📦 Secondary departments:', secondaryDepartments);
@@ -2450,30 +2472,15 @@
             const data = await response.json();
             
             if (response.ok && data.success) {
-                // ⭐ เก็บ ID ไว้ก่อน (ก่อนปิด Modal ที่จะ clear ค่า)
-                const doctorId = currentDoctorId;
-                const deptId = currentDoctorDepartmentId;
-                
                 closeDoctorDutyModal();
                 
-                // แสดงข้อความสำเร็จ
+                // Reload Duties ของแพทย์คนนี้ทันที
+                await loadDoctorDepartmentsAndDuties(currentDoctorId, currentDoctorDepartmentId);
+                
                 const doctorListMessage = document.getElementById('doctorListMessage');
-                if (doctorListMessage) {
-                    doctorListMessage.className = 'message success show';
-                    doctorListMessage.textContent = '✅ เพิ่ม Duty สำเร็จ';
-                    setTimeout(() => doctorListMessage.classList.remove('show'), 3000);
-                }
-                
-                // ⭐ Reload Duties ของแพทย์คนนี้
-                await loadDoctorDepartmentsAndDuties(doctorId, deptId);
-                
-                // Scroll ไปที่แพทย์คนนั้น
-                setTimeout(() => {
-                    const dutiesContainer = document.getElementById(`duties-${doctorId}`);
-                    if (dutiesContainer) {
-                        dutiesContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }
-                }, 100);
+                doctorListMessage.className = 'message success show';
+                doctorListMessage.textContent = '✅ เพิ่ม Duty สำเร็จ';
+                setTimeout(() => doctorListMessage.classList.remove('show'), 3000);
             } else {
                 throw new Error(data.message || 'ไม่สามารถเพิ่ม Duty ได้');
             }
