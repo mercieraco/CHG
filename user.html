@@ -3082,8 +3082,18 @@
             return;
         }
 
-        // แจ้งเตือนเพิ่มถ้ามีแผนกที่ไม่ฝากงาน
-        const noDelegationDepts = departmentData.filter(d => d.requestBody.delegationType === 'none');
+        // GEN4 V3: แจ้งเตือนเพิ่มถ้ามีแผนกที่ไม่ฝากงาน (รวม custom delegation)
+        const noDelegationDepts = departmentData.filter(d => {
+            // เช็คทั้ง delegation_type: none และ custom ที่มี noDelegateGroups
+            if (d.requestBody.delegationType === 'none') {
+                return true;
+            }
+            if (d.requestBody.delegationType === 'custom' && d.requestBody.noDelegateGroups) {
+                return d.requestBody.noDelegateGroups.length > 0;
+            }
+            return false;
+        });
+        
         if (noDelegationDepts.length > 0) {
             const confirm1 = confirm(
                 '⚠️ ยืนยันการลางานโดยไม่มอบหมายงานแทน\n\n' +
