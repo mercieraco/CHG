@@ -2810,7 +2810,7 @@
     }
 
     // บันทึกการลา
-    // GEN4 V3 Step 4: ฟังก์ชัน Group วันติดกันที่ฝากงาน
+    // GEN4 V3 Step 5: ฟังก์ชัน Group วันติดกัน (ทั้ง delegate และ no-delegate)
     function groupConsecutiveDelegateDays(allDuties) {
         // Debug: แสดงข้อมูลที่รับเข้ามา
         console.log('=== groupConsecutiveDelegateDays ===');
@@ -2828,52 +2828,60 @@
         delegateItems.sort((a, b) => new Date(a.date) - new Date(b.date));
         noDelegateItems.sort((a, b) => new Date(a.date) - new Date(b.date));
         
-        // Group วันติดกัน (เฉพาะ delegate)
-        const delegateGroups = [];
-        let currentGroup = null;
-        
-        for (const item of delegateItems) {
-            if (!currentGroup) {
-                // เริ่ม group ใหม่
-                currentGroup = {
-                    startDate: item.date,
-                    endDate: item.date,
-                    duties: [item]
-                };
-            } else {
-                // เช็คว่าวันนี้ติดกับวันก่อนหน้าไหม
-                const prevDate = new Date(currentGroup.endDate);
-                const currDate = new Date(item.date);
-                const diffDays = Math.floor((currDate - prevDate) / (1000 * 60 * 60 * 24));
-                
-                if (diffDays === 1) {
-                    // ติดกัน → เพิ่มเข้า group เดิม
-                    currentGroup.endDate = item.date;
-                    currentGroup.duties.push(item);
-                } else {
-                    // ไม่ติดกัน → บันทึก group เดิม และเริ่ม group ใหม่
-                    delegateGroups.push(currentGroup);
+        // ฟังก์ชันช่วย: Group วันติดกัน
+        const groupConsecutive = (items) => {
+            const groups = [];
+            let currentGroup = null;
+            
+            for (const item of items) {
+                if (!currentGroup) {
+                    // เริ่ม group ใหม่
                     currentGroup = {
                         startDate: item.date,
                         endDate: item.date,
                         duties: [item]
                     };
+                } else {
+                    // เช็คว่าวันนี้ติดกับวันก่อนหน้าไหม
+                    const prevDate = new Date(currentGroup.endDate);
+                    const currDate = new Date(item.date);
+                    const diffDays = Math.floor((currDate - prevDate) / (1000 * 60 * 60 * 24));
+                    
+                    if (diffDays === 1) {
+                        // ติดกัน → เพิ่มเข้า group เดิม
+                        currentGroup.endDate = item.date;
+                        currentGroup.duties.push(item);
+                    } else {
+                        // ไม่ติดกัน → บันทึก group เดิม และเริ่ม group ใหม่
+                        groups.push(currentGroup);
+                        currentGroup = {
+                            startDate: item.date,
+                            endDate: item.date,
+                            duties: [item]
+                        };
+                    }
                 }
             }
-        }
+            
+            // บันทึก group สุดท้าย
+            if (currentGroup) {
+                groups.push(currentGroup);
+            }
+            
+            return groups;
+        };
         
-        // บันทึก group สุดท้าย
-        if (currentGroup) {
-            delegateGroups.push(currentGroup);
-        }
+        // GEN4 V3 Step 5 Fix: Group ทั้ง delegate และ no-delegate
+        const delegateGroups = groupConsecutive(delegateItems);
+        const noDelegateGroups = groupConsecutive(noDelegateItems);
         
         console.log('=== Grouping Result ===');
         console.log('Delegate groups:', delegateGroups.length);
-        console.log('No-delegate items:', noDelegateItems.length);
+        console.log('No-delegate groups:', noDelegateGroups.length);
         
         return {
-            delegateGroups,    // [{startDate, endDate, duties: [...]}]
-            noDelegateItems    // [{uniqueId, date, dutyId, state}]
+            delegateGroups,      // [{startDate, endDate, duties: [...]}]
+            noDelegateGroups     // [{startDate, endDate, duties: [...]}] (เปลี่ยนจาก noDelegateItems)
         };
     }
 
@@ -3021,10 +3029,10 @@
                     }
                 }
                 
-                // GEN4 V3 Step 4: Group วันติดกัน
-                const { delegateGroups, noDelegateItems } = groupConsecutiveDelegateDays(allDuties);
+                // GEN4 V3 Step 5: Group วันติดกัน (ทั้ง delegate และ no-delegate)
+                const { delegateGroups, noDelegateGroups } = groupConsecutiveDelegateDays(allDuties);
                 
-                console.log(`=== Dept ${deptId}: ${delegateGroups.length} delegate groups, ${noDelegateItems.length} no-delegate items ===`);
+                console.log(`=== Dept ${deptId}: ${delegateGroups.length} delegate groups, ${noDelegateGroups.length} no-delegate groups ===`);
                 
                 // บันทึกข้อมูล (ยังใช้แบบเดิมก่อน - จะแยกใน Step 5)
                 const dutyAssignments = [];
@@ -3038,18 +3046,12 @@
                 }
                 
                 deptRequestBody.dutyAssignments = dutyAssignments;
-                deptRequestBody.noDelegateInfo = noDelegateItems.map(item => ({
-                    uniqueId: item.uniqueId,
-                    date: item.date,
-                    dutyId: item.dutyId,
-                    reason: document.getElementById(`noDelegationReason_${item.uniqueId}`)?.value.trim() || ''
-                }));
                 
-                // GEN4 V3 Step 4: เก็บ grouping info (จะใช้ใน Step 5)
+                // GEN4 V3 Step 5: เก็บ grouping info
                 deptRequestBody.delegateGroups = delegateGroups;
-                deptRequestBody.noDelegateItems = noDelegateItems;
+                deptRequestBody.noDelegateGroups = noDelegateGroups;
                 
-                confirmMessage += `\n📍 ${dept.department_name}: กำหนดเอง (${delegateGroups.length} กลุ่มฝาก, ${noDelegateItems.length} ไม่ฝาก)`;
+                confirmMessage += `\n📍 ${dept.department_name}: กำหนดเอง (${delegateGroups.length} กลุ่มฝาก, ${noDelegateGroups.length} กลุ่มไม่ฝาก)`;
                 
             } else if (delegationType === 'none') {
                 // No Delegation
@@ -3119,15 +3121,15 @@
                 const dept = item.department;
                 const requestBody = item.requestBody;
                 
-                // เช็คว่าเป็น custom delegation ที่มี delegateGroups/noDelegateItems หรือไม่
+                // เช็คว่าเป็น custom delegation ที่มี delegateGroups/noDelegateGroups หรือไม่
                 if (requestBody.delegationType === 'custom' && 
-                    (requestBody.delegateGroups || requestBody.noDelegateItems)) {
+                    (requestBody.delegateGroups || requestBody.noDelegateGroups)) {
                     
                     // GEN4 V3 Step 5: แยกบันทึกเป็นหลาย records
                     const delegateGroups = requestBody.delegateGroups || [];
-                    const noDelegateItems = requestBody.noDelegateItems || [];
+                    const noDelegateGroups = requestBody.noDelegateGroups || [];
                     
-                    console.log(`=== แผนก ${dept.department_name}: ${delegateGroups.length} กลุ่มฝาก + ${noDelegateItems.length} ไม่ฝาก ===`);
+                    console.log(`=== แผนก ${dept.department_name}: ${delegateGroups.length} กลุ่มฝาก + ${noDelegateGroups.length} กลุ่มไม่ฝาก ===`);
                     
                     // 1. บันทึกแต่ละ delegate group
                     for (const group of delegateGroups) {
@@ -3178,23 +3180,32 @@
                         }
                     }
                     
-                    // 2. บันทึกแต่ละ no-delegate item (แยกทีละวัน)
-                    for (const noDelItem of noDelegateItems) {
-                        const textarea = document.getElementById(`noDelegationReason_${noDelItem.uniqueId}`);
-                        const reason = textarea?.value.trim() || '';
+                    // 2. GEN4 V3 Step 5 Fix: บันทึกแต่ละ no-delegate group (รวมวันติดกัน)
+                    for (const noDelGroup of noDelegateGroups) {
+                        // รวบรวมเหตุผลจากทุกวันใน group
+                        const reasons = [];
+                        for (const duty of noDelGroup.duties) {
+                            const textarea = document.getElementById(`noDelegationReason_${duty.uniqueId}`);
+                            const reason = textarea?.value.trim() || '';
+                            if (reason && !reasons.includes(reason)) {
+                                reasons.push(reason);
+                            }
+                        }
+                        
+                        const combinedReason = reasons.join('; ');
                         
                         const noDelBody = {
                             doctorId: requestBody.doctorId,
-                            startDate: noDelItem.date,
-                            endDate: noDelItem.date,
+                            startDate: noDelGroup.startDate,
+                            endDate: noDelGroup.endDate,
                             delegationType: 'none',
                             departmentId: requestBody.departmentId,
                             hasReplacement: false,
-                            noDelegationReason: reason,
+                            noDelegationReason: combinedReason,
                             groupId: groupId
                         };
                         
-                        console.log(`  → บันทึก no-delegate: ${noDelItem.date}`);
+                        console.log(`  → บันทึก no-delegate group: ${noDelGroup.startDate} - ${noDelGroup.endDate}`);
                         console.log('    Body:', noDelBody);
                         
                         const response = await fetch(`${LEAVE_API_URL}/api/leaves`, {
