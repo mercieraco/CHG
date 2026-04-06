@@ -2890,36 +2890,88 @@
                 confirmMessage += `\n📍 ${dept.department_name}: แพทย์ ${replacementDoctorName}`;
 
             } else if (delegationType === 'custom') {
-                // Custom Delegation
-                const dutyAssignments = [];
-                const selects = document.querySelectorAll(`.custom-delegation-select[data-dept-id="${deptId}"]`);
+                // GEN4 V3 Step 3: Custom Delegation with "ไม่ฝาก" support
+                
+                // รวบรวมข้อมูลทั้งหมด
+                const allDuties = [];
+                const delegateDuties = [];    // duty ที่เลือก "ฝาก"
+                const noDelegateDuties = [];  // duty ที่เลือก "ไม่ฝาก"
+                
+                // หา duties ทั้งหมดของแผนกนี้
+                const dutiesForDept = currentDutyData.filter(d => d.department_id === deptId);
+                
+                dutiesForDept.forEach(item => {
+                    item.duties.forEach(duty => {
+                        const uniqueId = `${deptId}_${duty.duty_id}_${item.date}`;
+                        const state = dutyDelegationStates[uniqueId] || 'delegate'; // default: ฝาก
+                        
+                        allDuties.push({
+                            uniqueId,
+                            date: item.date,
+                            dutyId: duty.duty_id,
+                            dutyName: duty.duty_name,
+                            state
+                        });
+                        
+                        if (state === 'delegate') {
+                            delegateDuties.push({ uniqueId, date: item.date, dutyId: duty.duty_id });
+                        } else {
+                            noDelegateDuties.push({ uniqueId, date: item.date, dutyId: duty.duty_id });
+                        }
+                    });
+                });
                 
                 console.log(`=== Custom Delegation for Dept ${deptId} ===`);
-                console.log('Found selects:', selects.length);
+                console.log('All duties:', allDuties.length);
+                console.log('Delegate:', delegateDuties.length);
+                console.log('No delegate:', noDelegateDuties.length);
                 
-                for (const select of selects) {
-                    const replacementDoctorId = select.value;
-                    const dutyId = select.dataset.dutyId;
-                    const dutyDate = select.dataset.date;
-                    
-                    console.log(`  Select: dutyId=${dutyId}, date=${dutyDate}, replacementId=${replacementDoctorId}`);
+                // Validation: ต้องมีอย่างน้อย 1 duty
+                if (allDuties.length === 0) {
+                    showMessage(`ไม่มี duty สำหรับแผนก ${dept.department_name}`, 'error');
+                    return;
+                }
+                
+                // Validation: เช็คว่าเลือกแพทย์ครบทุก duty ที่ "ฝาก"
+                const dutyAssignments = [];
+                for (const item of delegateDuties) {
+                    const select = document.querySelector(`.custom-delegation-select[data-unique-id="${item.uniqueId}"]`);
+                    const replacementDoctorId = select?.value;
                     
                     if (!replacementDoctorId) {
-                        showMessage(`กรุณาเลือกแพทย์ที่มาแทนให้ครบทุก Duty ในแผนก ${dept.department_name}`, 'error');
+                        showMessage(`กรุณาเลือกแพทย์ที่มาแทนให้ครบทุก Duty ที่เลือก "ฝาก" ในแผนก ${dept.department_name}`, 'error');
                         return;
                     }
                     
                     dutyAssignments.push({
-                        dutyId: parseInt(dutyId),
-                        dutyDate: dutyDate,
+                        dutyId: parseInt(item.dutyId),
+                        dutyDate: item.date,
                         replacementDoctorId: parseInt(replacementDoctorId)
                     });
                 }
                 
-                console.log('Final dutyAssignments:', dutyAssignments);
+                // Validation: เช็คว่าใส่เหตุผลครบทุก duty ที่ "ไม่ฝาก"
+                for (const item of noDelegateDuties) {
+                    const textarea = document.getElementById(`noDelegationReason_${item.uniqueId}`);
+                    const reason = textarea?.value.trim() || '';
+                    
+                    if (!reason) {
+                        showMessage(`กรุณาระบุเหตุผลให้ครบทุก Duty ที่เลือก "ไม่ฝาก" ในแผนก ${dept.department_name}`, 'error');
+                        textarea?.focus();
+                        return;
+                    }
+                }
                 
+                // บันทึกข้อมูล
                 deptRequestBody.dutyAssignments = dutyAssignments;
-                confirmMessage += `\n📍 ${dept.department_name}: กำหนดเอง (${dutyAssignments.length} งาน)`;
+                deptRequestBody.noDelegateInfo = noDelegateDuties.map(item => ({
+                    uniqueId: item.uniqueId,
+                    date: item.date,
+                    dutyId: item.dutyId,
+                    reason: document.getElementById(`noDelegationReason_${item.uniqueId}`)?.value.trim() || ''
+                }));
+                
+                confirmMessage += `\n📍 ${dept.department_name}: กำหนดเอง (ฝาก ${delegateDuties.length} งาน, ไม่ฝาก ${noDelegateDuties.length} งาน)`;
                 
             } else if (delegationType === 'none') {
                 // No Delegation
