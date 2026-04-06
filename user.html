@@ -3600,7 +3600,7 @@
         return html;
     }
 
-    // GEN4 V3 Step 1: ฟังก์ชัน Toggle ระหว่าง ฝาก/ไม่ฝาก
+    // GEN4 V3 Step 2: ฟังก์ชัน Toggle ระหว่าง ฝาก/ไม่ฝาก
     window.toggleDutyDelegation = function(uniqueId, type) {
         // บันทึก state
         dutyDelegationStates[uniqueId] = type;
@@ -3610,7 +3610,7 @@
         const noDelegateBtn = document.querySelector(`.btn-no-delegate[data-unique-id="${uniqueId}"]`);
         
         if (type === 'delegate') {
-            // ปุ่ม "ฝาก" active (เหมือน summary.html)
+            // ปุ่ม "ฝาก" active
             delegateBtn.style.background = '#667eea';
             delegateBtn.style.color = 'white';
             delegateBtn.classList.add('active');
@@ -3619,7 +3619,7 @@
             noDelegateBtn.style.color = '#667eea';
             noDelegateBtn.classList.remove('active');
         } else {
-            // ปุ่ม "ไม่ฝาก" active (เหมือน summary.html)
+            // ปุ่ม "ไม่ฝาก" active
             noDelegateBtn.style.background = '#667eea';
             noDelegateBtn.style.color = 'white';
             noDelegateBtn.classList.add('active');
@@ -3629,7 +3629,63 @@
             delegateBtn.classList.remove('active');
         }
         
-        // อัพเดท Content (จะทำในขั้นตอนที่ 2)
+        // GEN4 V3 Step 2: Toggle Content (Dropdown vs Textarea)
+        const contentContainer = document.getElementById(`delegationContent_${uniqueId}`);
+        if (!contentContainer) return;
+        
+        if (type === 'delegate') {
+            // แสดง Dropdown (Filter + Select)
+            contentContainer.innerHTML = `
+                <!-- Filter แผนก + Work Type -->
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <select 
+                        id="customFilterDept_${uniqueId}" 
+                        onchange="loadDoctorsForCustomDuty('${uniqueId}', ${uniqueId.split('_')[0]})"
+                        style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                        <option value="">-- เลือกแผนก --</option>
+                    </select>
+                    <select 
+                        id="customFilterWorkType_${uniqueId}" 
+                        onchange="loadDoctorsForCustomDuty('${uniqueId}', ${uniqueId.split('_')[0]})"
+                        style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                        <option value="full" selected>Full time</option>
+                        <option value="part">Part time</option>
+                    </select>
+                </div>
+                
+                <select 
+                    class="custom-delegation-select" 
+                    data-dept-id="${uniqueId.split('_')[0]}" 
+                    data-unique-id="${uniqueId}"
+                    style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                    <option value="">-- เลือกแพทย์ที่จะมาแทน --</option>
+                </select>
+            `;
+            
+            // โหลดแพทย์ทันที
+            if (window.loadDoctorsForCustomDuty) {
+                const deptId = parseInt(uniqueId.split('_')[0]);
+                window.loadDoctorsForCustomDuty(uniqueId, deptId);
+            }
+        } else {
+            // แสดง Textarea (เหตุผล)
+            contentContainer.innerHTML = `
+                <div style="margin-top: 10px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #333;">
+                        เหตุผลที่ไม่ฝากงาน
+                    </label>
+                    <textarea 
+                        id="noDelegationReason_${uniqueId}" 
+                        class="no-delegation-reason"
+                        data-unique-id="${uniqueId}"
+                        rows="3" 
+                        placeholder="กรุณาระบุเหตุผล..."
+                        style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; font-family: inherit; resize: vertical; box-sizing: border-box;"
+                    ></textarea>
+                </div>
+            `;
+        }
+        
         console.log(`Duty ${uniqueId} set to: ${type}`);
     };
 
