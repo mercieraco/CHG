@@ -872,6 +872,7 @@
     let doctorLeaves = [];
     let hasShownAlert = false; // ป้องกัน alert ซ้ำ
     let currentDutyData = []; // เก็บ duty data สำหรับ multiple delegation
+    let userDepartments = []; // เก็บแผนกของแพทย์ที่เลือก
     
     // GEN4 V2 Step 1: เก็บ state การเลือก ฝาก/ไม่ฝาก แต่ละ duty
     let dutyDelegationStates = {}; // key: uniqueId, value: 'delegate' | 'no-delegate'
@@ -3054,7 +3055,7 @@
     // ========================================
     // ฟังก์ชันจัดการ Multi-Department
     // ========================================
-    let userDepartments = []; // เก็บแผนกของแพทย์
+    // userDepartments ถูกประกาศแล้วที่บรรทัดบน (global variable)
 
     function showDepartmentSelection(departments) {
         userDepartments = departments;
