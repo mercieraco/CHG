@@ -1868,32 +1868,41 @@
         const calculateColorClassFromDeptLeaves = (dateStr, isSelected) => {
             const allDeptLeaves = window.primaryDeptLeaves;
             
-            const leaveTypes = {
-                green: 0,
-                yellow: 0,
-                approved: 0,
-                rejected: 0,
-            };
+            // GEN4 V3 Fix: นับตาม doctor_id ไม่ใช่ duty
+            const doctorsGreen = new Set();    // แพทย์ที่ลา (มีคนแทน)
+            const doctorsYellow = new Set();   // แพทย์ที่ลา (ไม่มีคนแทน - pending)
+            const doctorsApproved = new Set(); // แพทย์ที่ลา (อนุมัติแล้ว)
+            const doctorsRejected = new Set(); // แพทย์ที่ลา (ไม่อนุมัติ)
             
             allDeptLeaves.forEach(leave => {
                 if (dateStr >= leave.start_date && dateStr <= leave.end_date) {
+                    const doctorId = leave.doctor_id;
+                    
                     // เช็คจาก delegation_type ก่อน (ไม่ใช่จากสี)
                     if (leave.delegation_type === 'none') {
                         // ต้องอนุมัติ → เช็คสถานะ
                         if (leave.approval_status === 'approved') {
-                            leaveTypes.approved++;
+                            doctorsApproved.add(doctorId);
                         } else if (leave.approval_status === 'rejected') {
-                            leaveTypes.rejected++;
+                            doctorsRejected.add(doctorId);
                         } else {
                             // รออนุมัติ
-                            leaveTypes.yellow++;
+                            doctorsYellow.add(doctorId);
                         }
                     } else if (leave.delegation_type === 'single' || leave.delegation_type === 'custom') {
                         // ไม่ต้องอนุมัติ
-                        leaveTypes.green++;
+                        doctorsGreen.add(doctorId);
                     }
                 }
             });
+            
+            // นับจำนวนแพทย์
+            const leaveTypes = {
+                green: doctorsGreen.size,
+                yellow: doctorsYellow.size,
+                approved: doctorsApproved.size,
+                rejected: doctorsRejected.size
+            };
             
             // ถ้ากำลังเลือก
             if (isSelected) {
@@ -1997,7 +2006,19 @@
                 ? doctorLeaves.filter(leave => leave.department_id === primaryDeptId)
                 : doctorLeaves;
             
-            // นับจำนวนการลาแต่ละประเภทในวันนี้ (เฉพาะแผนกหลัก)
+            // GEN4 V3 Fix: ตัวเองไม่มีปัญหานับซ้ำ แต่ต้องระวังถ้ามีหลาย records
+            // เช็คว่าเป็นคนเดียวกันหรือไม่
+            const uniqueDoctors = new Set();
+            const leavesInDay = [];
+            
+            primaryLeaves.forEach(leave => {
+                if (dateStr >= leave.start_date && dateStr <= leave.end_date) {
+                    uniqueDoctors.add(leave.doctor_id);
+                    leavesInDay.push(leave);
+                }
+            });
+            
+            // นับจำนวนการลาแต่ละประเภท
             const leaveTypes = {
                 green: 0,   // ฝากงานปกติ (single/custom)
                 yellow: 0,  // ไม่ฝากงาน (none)
@@ -2005,29 +2026,22 @@
                 rejected: 0,  // ไม่อนุมัติ
             };
             
-            // Loop ทุกการลาในวันนี้ (เฉพาะแผนกหลัก)
-            const leavesInDay = [];
-            primaryLeaves.forEach(leave => {
-                if (dateStr >= leave.start_date && dateStr <= leave.end_date) {
-                    // เช็คจาก delegation_type ก่อน (ไม่ใช่จากสี)
-                    if (leave.delegation_type === 'none') {
-                        // ต้องอนุมัติ → เช็คสถานะ
-                        if (leave.approval_status === 'approved') {
-                            leaveTypes.approved++;
-                            leavesInDay.push(leave);
-                        } else if (leave.approval_status === 'rejected') {
-                            leaveTypes.rejected++;
-                            leavesInDay.push(leave);
-                        } else {
-                            // รออนุมัติ
-                            leaveTypes.yellow++;
-                            leavesInDay.push(leave);
-                        }
-                    } else if (leave.delegation_type === 'single' || leave.delegation_type === 'custom') {
-                        // ไม่ต้องอนุมัติ
-                        leavesInDay.push(leave);
-                        leaveTypes.green++;
+            // Loop ทุกการลาในวันนี้
+            leavesInDay.forEach(leave => {
+                // เช็คจาก delegation_type ก่อน
+                if (leave.delegation_type === 'none') {
+                    // ต้องอนุมัติ → เช็คสถานะ
+                    if (leave.approval_status === 'approved') {
+                        leaveTypes.approved++;
+                    } else if (leave.approval_status === 'rejected') {
+                        leaveTypes.rejected++;
+                    } else {
+                        // รออนุมัติ
+                        leaveTypes.yellow++;
                     }
+                } else if (leave.delegation_type === 'single' || leave.delegation_type === 'custom') {
+                    // ไม่ต้องอนุมัติ
+                    leaveTypes.green++;
                 }
             });
             
