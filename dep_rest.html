@@ -3342,34 +3342,57 @@
                 
                 html += `
                     <div style="margin-bottom: 15px; padding: 15px; background: white; border-radius: 6px; border: 1px solid #e0e0e0;">
-                        <p style="font-weight: 600; margin-bottom: 10px;">วันที่ ${dateStr}: ${duty.duty_name}</p>
-                        
-                        <!-- Filter แผนก + Work Type สำหรับ Duty นี้ -->
-                        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                            <select 
-                                id="customFilterDept_${uniqueId}" 
-                                onchange="loadDoctorsForCustomDuty('${uniqueId}', ${deptId})"
-                                style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
-                                <option value="">-- เลือกแผนก --</option>
-                            </select>
-                            <select 
-                                id="customFilterWorkType_${uniqueId}" 
-                                onchange="loadDoctorsForCustomDuty('${uniqueId}', ${deptId})"
-                                style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
-                                <option value="full" selected>Full time</option>
-                                <option value="part">Part time</option>
-                            </select>
+                        <!-- GEN4 V2 Step 3: Header + ปุ่ม ฝาก/ไม่ฝาก -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <p style="font-weight: 600; margin: 0;">วันที่ ${dateStr}: ${duty.duty_name}</p>
+                            
+                            <div class="delegation-toggle-buttons" style="display: flex; gap: 8px;">
+                                <button 
+                                    class="btn-delegate active" 
+                                    data-unique-id="${uniqueId}"
+                                    onclick="toggleDutyDelegation('${uniqueId}', 'delegate')"
+                                    style="padding: 6px 16px; border: 1px solid #667eea; border-radius: 4px; background: #667eea; color: white; cursor: pointer; font-size: 14px; transition: all 0.2s;">
+                                    ฝาก
+                                </button>
+                                <button 
+                                    class="btn-no-delegate" 
+                                    data-unique-id="${uniqueId}"
+                                    onclick="toggleDutyDelegation('${uniqueId}', 'no-delegate')"
+                                    style="padding: 6px 16px; border: 1px solid #667eea; border-radius: 4px; background: white; color: #667eea; cursor: pointer; font-size: 14px; transition: all 0.2s;">
+                                    ไม่ฝาก
+                                </button>
+                            </div>
                         </div>
                         
-                        <select 
-                            class="custom-delegation-select" 
-                            data-dept-id="${deptId}" 
-                            data-duty-id="${duty.duty_id}" 
-                            data-date="${item.date}"
-                            data-unique-id="${uniqueId}"
-                            style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
-                            <option value="">-- เลือกแพทย์ที่จะมาแทน --</option>
-                        </select>
+                        <!-- GEN4 V2 Step 3: Content Container -->
+                        <div id="delegationContent_${uniqueId}">
+                            <!-- Filter แผนก + Work Type สำหรับ Duty นี้ -->
+                            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                                <select 
+                                    id="customFilterDept_${uniqueId}" 
+                                    onchange="loadDoctorsForCustomDuty('${uniqueId}', ${deptId})"
+                                    style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                                    <option value="">-- เลือกแผนก --</option>
+                                </select>
+                                <select 
+                                    id="customFilterWorkType_${uniqueId}" 
+                                    onchange="loadDoctorsForCustomDuty('${uniqueId}', ${deptId})"
+                                    style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                                    <option value="full" selected>Full time</option>
+                                    <option value="part">Part time</option>
+                                </select>
+                            </div>
+                            
+                            <select 
+                                class="custom-delegation-select" 
+                                data-dept-id="${deptId}" 
+                                data-duty-id="${duty.duty_id}" 
+                                data-date="${item.date}"
+                                data-unique-id="${uniqueId}"
+                                style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                                <option value="">-- เลือกแพทย์ที่จะมาแทน --</option>
+                            </select>
+                        </div>
                     </div>
                 `;
             });
