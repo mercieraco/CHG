@@ -3058,9 +3058,15 @@
     // userDepartments ถูกประกาศแล้วที่บรรทัดบน (global variable)
 
     function showDepartmentSelection(departments) {
+        console.log('🎯 showDepartmentSelection called with:', departments);
         userDepartments = departments;
+        console.log('✅ userDepartments assigned:', userDepartments);
+        
         const container = document.getElementById('departmentSelectionContainer');
         const checkboxContainer = document.getElementById('departmentCheckboxes');
+        
+        console.log('Container found:', !!container);
+        console.log('CheckboxContainer found:', !!checkboxContainer);
         
         // สร้าง Checkbox พร้อม event handler
         let html = '';
