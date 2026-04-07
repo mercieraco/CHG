@@ -3174,6 +3174,159 @@
         }
     }
 
+    // GEN4 V2 Step 2: ฟังก์ชัน Toggle ระหว่าง ฝาก/ไม่ฝาก
+    window.toggleDutyDelegation = function(uniqueId, type) {
+        console.log(`toggleDutyDelegation called: ${uniqueId}, ${type}`);
+        
+        // บันทึก state
+        dutyDelegationStates[uniqueId] = type;
+        
+        // อัพเดทปุ่ม
+        const delegateBtn = document.querySelector(`.btn-delegate[data-unique-id="${uniqueId}"]`);
+        const noDelegateBtn = document.querySelector(`.btn-no-delegate[data-unique-id="${uniqueId}"]`);
+        
+        if (!delegateBtn || !noDelegateBtn) {
+            console.error('ปุ่มไม่พบ:', uniqueId);
+            return;
+        }
+        
+        if (type === 'delegate') {
+            delegateBtn.style.background = '#667eea';
+            delegateBtn.style.color = 'white';
+            noDelegateBtn.style.background = 'white';
+            noDelegateBtn.style.color = '#667eea';
+        } else {
+            noDelegateBtn.style.background = '#667eea';
+            noDelegateBtn.style.color = 'white';
+            delegateBtn.style.background = 'white';
+            delegateBtn.style.color = '#667eea';
+        }
+        
+        // Toggle Content (Dropdown vs Textarea)
+        const contentContainer = document.getElementById(`delegationContent_${uniqueId}`);
+        if (!contentContainer) {
+            console.error('Content container ไม่พบ:', uniqueId);
+            return;
+        }
+        
+        if (type === 'delegate') {
+            // แสดง Dropdown
+            const deptId = uniqueId.split('_')[0];
+            contentContainer.innerHTML = `
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <select 
+                        id="customFilterDept_${uniqueId}" 
+                        onchange="loadDoctorsForCustomDuty('${uniqueId}', ${deptId})"
+                        style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                        <option value="">-- เลือกแผนก --</option>
+                    </select>
+                    <select 
+                        id="customFilterWorkType_${uniqueId}" 
+                        onchange="loadDoctorsForCustomDuty('${uniqueId}', ${deptId})"
+                        style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                        <option value="full" selected>Full time</option>
+                        <option value="part">Part time</option>
+                    </select>
+                </div>
+                
+                <select 
+                    class="custom-delegation-select" 
+                    data-dept-id="${deptId}" 
+                    data-duty-id="${uniqueId.split('_')[1]}"
+                    data-date="${uniqueId.split('_')[2]}"
+                    data-unique-id="${uniqueId}"
+                    style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                    <option value="">-- เลือกแพทย์ที่จะมาแทน --</option>
+                </select>
+            `;
+            
+            // โหลดแพทย์
+            if (window.loadDoctorsForCustomDuty) {
+                window.loadDoctorsForCustomDuty(uniqueId, parseInt(deptId));
+            }
+        } else {
+            // แสดง Textarea + Hidden Select
+            const deptId = uniqueId.split('_')[0];
+            const dutyId = uniqueId.split('_')[1];
+            const date = uniqueId.split('_')[2];
+            
+            contentContainer.innerHTML = `
+                <select 
+                    class="custom-delegation-select" 
+                    data-dept-id="${deptId}" 
+                    data-duty-id="${dutyId}"
+                    data-date="${date}"
+                    data-unique-id="${uniqueId}"
+                    style="display: none;">
+                </select>
+                
+                <div style="margin-top: 10px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #333;">
+                        เหตุผลที่ไม่ฝากงาน
+                    </label>
+                    <textarea 
+                        id="noDelegationReason_${uniqueId}" 
+                        class="no-delegation-reason"
+                        data-unique-id="${uniqueId}"
+                        rows="3" 
+                        placeholder="กรุณาระบุเหตุผล..."
+                        style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; font-family: inherit; resize: vertical; box-sizing: border-box;"
+                    ></textarea>
+                </div>
+            `;
+        }
+    };
+    
+    // GEN4 V2 Step 2: ฟังก์ชัน Group วันติดกัน
+    function groupConsecutiveDelegateDays(allDuties) {
+        console.log('=== groupConsecutiveDelegateDays ===');
+        console.log('Input:', allDuties);
+        
+        const delegateItems = allDuties.filter(d => d.state === 'delegate');
+        const noDelegateItems = allDuties.filter(d => d.state === 'no-delegate');
+        
+        const groupConsecutive = (items) => {
+            if (items.length === 0) return [];
+            
+            items.sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            const groups = [];
+            let currentGroup = {
+                startDate: items[0].date,
+                endDate: items[0].date,
+                duties: [items[0]]
+            };
+            
+            for (let i = 1; i < items.length; i++) {
+                const prevDate = new Date(currentGroup.endDate);
+                const currDate = new Date(items[i].date);
+                const diffDays = Math.floor((currDate - prevDate) / (1000 * 60 * 60 * 24));
+                
+                if (diffDays === 1) {
+                    currentGroup.endDate = items[i].date;
+                    currentGroup.duties.push(items[i]);
+                } else {
+                    groups.push(currentGroup);
+                    currentGroup = {
+                        startDate: items[i].date,
+                        endDate: items[i].date,
+                        duties: [items[i]]
+                    };
+                }
+            }
+            groups.push(currentGroup);
+            
+            return groups;
+        };
+        
+        const delegateGroups = groupConsecutive(delegateItems);
+        const noDelegateGroups = groupConsecutive(noDelegateItems);
+        
+        console.log('Result:', { delegateGroups, noDelegateGroups });
+        
+        return { delegateGroups, noDelegateGroups };
+    }
+
     // Render Custom Delegation
     function renderCustomDelegation(deptId, dutiesWithWork) {
         if (dutiesWithWork.length === 0) {
