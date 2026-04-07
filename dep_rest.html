@@ -1734,7 +1734,18 @@
                 ? doctorLeaves.filter(leave => leave.department_id === primaryDeptId)
                 : doctorLeaves;
             
-            // นับจำนวนการลาแต่ละประเภทในวันนี้ (เฉพาะแผนกหลัก)
+            // GEN4 V2 Step 6: นับตาม doctor_id ไม่ใช่ duty
+            const uniqueDoctors = new Set();
+            const leavesInDay = [];
+            
+            primaryLeaves.forEach(leave => {
+                if (dateStr >= leave.start_date && dateStr <= leave.end_date) {
+                    uniqueDoctors.add(leave.doctor_id);
+                    leavesInDay.push(leave);
+                }
+            });
+            
+            // นับจำนวนการลาแต่ละประเภท
             const leaveTypes = {
                 green: 0,   // ฝากงานปกติ (single/custom)
                 yellow: 0,  // ไม่ฝากงาน (none)
@@ -1742,25 +1753,15 @@
                 rejected: 0,  // ไม่อนุมัติ
             };
             
-            // Loop ทุกการลาในวันนี้ (เฉพาะแผนกหลัก)
-            const leavesInDay = [];
-            primaryLeaves.forEach(leave => {
-                if (dateStr >= leave.start_date && dateStr <= leave.end_date) {
-                    // เช็คสถานะอนุมัติก่อน
-                    if (leave.approval_status === 'approved') {
-                        leaveTypes.approved++;
-                        leavesInDay.push(leave);
-                    } else if (leave.approval_status === 'rejected') {
-                        leaveTypes.rejected++;
-                        leavesInDay.push(leave);
-                    } else if (leave.delegation_type === 'none') {
-                        leaveTypes.yellow++;
-                        leavesInDay.push(leave);
-                    } else if (leave.delegation_type === 'single' || leave.delegation_type === 'custom') {
-                        // เก็บข้อมูลการลาเพื่อเช็คว่ามี duty หรือไม่
-                        leavesInDay.push(leave);
-                        leaveTypes.green++;
-                    }
+            leavesInDay.forEach(leave => {
+                if (leave.approval_status === 'approved') {
+                    leaveTypes.approved++;
+                } else if (leave.approval_status === 'rejected') {
+                    leaveTypes.rejected++;
+                } else if (leave.delegation_type === 'none') {
+                    leaveTypes.yellow++;
+                } else if (leave.delegation_type === 'single' || leave.delegation_type === 'custom') {
+                    leaveTypes.green++;
                 }
             });
             
@@ -3838,28 +3839,37 @@
             html += '<div class="calendar-day empty"></div>';
         }
         
-        // ฟังก์ชันคำนวณสี (แสดงการลาทุกคน + cursor สีฟ้า)
+        // GEN4 V2 Step 6: ฟังก์ชันคำนวณสี (นับตาม doctor_id ไม่ใช่ duty)
         const calculateColorClass = (dateStr, isSelected) => {
-            const leaveTypes = {
-                green: 0,
-                yellow: 0,
-                approved: 0,
-                rejected: 0,
-            };
+            // ใช้ Set เก็บ doctor_id ที่ไม่ซ้ำ
+            const doctorsGreen = new Set();
+            const doctorsYellow = new Set();
+            const doctorsApproved = new Set();
+            const doctorsRejected = new Set();
             
             allDeptLeaves.forEach(leave => {
                 if (dateStr >= leave.start_date && dateStr <= leave.end_date) {
+                    const doctorId = leave.doctor_id;
+                    
                     if (leave.approval_status === 'approved') {
-                        leaveTypes.approved++;
+                        doctorsApproved.add(doctorId);
                     } else if (leave.approval_status === 'rejected') {
-                        leaveTypes.rejected++;
+                        doctorsRejected.add(doctorId);
                     } else if (leave.delegation_type === 'none') {
-                        leaveTypes.yellow++;
+                        doctorsYellow.add(doctorId);
                     } else if (leave.delegation_type === 'single' || leave.delegation_type === 'custom') {
-                        leaveTypes.green++;
+                        doctorsGreen.add(doctorId);
                     }
                 }
             });
+            
+            // นับจำนวนแพทย์
+            const leaveTypes = {
+                green: doctorsGreen.size,
+                yellow: doctorsYellow.size,
+                approved: doctorsApproved.size,
+                rejected: doctorsRejected.size
+            };
             
             // *** Step 5: ถ้าวันนี้ถูกเลือกในปฏิทินหลัก → นับเป็น +1 ***
             if (isSelected) {
