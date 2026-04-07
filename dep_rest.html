@@ -899,25 +899,6 @@
         renderCalendar();
     };
 
-    // โหลดแผนก (สำหรับ Admin)
-    async function loadDepartments() {
-        try {
-            const response = await fetch(`${API_URL}/api/departments`);
-            const data = await response.json();
-            
-            if (response.ok && data.success) {
-                const departments = data.data;
-                const departmentSelect = document.getElementById('departmentSelect');
-                
-                departments.forEach(dept => {
-                    departmentSelect.innerHTML += `<option value="${dept.id}">${dept.name}</option>`;
-                });
-            }
-        } catch (error) {
-            console.error('Load departments error:', error);
-        }
-    }
-
     // โหลดข้อมูลแพทย์เมื่อ Admin เลือก (แทน loadDoctorData เดิม)
     async function loadDoctorDataForAdmin(doctorId) {
         try {
