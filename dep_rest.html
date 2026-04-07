@@ -873,6 +873,9 @@
     let hasShownAlert = false; // ป้องกัน alert ซ้ำ
     let currentDutyData = []; // เก็บ duty data สำหรับ multiple delegation
     
+    // GEN4 V2 Step 1: เก็บ state การเลือก ฝาก/ไม่ฝาก แต่ละ duty
+    let dutyDelegationStates = {}; // key: uniqueId, value: 'delegate' | 'no-delegate'
+    
     // ระบบเลือกวันแบบใหม่
     let selectionStep = 0; // 0 = ยังไม่เริ่ม, 1 = เลือกวันเริ่มต้นแล้ว, 2 = เลือกวันสิ้นสุดแล้ว
     let startDate = null;
@@ -894,25 +897,6 @@
         
         renderCalendar();
     };
-
-    // โหลดแผนก (สำหรับ Admin)
-    async function loadDepartments() {
-        try {
-            const response = await fetch(`${API_URL}/api/departments`);
-            const data = await response.json();
-            
-            if (response.ok && data.success) {
-                const departments = data.data;
-                const departmentSelect = document.getElementById('departmentSelect');
-                
-                departments.forEach(dept => {
-                    departmentSelect.innerHTML += `<option value="${dept.id}">${dept.name}</option>`;
-                });
-            }
-        } catch (error) {
-            console.error('Load departments error:', error);
-        }
-    }
 
     // โหลดข้อมูลแพทย์เมื่อ Admin เลือก (แทน loadDoctorData เดิม)
     async function loadDoctorDataForAdmin(doctorId) {
@@ -987,21 +971,38 @@
 
     // โหลดแผนก
     async function loadDepartments() {
+        console.log('🔵 loadDepartments() called');
+        console.log('API_URL:', API_URL);
+        
         try {
             const response = await fetch(`${API_URL}/api/departments`);
+            console.log('Response status:', response.status);
+            
             const data = await response.json();
+            console.log('Response data:', data);
             
             if (response.ok && data.success) {
                 const departments = data.data.sort((a, b) => a.name.localeCompare(b.name));
+                console.log('Departments:', departments);
                 
                 const departmentSelect = document.getElementById('departmentSelect');
+                console.log('departmentSelect element:', departmentSelect);
+                
+                if (!departmentSelect) {
+                    console.error('❌ departmentSelect element not found!');
+                    return;
+                }
                 
                 departments.forEach(dept => {
                     departmentSelect.innerHTML += `<option value="${dept.id}">${dept.name}</option>`;
                 });
+                
+                console.log('✅ Departments loaded, total:', departments.length);
+            } else {
+                console.error('❌ API response not ok:', data);
             }
         } catch (error) {
-            console.error('Load departments error:', error);
+            console.error('❌ Load departments error:', error);
         }
     }
 
