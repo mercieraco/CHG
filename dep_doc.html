@@ -1103,20 +1103,72 @@
     let pendingUserId = null;
     let pendingLicenseNumber = null;
 
-    // GEN4 V2 Phase 1: Default Duties per Department
+    // GEN4 V2 Phase 1: Default Duties per Department (Dual Storage)
     let departmentDefaultDuties = {};
     
-    // โหลด defaults จาก localStorage
-    function loadDefaultDuties() {
-        const saved = localStorage.getItem('departmentDefaultDuties');
-        if (saved) {
+    // โหลด defaults จาก localStorage + Backend
+    async function loadDefaultDuties() {
+        console.log('🔄 Loading default duties...');
+        
+        // 1. โหลด localStorage ก่อน (cache - เร็ว)
+        const cached = localStorage.getItem('departmentDefaultDuties');
+        if (cached) {
             try {
-                departmentDefaultDuties = JSON.parse(saved);
-                console.log('✅ โหลด default duties:', departmentDefaultDuties);
+                departmentDefaultDuties = JSON.parse(cached);
+                console.log('📦 Loaded from cache:', departmentDefaultDuties);
             } catch (e) {
-                console.error('Error parsing default duties:', e);
+                console.error('Error parsing cache:', e);
                 departmentDefaultDuties = {};
             }
+        }
+        
+        // 2. โหลดจาก Backend (source of truth)
+        try {
+            const response = await fetch(`${API_URL}/api/department-defaults`);
+            const data = await response.json();
+            
+            if (data.success && data.defaults) {
+                // Merge: ใช้ Backend เป็นหลัก แต่รักษา unsynced data
+                const backendDefaults = data.defaults;
+                
+                // เก็บ unsynced data ไว้ก่อน
+                const unsyncedData = {};
+                for (const [deptId, deptData] of Object.entries(departmentDefaultDuties)) {
+                    if (deptData.synced === false) {
+                        unsyncedData[deptId] = deptData;
+                    }
+                }
+                
+                // Override ด้วย Backend
+                departmentDefaultDuties = backendDefaults;
+                
+                // Merge unsynced data กลับเข้าไป (ถ้ามี)
+                for (const [deptId, unsyncedDeptData] of Object.entries(unsyncedData)) {
+                    if (!departmentDefaultDuties[deptId]) {
+                        departmentDefaultDuties[deptId] = unsyncedDeptData;
+                    } else {
+                        // Merge duties ที่ยังไม่มีใน Backend
+                        const backendDuties = departmentDefaultDuties[deptId].duties;
+                        const unsyncedDuties = unsyncedDeptData.duties.filter(d => !backendDuties.includes(d));
+                        
+                        if (unsyncedDuties.length > 0) {
+                            departmentDefaultDuties[deptId].duties.push(...unsyncedDuties);
+                            departmentDefaultDuties[deptId].synced = false;
+                            console.warn(`⚠️ แผนก ${deptId} มี unsynced duties:`, unsyncedDuties);
+                        }
+                    }
+                }
+                
+                // บันทึก localStorage
+                localStorage.setItem('departmentDefaultDuties', JSON.stringify(departmentDefaultDuties));
+                console.log('✅ Synced from Backend:', departmentDefaultDuties);
+                
+                // Retry sync ข้อมูลที่ยังไม่สำเร็จ
+                await retrySyncDefaults();
+            }
+        } catch (error) {
+            console.warn('⚠️ Backend not available, using cache:', error.message);
+            // ถ้า Backend fail → ใช้ localStorage ต่อ
         }
     }
     
@@ -1129,9 +1181,63 @@
     // ดึง default duties ของแผนก (ถ้าไม่มี ใช้ default ทั่วไป)
     function getDefaultDutiesForDepartment(deptId) {
         if (!departmentDefaultDuties[deptId]) {
-            departmentDefaultDuties[deptId] = ['OPD', 'Round', 'Consult']; // default ทั่วไป
+            departmentDefaultDuties[deptId] = {
+                duties: ['OPD', 'Round', 'Consult'],
+                synced: false,
+                lastSync: null
+            };
         }
-        return departmentDefaultDuties[deptId];
+        return departmentDefaultDuties[deptId].duties;
+    }
+    
+    // Sync default duty ไป Backend
+    async function syncDefaultDutyToBackend(deptId, dutyName, action = 'add') {
+        try {
+            const url = `${API_URL}/api/department-defaults`;
+            const method = action === 'add' ? 'POST' : 'DELETE';
+            
+            const response = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    departmentId: parseInt(deptId),
+                    dutyName: dutyName
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                // Sync สำเร็จ
+                if (departmentDefaultDuties[deptId]) {
+                    departmentDefaultDuties[deptId].synced = true;
+                    departmentDefaultDuties[deptId].lastSync = new Date().toISOString();
+                    saveDefaultDuties();
+                }
+                console.log(`✅ Synced ${action} "${dutyName}" to backend`);
+                return true;
+            } else {
+                console.warn(`⚠️ Backend sync failed: ${data.message}`);
+                return false;
+            }
+        } catch (error) {
+            console.warn(`⚠️ Backend sync error:`, error);
+            return false;
+        }
+    }
+    
+    // Retry sync สำหรับ duties ที่ยังไม่สำเร็จ
+    async function retrySyncDefaults() {
+        for (const [deptId, deptData] of Object.entries(departmentDefaultDuties)) {
+            if (deptData.synced === false && deptData.duties.length > 0) {
+                console.log(`🔄 Retrying sync for department ${deptId}...`);
+                
+                // Sync ทุก duty ในแผนก
+                for (const duty of deptData.duties) {
+                    await syncDefaultDutyToBackend(deptId, duty, 'add');
+                }
+            }
+        }
     }
 
     // เลือก Work Type
@@ -1160,7 +1266,7 @@
     }
 
     // ตรวจสอบ Login
-    window.onload = function() {
+    window.onload = async function() {
         const loggedIn = sessionStorage.getItem('loggedIn');
         const username = sessionStorage.getItem('username');
         const role = sessionStorage.getItem('role');
@@ -1172,8 +1278,8 @@
 
         document.getElementById('userDisplay').textContent = `คุณ ${username} (Admin)`;
         
-        // GEN4 V2 Phase 1: โหลด default duties
-        loadDefaultDuties();
+        // GEN4 V2 Phase 1: โหลด default duties (async)
+        await loadDefaultDuties();
         
         loadPendingCount();
     };
@@ -1667,8 +1773,8 @@
         container.innerHTML = html;
     }
     
-    // GEN4 V2 Phase 1: เพิ่ม Duty ใหม่
-    function addDefaultDutyToList() {
+    // GEN4 V2 Phase 1: เพิ่ม Duty ใหม่ (Dual Storage)
+    async function addDefaultDutyToList() {
         const input = document.getElementById('newDutyName');
         const dutyName = input.value.trim();
         
@@ -1686,9 +1792,19 @@
             return;
         }
         
-        // เพิ่ม
+        // เพิ่มใน Frontend ทันที (Optimistic Update)
         duties.push(dutyName);
-        departmentDefaultDuties[deptId] = duties;
+        
+        if (!departmentDefaultDuties[deptId]) {
+            departmentDefaultDuties[deptId] = {
+                duties: duties,
+                synced: false,
+                lastSync: null
+            };
+        } else {
+            departmentDefaultDuties[deptId].duties = duties;
+            departmentDefaultDuties[deptId].synced = false;
+        }
         
         // บันทึก localStorage
         saveDefaultDuties();
@@ -1696,7 +1812,7 @@
         // Clear input
         input.value = '';
         
-        // ✅ Render ใหม่ (แก้ไข: ลบ renderCurrentDutiesList ที่ไม่มี)
+        // ✅ Render ใหม่ทันที
         renderDutyRadioOptions();
         
         // เลือก duty ที่เพิ่มใหม่ทันที
@@ -1709,11 +1825,18 @@
             });
         }, 100);
         
-        console.log(`✅ เพิ่ม "${dutyName}" ใน แผนก ${deptId}`);
+        console.log(`✅ เพิ่ม "${dutyName}" ใน แผนก ${deptId} (Frontend)`);
+        
+        // Sync Backend (background)
+        const synced = await syncDefaultDutyToBackend(deptId, dutyName, 'add');
+        
+        if (!synced) {
+            console.warn(`⚠️ "${dutyName}" จะถูก sync ทีหลัง`);
+        }
     }
     
-    // GEN4 V2 Phase 1: ลบ Duty
-    function removeDefaultDutyFromList(dutyName) {
+    // GEN4 V2 Phase 1: ลบ Duty (Dual Storage)
+    async function removeDefaultDutyFromList(dutyName) {
         if (!confirm(`ต้องการลบ "${dutyName}" ออกจาก default list?\n\n(คุณยังสามารถเพิ่มกลับมาได้ทีหลัง)`)) {
             return;
         }
@@ -1727,21 +1850,31 @@
             return;
         }
         
-        // ลบ
+        // ลบจาก Frontend ทันที
         const index = duties.indexOf(dutyName);
         if (index > -1) {
             duties.splice(index, 1);
         }
         
-        departmentDefaultDuties[deptId] = duties;
+        if (departmentDefaultDuties[deptId]) {
+            departmentDefaultDuties[deptId].duties = duties;
+            departmentDefaultDuties[deptId].synced = false;
+        }
         
         // บันทึก localStorage
         saveDefaultDuties();
         
-        // ✅ Render ใหม่ (แก้ไข: ลบ renderCurrentDutiesList ที่ไม่มี)
+        // ✅ Render ใหม่
         renderDutyRadioOptions();
         
-        console.log(`🗑️ ลบ "${dutyName}" จาก แผนก ${deptId}`);
+        console.log(`🗑️ ลบ "${dutyName}" จาก แผนก ${deptId} (Frontend)`);
+        
+        // Sync Backend (background)
+        const synced = await syncDefaultDutyToBackend(deptId, dutyName, 'delete');
+        
+        if (!synced) {
+            console.warn(`⚠️ การลบ "${dutyName}" จะถูก sync ทีหลัง`);
+        }
     }
 
     function showDutyModal(departmentId, departmentName) {
