@@ -1696,9 +1696,18 @@
         // Clear input
         input.value = '';
         
-        // Render ใหม่
-        renderCurrentDutiesList();
+        // ✅ Render ใหม่ (แก้ไข: ลบ renderCurrentDutiesList ที่ไม่มี)
         renderDutyRadioOptions();
+        
+        // เลือก duty ที่เพิ่มใหม่ทันที
+        setTimeout(() => {
+            const radios = document.querySelectorAll('input[name="dutyType"]');
+            radios.forEach(radio => {
+                if (radio.value === dutyName) {
+                    radio.checked = true;
+                }
+            });
+        }, 100);
         
         console.log(`✅ เพิ่ม "${dutyName}" ใน แผนก ${deptId}`);
     }
@@ -1729,8 +1738,7 @@
         // บันทึก localStorage
         saveDefaultDuties();
         
-        // Render ใหม่
-        renderCurrentDutiesList();
+        // ✅ Render ใหม่ (แก้ไข: ลบ renderCurrentDutiesList ที่ไม่มี)
         renderDutyRadioOptions();
         
         console.log(`🗑️ ลบ "${dutyName}" จาก แผนก ${deptId}`);
