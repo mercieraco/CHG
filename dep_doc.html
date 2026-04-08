@@ -844,28 +844,52 @@
     <div class="modal-content">
         <h3>➕ เพิ่มภาระงาน (Duty)</h3>
         <p><strong id="dutyDepartmentName"></strong></p>
+        
+        <!-- GEN4 V2 Phase 1: Dynamic Duty Options -->
         <div style="text-align: left; margin: 20px 0;">
+            <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 4px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <label style="font-weight: 600;">จัดการ Default Duties:</label>
+                    <button onclick="toggleDutyManager()" id="btnToggleDutyManager" 
+                            style="padding: 4px 12px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                        แสดง
+                    </button>
+                </div>
+                
+                <div id="dutyManagerSection" style="display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd;">
+                    <div id="currentDutiesList" style="margin-bottom: 10px;">
+                        <!-- แสดง duties ที่มีอยู่ -->
+                    </div>
+                    
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="newDutyName" placeholder="ชื่อ Duty ใหม่" 
+                               style="flex: 1; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
+                        <button onclick="addDefaultDutyToList()" 
+                                style="padding: 6px 12px; background: #11998e; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px;">
+                            ➕ เพิ่ม
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
             <div class="form-group">
-                <label style="margin-bottom: 10px; display: block;">เลือกภาระงาน:</label>
-                <label style="display: block; margin-bottom: 10px; cursor: pointer;">
-                    <input type="radio" name="dutyType" value="OPD" checked> OPD
-                </label>
-                <label style="display: block; margin-bottom: 10px; cursor: pointer;">
-                    <input type="radio" name="dutyType" value="Round"> Round
-                </label>
-                <label style="display: block; margin-bottom: 10px; cursor: pointer;">
-                    <input type="radio" name="dutyType" value="Consult"> Consult
-                </label>
-                <label style="display: block; margin-bottom: 10px; cursor: pointer;">
+                <label style="margin-bottom: 10px; display: block; font-weight: 600;">เลือกภาระงาน:</label>
+                <div id="dutyRadioOptions">
+                    <!-- Radio buttons จะถูก render ที่นี่ -->
+                </div>
+                
+                <!-- อื่นๆ: ยังคงมีเหมือนเดิม -->
+                <label style="display: block; margin-top: 10px; cursor: pointer;">
                     <input type="radio" name="dutyType" value="other"> อื่นๆ: 
                     <input type="text" id="otherDutyName" placeholder="ระบุภาระงาน" 
                            style="margin-left: 10px; padding: 5px; border: 1px solid #ddd; border-radius: 4px; width: 150px;">
                 </label>
             </div>
         </div>
+        
         <div class="modal-actions">
             <button onclick="closeDutyModal()" class="btn btn-secondary">ยกเลิก</button>
-            <button onclick="confirmAddDuty()" class="btn btn-primary">เพิ่ม Duty</button>
+            <button onclick="confirmAddDuty()" class="btn btn-primary">บันทึก Duty</button>
         </div>
     </div>
 </div>
@@ -1102,6 +1126,37 @@
     let pendingUserId = null;
     let pendingLicenseNumber = null;
 
+    // GEN4 V2 Phase 1: Default Duties per Department
+    let departmentDefaultDuties = {};
+    
+    // โหลด defaults จาก localStorage
+    function loadDefaultDuties() {
+        const saved = localStorage.getItem('departmentDefaultDuties');
+        if (saved) {
+            try {
+                departmentDefaultDuties = JSON.parse(saved);
+                console.log('✅ โหลด default duties:', departmentDefaultDuties);
+            } catch (e) {
+                console.error('Error parsing default duties:', e);
+                departmentDefaultDuties = {};
+            }
+        }
+    }
+    
+    // บันทึก defaults ลง localStorage
+    function saveDefaultDuties() {
+        localStorage.setItem('departmentDefaultDuties', JSON.stringify(departmentDefaultDuties));
+        console.log('💾 บันทึก default duties:', departmentDefaultDuties);
+    }
+    
+    // ดึง default duties ของแผนก (ถ้าไม่มี ใช้ default ทั่วไป)
+    function getDefaultDutiesForDepartment(deptId) {
+        if (!departmentDefaultDuties[deptId]) {
+            departmentDefaultDuties[deptId] = ['OPD', 'Round', 'Consult']; // default ทั่วไป
+        }
+        return departmentDefaultDuties[deptId];
+    }
+
     // เลือก Work Type
     function selectWorkType(type) {
         const btnFull = document.getElementById('btnFullTime');
@@ -1139,6 +1194,10 @@
         }
 
         document.getElementById('userDisplay').textContent = `คุณ ${username} (Admin)`;
+        
+        // GEN4 V2 Phase 1: โหลด default duties
+        loadDefaultDuties();
+        
         loadPendingCount();
     };
 
@@ -1562,12 +1621,151 @@
     }
 
     // Modal Duty ของแผนก
+    // GEN4 V2 Phase 1: Toggle Duty Manager Section
+    function toggleDutyManager() {
+        const section = document.getElementById('dutyManagerSection');
+        const btn = document.getElementById('btnToggleDutyManager');
+        
+        if (section.style.display === 'none') {
+            section.style.display = 'block';
+            btn.textContent = 'ซ่อน';
+            renderCurrentDutiesList();
+        } else {
+            section.style.display = 'none';
+            btn.textContent = 'แสดง';
+        }
+    }
+    
+    // GEN4 V2 Phase 1: แสดง duties ที่มีอยู่ (สำหรับลบ)
+    function renderCurrentDutiesList() {
+        const deptId = currentDepartmentId;
+        const duties = getDefaultDutiesForDepartment(deptId);
+        const container = document.getElementById('currentDutiesList');
+        
+        if (duties.length === 0) {
+            container.innerHTML = '<p style="color: #999; font-size: 13px;">ไม่มี default duties</p>';
+            return;
+        }
+        
+        let html = '<div style="font-size: 13px;">';
+        duties.forEach(duty => {
+            html += `
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px; margin-bottom: 4px; background: white; border-radius: 3px; border: 1px solid #e0e0e0;">
+                    <span>• ${duty}</span>
+                    <button onclick="removeDefaultDutyFromList('${duty}')" 
+                            style="padding: 3px 10px; background: #ff4757; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 11px;">
+                        ➖
+                    </button>
+                </div>
+            `;
+        });
+        html += '</div>';
+        
+        container.innerHTML = html;
+    }
+    
+    // GEN4 V2 Phase 1: Render Radio Buttons แบบ dynamic
+    function renderDutyRadioOptions() {
+        const deptId = currentDepartmentId;
+        const duties = getDefaultDutiesForDepartment(deptId);
+        const container = document.getElementById('dutyRadioOptions');
+        
+        let html = '';
+        duties.forEach((duty, index) => {
+            const checked = index === 0 ? 'checked' : '';
+            html += `
+                <label style="display: block; margin-bottom: 10px; cursor: pointer;">
+                    <input type="radio" name="dutyType" value="${duty}" ${checked}> ${duty}
+                </label>
+            `;
+        });
+        
+        container.innerHTML = html;
+    }
+    
+    // GEN4 V2 Phase 1: เพิ่ม Duty ใหม่
+    function addDefaultDutyToList() {
+        const input = document.getElementById('newDutyName');
+        const dutyName = input.value.trim();
+        
+        if (!dutyName) {
+            alert('⚠️ กรุณากรอกชื่อ Duty');
+            return;
+        }
+        
+        const deptId = currentDepartmentId;
+        const duties = getDefaultDutiesForDepartment(deptId);
+        
+        // เช็คซ้ำ
+        if (duties.includes(dutyName)) {
+            alert('⚠️ Duty นี้มีอยู่แล้ว');
+            return;
+        }
+        
+        // เพิ่ม
+        duties.push(dutyName);
+        departmentDefaultDuties[deptId] = duties;
+        
+        // บันทึก localStorage
+        saveDefaultDuties();
+        
+        // Clear input
+        input.value = '';
+        
+        // Render ใหม่
+        renderCurrentDutiesList();
+        renderDutyRadioOptions();
+        
+        console.log(`✅ เพิ่ม "${dutyName}" ใน แผนก ${deptId}`);
+    }
+    
+    // GEN4 V2 Phase 1: ลบ Duty
+    function removeDefaultDutyFromList(dutyName) {
+        if (!confirm(`ต้องการลบ "${dutyName}" ออกจาก default list?\n\n(คุณยังสามารถเพิ่มกลับมาได้ทีหลัง)`)) {
+            return;
+        }
+        
+        const deptId = currentDepartmentId;
+        const duties = getDefaultDutiesForDepartment(deptId);
+        
+        // ต้องเหลืออย่างน้อย 1 อัน
+        if (duties.length <= 1) {
+            alert('⚠️ ต้องมี default duty อย่างน้อย 1 อัน');
+            return;
+        }
+        
+        // ลบ
+        const index = duties.indexOf(dutyName);
+        if (index > -1) {
+            duties.splice(index, 1);
+        }
+        
+        departmentDefaultDuties[deptId] = duties;
+        
+        // บันทึก localStorage
+        saveDefaultDuties();
+        
+        // Render ใหม่
+        renderCurrentDutiesList();
+        renderDutyRadioOptions();
+        
+        console.log(`🗑️ ลบ "${dutyName}" จาก แผนก ${deptId}`);
+    }
+
     function showDutyModal(departmentId, departmentName) {
         currentDepartmentId = departmentId;
         currentDepartmentName = departmentName;
         document.getElementById('dutyDepartmentName').textContent = departmentName;
         
-        document.querySelector('input[name="dutyType"][value="OPD"]').checked = true;
+        // GEN4 V2 Phase 1: Render radio buttons
+        renderDutyRadioOptions();
+        
+        // ซ่อน duty manager section
+        document.getElementById('dutyManagerSection').style.display = 'none';
+        document.getElementById('btnToggleDutyManager').textContent = 'แสดง';
+        
+        // Clear textbox
+        document.getElementById('newDutyName').value = '';
         document.getElementById('otherDutyName').value = '';
         
         document.getElementById('dutyModal').classList.add('show');
