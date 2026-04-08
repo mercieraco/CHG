@@ -845,45 +845,22 @@
         <h3>➕ เพิ่มภาระงาน (Duty)</h3>
         <p><strong id="dutyDepartmentName"></strong></p>
         
-        <!-- GEN4 V2 Phase 1: Dynamic Duty Options -->
+        <!-- GEN4 V2 Phase 1: เลือกภาระงาน + ลบ/เพิ่ม -->
         <div style="text-align: left; margin: 20px 0;">
-            <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 4px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                    <label style="font-weight: 600;">จัดการ Default Duties:</label>
-                    <button onclick="toggleDutyManager()" id="btnToggleDutyManager" 
-                            style="padding: 4px 12px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
-                        แสดง
-                    </button>
-                </div>
-                
-                <div id="dutyManagerSection" style="display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd;">
-                    <div id="currentDutiesList" style="margin-bottom: 10px;">
-                        <!-- แสดง duties ที่มีอยู่ -->
-                    </div>
-                    
-                    <div style="display: flex; gap: 8px;">
-                        <input type="text" id="newDutyName" placeholder="ชื่อ Duty ใหม่" 
-                               style="flex: 1; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
-                        <button onclick="addDefaultDutyToList()" 
-                                style="padding: 6px 12px; background: #11998e; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px;">
-                            ➕ เพิ่ม
-                        </button>
-                    </div>
-                </div>
+            <label style="margin-bottom: 10px; display: block; font-weight: 600;">เลือกภาระงาน:</label>
+            
+            <div id="dutyRadioOptions" style="margin-bottom: 15px;">
+                <!-- Radio buttons จะถูก render ที่นี่ -->
             </div>
             
-            <div class="form-group">
-                <label style="margin-bottom: 10px; display: block; font-weight: 600;">เลือกภาระงาน:</label>
-                <div id="dutyRadioOptions">
-                    <!-- Radio buttons จะถูก render ที่นี่ -->
-                </div>
-                
-                <!-- อื่นๆ: ยังคงมีเหมือนเดิม -->
-                <label style="display: block; margin-top: 10px; cursor: pointer;">
-                    <input type="radio" name="dutyType" value="other"> อื่นๆ: 
-                    <input type="text" id="otherDutyName" placeholder="ระบุภาระงาน" 
-                           style="margin-left: 10px; padding: 5px; border: 1px solid #ddd; border-radius: 4px; width: 150px;">
-                </label>
+            <!-- เพิ่ม Duty ใหม่ -->
+            <div style="display: flex; gap: 10px; align-items: center; padding: 10px; background: #f8f9fa; border-radius: 4px; border: 1px solid #ddd;">
+                <input type="text" id="newDutyName" placeholder="ชื่อ Duty ใหม่" 
+                       style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                <button onclick="addDefaultDutyToList()" 
+                        style="padding: 8px 16px; background: #11998e; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: 500;">
+                    ➕ เพิ่ม
+                </button>
             </div>
         </div>
         
@@ -1664,7 +1641,7 @@
         container.innerHTML = html;
     }
     
-    // GEN4 V2 Phase 1: Render Radio Buttons แบบ dynamic
+    // GEN4 V2 Phase 1: Render Radio Buttons แบบ dynamic (มีปุ่มลบ)
     function renderDutyRadioOptions() {
         const deptId = currentDepartmentId;
         const duties = getDefaultDutiesForDepartment(deptId);
@@ -1674,9 +1651,16 @@
         duties.forEach((duty, index) => {
             const checked = index === 0 ? 'checked' : '';
             html += `
-                <label style="display: block; margin-bottom: 10px; cursor: pointer;">
-                    <input type="radio" name="dutyType" value="${duty}" ${checked}> ${duty}
-                </label>
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; padding: 8px; background: white; border: 1px solid #e0e0e0; border-radius: 4px;">
+                    <label style="flex: 1; cursor: pointer; display: flex; align-items: center;">
+                        <input type="radio" name="dutyType" value="${duty}" ${checked} style="margin-right: 8px;"> 
+                        <span style="font-size: 14px;">${duty}</span>
+                    </label>
+                    <button onclick="removeDefaultDutyFromList('${duty}')" 
+                            style="padding: 4px 12px; background: #ff4757; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                        ➖ ลบ
+                    </button>
+                </div>
             `;
         });
         
@@ -1760,13 +1744,8 @@
         // GEN4 V2 Phase 1: Render radio buttons
         renderDutyRadioOptions();
         
-        // ซ่อน duty manager section
-        document.getElementById('dutyManagerSection').style.display = 'none';
-        document.getElementById('btnToggleDutyManager').textContent = 'แสดง';
-        
         // Clear textbox
         document.getElementById('newDutyName').value = '';
-        document.getElementById('otherDutyName').value = '';
         
         document.getElementById('dutyModal').classList.add('show');
     }
