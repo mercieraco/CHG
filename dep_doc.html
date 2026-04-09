@@ -1892,6 +1892,34 @@
         console.log(`⏰ ${dutyId}: End time updated to ${startHour}:${startMinute}`);
     }
     
+    // Phase 2: ดึงข้อมูลเวลาจาก duty ที่เลือก
+    function getSelectedDutyTime(dutyId) {
+        // เช็คว่า Time Picker แสดงอยู่ไหม
+        const timePicker = document.getElementById(`${dutyId}_timepicker`);
+        const isTimeMode = timePicker && timePicker.style.display !== 'none';
+        
+        if (!isTimeMode) {
+            // All Day mode
+            return {
+                isAllDay: true,
+                startTime: null,
+                endTime: null
+            };
+        } else {
+            // Time mode
+            const startHour = document.getElementById(`${dutyId}_startHour`).value;
+            const startMinute = document.getElementById(`${dutyId}_startMinute`).value;
+            const endHour = document.getElementById(`${dutyId}_endHour`).value;
+            const endMinute = document.getElementById(`${dutyId}_endMinute`).value;
+            
+            return {
+                isAllDay: false,
+                startTime: `${startHour}:${startMinute}`,
+                endTime: `${endHour}:${endMinute}`
+            };
+        }
+    }
+    
     // GEN4 V2 Phase 1: เพิ่ม Duty ใหม่ (Dual Storage)
     async function addDefaultDutyToList() {
         const input = document.getElementById('newDutyName');
@@ -2017,27 +2045,24 @@
     }
 
     async function confirmAddDuty() {
-        const selectedType = document.querySelector('input[name="dutyType"]:checked').value;
-        let dutyName = '';
+        const selectedRadio = document.querySelector('input[name="dutyType"]:checked');
         
-        if (selectedType === 'other') {
-            dutyName = document.getElementById('otherDutyName').value.trim();
-            if (!dutyName) {
-                alert('กรุณาระบุชื่อภาระงาน');
-                return;
-            }
-        } else {
-            dutyName = selectedType;
+        if (!selectedRadio) {
+            alert('⚠️ กรุณาเลือก Duty');
+            return;
         }
-
+        
+        const dutyName = selectedRadio.value;
+        const dutyId = selectedRadio.id.replace('_radio', ''); // เช่น "duty_0"
+        
         if (!currentDepartmentId) return;
         
         // เก็บ departmentId ไว้ (เพราะ currentDepartmentId อาจเปลี่ยนหลัง close modal)
         const savedDepartmentId = currentDepartmentId;
         const savedDepartmentName = currentDepartmentName;
         
-        // Phase 2: ดึงข้อมูลเวลา
-        const timeData = getSelectedTime();
+        // Phase 2: ดึงข้อมูลเวลาจาก duty ที่เลือก
+        const timeData = getSelectedDutyTime(dutyId);
         console.log('📋 Duty Information:');
         console.log('   - Name:', dutyName);
         console.log('   - Department:', savedDepartmentName);
