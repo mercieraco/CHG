@@ -1957,9 +1957,9 @@
                 // GEN4 V2 Fix: Highlight ใน Modal ก่อนปิด
                 highlightDutyInModal(dutyName);
                 
-                // รอให้เห็น highlight + ให้ Backend save ทัน (3 วินาที)
-                console.log(`⏳ รอ 3 วินาที...`);
-                await new Promise(resolve => setTimeout(resolve, 3000));
+                // รอให้เห็น highlight (1.5 วินาที - ไม่นานเกินไป)
+                console.log(`⏳ รอ highlight 1.5 วินาที...`);
+                await new Promise(resolve => setTimeout(resolve, 1500));
                 
                 closeDutyModal();
                 
@@ -1968,11 +1968,11 @@
                 await loadDepartments();
                 
                 // รอ DOM render เสร็จ
-                await new Promise(resolve => setTimeout(resolve, 300));
+                await new Promise(resolve => setTimeout(resolve, 200));
                 
-                // Verify ว่า Backend มีข้อมูลจริง
+                // GEN4 V2: Smart Retry Verify (ลองหลายครั้ง ถ้าไม่เจอ)
                 console.log(`🔍 กำลัง verify "${dutyName}" ในแผนก ${savedDepartmentId}...`);
-                const verified = await verifyDutyExists(savedDepartmentId, dutyName);
+                const verified = await verifyDutyWithRetry(savedDepartmentId, dutyName, 3, 500);
                 
                 if (verified) {
                     // ✅ สำเร็จ
@@ -1983,7 +1983,7 @@
                     setTimeout(() => listMessage.classList.remove('show'), 3000);
                 } else {
                     // ❌ ไม่สำเร็จ - Rollback
-                    console.error(`❌ Verify failed! ไม่พบ "${dutyName}" ใน Backend`);
+                    console.error(`❌ Verify failed! ไม่พบ "${dutyName}" ใน Backend หลัง retry`);
                     const listMessage = document.getElementById('listMessage');
                     listMessage.className = 'message error show';
                     listMessage.textContent = '❌ บันทึกไม่สำเร็จ กรุณาลองใหม่';
@@ -2021,29 +2021,45 @@
     // GEN4 V2: Verify ว่า Backend มีข้อมูลจริง
     async function verifyDutyExists(departmentId, dutyName) {
         try {
-            console.log(`   → Fetching duties from API...`);
             const response = await fetch(`${API_URL}/api/duties/department/${departmentId}`);
             const data = await response.json();
             
-            console.log(`   → API Response:`, data);
-            
             if (data.success && data.data) {
-                console.log(`   → Duties in Backend:`, data.data.map(d => d.duty_name));
-                
                 const exists = data.data.some(d => 
                     d.duty_name.toLowerCase() === dutyName.toLowerCase()
                 );
                 
-                console.log(`   → "${dutyName}" exists?`, exists);
                 return exists;
             }
             
-            console.log(`   → No data returned`);
             return false;
         } catch (error) {
             console.error('   → Verify error:', error);
             return false;
         }
+    }
+    
+    // GEN4 V2: Smart Retry - ลองหลายครั้งจนกว่าจะเจอ
+    async function verifyDutyWithRetry(departmentId, dutyName, maxRetries = 3, delayMs = 500) {
+        for (let i = 0; i < maxRetries; i++) {
+            console.log(`   → ครั้งที่ ${i + 1}/${maxRetries}: กำลังเช็ค...`);
+            
+            const exists = await verifyDutyExists(departmentId, dutyName);
+            
+            if (exists) {
+                console.log(`   → ✅ พบ "${dutyName}" (ครั้งที่ ${i + 1})`);
+                return true;
+            }
+            
+            // ถ้ายังไม่เจอและยังมี retry เหลือ → รอแล้วลองใหม่
+            if (i < maxRetries - 1) {
+                console.log(`   → ⏳ ยังไม่พบ, รอ ${delayMs}ms แล้วลองใหม่...`);
+                await new Promise(resolve => setTimeout(resolve, delayMs));
+            }
+        }
+        
+        console.log(`   → ❌ ไม่พบ "${dutyName}" หลัง ${maxRetries} ครั้ง`);
+        return false;
     }
 
     // Modal ลบ Duty ของแผนก
