@@ -1946,38 +1946,39 @@
             const data = await response.json();
             
             if (response.ok && data.success) {
+                // GEN4 V2 Fix: Highlight ใน Modal ก่อนปิด
+                highlightDutyInModal(dutyName);
+                
+                // รอให้เห็น highlight (2 วินาที)
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
                 closeDutyModal();
                 
-                // GEN4 V2: Reload + Highlight + Verify
+                // Reload หน้าจอ
                 await loadDepartments();
                 
                 // รอ DOM render เสร็จ
-                await new Promise(resolve => setTimeout(resolve, 100));
+                await new Promise(resolve => setTimeout(resolve, 200));
                 
-                // Highlight duty ที่เพิ่มใหม่ (สีเหลือง)
-                highlightNewDuty(dutyName);
+                // Verify ว่า Backend มีข้อมูลจริง (รอนานขึ้น 2 วินาที)
+                const verified = await verifyDutyExists(currentDepartmentId, dutyName);
                 
-                // Verify ว่า Backend มีข้อมูลจริง (หลัง 1.5 วินาที)
-                setTimeout(async () => {
-                    const verified = await verifyDutyExists(currentDepartmentId, dutyName);
+                if (verified) {
+                    // ✅ สำเร็จ
+                    const listMessage = document.getElementById('listMessage');
+                    listMessage.className = 'message success show';
+                    listMessage.textContent = '✅ บันทึก Duty สำเร็จ';
+                    setTimeout(() => listMessage.classList.remove('show'), 3000);
+                } else {
+                    // ❌ ไม่สำเร็จ - Rollback
+                    const listMessage = document.getElementById('listMessage');
+                    listMessage.className = 'message error show';
+                    listMessage.textContent = '❌ บันทึกไม่สำเร็จ กรุณาลองใหม่';
+                    setTimeout(() => listMessage.classList.remove('show'), 3000);
                     
-                    if (verified) {
-                        // ✅ สำเร็จ
-                        const listMessage = document.getElementById('listMessage');
-                        listMessage.className = 'message success show';
-                        listMessage.textContent = '✅ บันทึก Duty สำเร็จ';
-                        setTimeout(() => listMessage.classList.remove('show'), 3000);
-                    } else {
-                        // ❌ ไม่สำเร็จ - Rollback
-                        const listMessage = document.getElementById('listMessage');
-                        listMessage.className = 'message error show';
-                        listMessage.textContent = '❌ บันทึกไม่สำเร็จ กรุณาลองใหม่';
-                        setTimeout(() => listMessage.classList.remove('show'), 3000);
-                        
-                        // Reload เพื่อลบ duty ที่ไม่สำเร็จออก
-                        await loadDepartments();
-                    }
-                }, 1500);
+                    // Reload เพื่อลบ duty ที่ไม่สำเร็จออก
+                    await loadDepartments();
+                }
             } else {
                 throw new Error(data.message || 'ไม่สามารถเพิ่ม Duty ได้');
             }
@@ -1986,22 +1987,20 @@
         }
     }
     
-    // GEN4 V2: Highlight duty ที่เพิ่มใหม่
-    function highlightNewDuty(dutyName) {
-        // หา duty card ที่มีชื่อตรงกัน
-        const dutyCards = document.querySelectorAll('.duty-item');
+    // GEN4 V2 Fix: Highlight duty ใน Modal (ก่อนปิด)
+    function highlightDutyInModal(dutyName) {
+        // หา radio button container ใน Modal
+        const radioOptions = document.querySelectorAll('#dutyRadioOptions > div');
         
-        dutyCards.forEach(card => {
-            const dutyNameSpan = card.querySelector('span');
-            if (dutyNameSpan && dutyNameSpan.textContent.trim() === dutyName) {
+        radioOptions.forEach(container => {
+            const radio = container.querySelector('input[type="radio"]');
+            if (radio && radio.value === dutyName) {
                 // เพิ่ม highlight สีเหลือง
-                card.style.transition = 'background-color 0.3s ease';
-                card.style.backgroundColor = '#fff59d'; // สีเหลืองอ่อน
+                container.style.transition = 'background-color 0.3s ease';
+                container.style.backgroundColor = '#fff59d'; // สีเหลืองอ่อน
+                container.style.border = '2px solid #fbc02d'; // ขอบสีเหลืองเข้ม
                 
-                // ลบ highlight หลัง 2 วินาที
-                setTimeout(() => {
-                    card.style.backgroundColor = '';
-                }, 2000);
+                console.log(`🟡 Highlighting "${dutyName}" in modal`);
             }
         });
     }
