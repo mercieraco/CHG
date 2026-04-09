@@ -854,69 +854,13 @@
             </div>
             
             <!-- เพิ่ม Duty ใหม่ -->
-            <div style="display: flex; gap: 10px; align-items: center; padding: 10px; background: #f8f9fa; border-radius: 4px; border: 1px solid #ddd;">
+            <div style="display: flex; gap: 10px; align-items: center; padding: 10px; background: #f8f9fa; border-radius: 4px; border: 1px solid #ddd; margin-top: 10px;">
                 <input type="text" id="newDutyName" placeholder="ชื่อ Duty ใหม่" 
                        style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
                 <button onclick="addDefaultDutyToList()" 
                         style="padding: 8px 16px; background: #11998e; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: 500;">
                     ➕ เพิ่ม
                 </button>
-            </div>
-        </div>
-        
-        <!-- Phase 2: Time Toggle + Picker -->
-        <div style="text-align: left; margin: 20px 0;">
-            <label style="margin-bottom: 10px; display: block; font-weight: 600;">ประเภทเวลา:</label>
-            
-            <!-- Toggle Buttons -->
-            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                <button id="toggleAllDay" onclick="toggleTimeMode('allday')" 
-                        style="flex: 1; padding: 10px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500; font-size: 14px;">
-                    ทั้งวัน (All Day)
-                </button>
-                <button id="toggleTime" onclick="toggleTimeMode('time')" 
-                        style="flex: 1; padding: 10px; background: #e0e0e0; color: #666; border: none; border-radius: 4px; cursor: pointer; font-weight: 500; font-size: 14px;">
-                    ระบุเวลา (Time)
-                </button>
-            </div>
-            
-            <!-- Time Picker (ซ่อนไว้ตอนแรก) -->
-            <div id="timePicker" style="display: none; background: #f8f9fa; padding: 15px; border-radius: 4px; border: 1px solid #ddd;">
-                <div style="margin-bottom: 15px;">
-                    <label style="display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px;">เวลาเริ่ม:</label>
-                    <div style="display: flex; gap: 10px; align-items: center;">
-                        <select id="startHour" onchange="updateEndTimeDefault()" 
-                                style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; flex: 1;">
-                            <!-- 0-23 -->
-                        </select>
-                        <span style="font-weight: 600; font-size: 18px;">:</span>
-                        <select id="startMinute" onchange="updateEndTimeDefault()" 
-                                style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; flex: 1;">
-                            <option value="00">00</option>
-                            <option value="15">15</option>
-                            <option value="30">30</option>
-                            <option value="45">45</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <div>
-                    <label style="display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px;">เวลาสิ้นสุด:</label>
-                    <div style="display: flex; gap: 10px; align-items: center;">
-                        <select id="endHour" 
-                                style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; flex: 1;">
-                            <!-- 0-23 -->
-                        </select>
-                        <span style="font-weight: 600; font-size: 18px;">:</span>
-                        <select id="endMinute" 
-                                style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; flex: 1;">
-                            <option value="00">00</option>
-                            <option value="15">15</option>
-                            <option value="30">30</option>
-                            <option value="45">45</option>
-                        </select>
-                    </div>
-                </div>
             </div>
         </div>
         
@@ -1812,21 +1756,140 @@
         let html = '';
         duties.forEach((duty, index) => {
             const checked = index === 0 ? 'checked' : '';
+            const dutyId = `duty_${index}`;
+            
             html += `
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; padding: 8px; background: white; border: 1px solid #e0e0e0; border-radius: 4px;">
-                    <label style="flex: 1; cursor: pointer; display: flex; align-items: center;">
-                        <input type="radio" name="dutyType" value="${duty}" ${checked} style="margin-right: 8px;"> 
-                        <span style="font-size: 14px;">${duty}</span>
-                    </label>
-                    <button onclick="removeDefaultDutyFromList('${duty}')" 
-                            style="padding: 4px 12px; background: #ff4757; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
-                        ➖ ลบ
-                    </button>
+                <div id="${dutyId}_container" style="margin-bottom: 12px; padding: 10px; background: white; border: 1px solid #e0e0e0; border-radius: 4px;">
+                    <!-- Duty Row: Radio + Name + Toggle + Delete -->
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                        <label style="flex: 1; cursor: pointer; display: flex; align-items: center;">
+                            <input type="radio" name="dutyType" value="${duty}" ${checked} 
+                                   id="${dutyId}_radio"
+                                   style="margin-right: 8px;"> 
+                            <span style="font-size: 14px; font-weight: 500;">${duty}</span>
+                        </label>
+                        
+                        <!-- Toggle Buttons -->
+                        <button onclick="selectDutyTimeMode('${dutyId}', 'allday')" 
+                                id="${dutyId}_allday"
+                                style="padding: 6px 12px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 500;">
+                            All Day
+                        </button>
+                        <button onclick="selectDutyTimeMode('${dutyId}', 'time')" 
+                                id="${dutyId}_time"
+                                style="padding: 6px 12px; background: #e0e0e0; color: #666; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 500;">
+                            Time
+                        </button>
+                        
+                        <!-- Delete Button -->
+                        <button onclick="removeDefaultDutyFromList('${duty}')" 
+                                style="padding: 6px 12px; background: #ff4757; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 500;">
+                            ➖ ลบ
+                        </button>
+                    </div>
+                    
+                    <!-- Time Picker (hidden by default) -->
+                    <div id="${dutyId}_timepicker" style="display: none; background: #f8f9fa; padding: 12px; border-radius: 4px; margin-top: 8px;">
+                        <div style="display: flex; gap: 20px; align-items: center;">
+                            <div style="flex: 1;">
+                                <label style="display: block; margin-bottom: 4px; font-size: 12px; font-weight: 600;">เวลาเริ่ม:</label>
+                                <div style="display: flex; gap: 5px; align-items: center;">
+                                    <select id="${dutyId}_startHour" onchange="updateDutyEndTime('${dutyId}')" 
+                                            style="padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; flex: 1;">
+                                        ${generateHourOptions(12)}
+                                    </select>
+                                    <span style="font-weight: 600;">:</span>
+                                    <select id="${dutyId}_startMinute" onchange="updateDutyEndTime('${dutyId}')" 
+                                            style="padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; flex: 1;">
+                                        ${generateMinuteOptions('00')}
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div style="flex: 1;">
+                                <label style="display: block; margin-bottom: 4px; font-size: 12px; font-weight: 600;">เวลาสิ้นสุด:</label>
+                                <div style="display: flex; gap: 5px; align-items: center;">
+                                    <select id="${dutyId}_endHour" 
+                                            style="padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; flex: 1;">
+                                        ${generateHourOptions(12)}
+                                    </select>
+                                    <span style="font-weight: 600;">:</span>
+                                    <select id="${dutyId}_endMinute" 
+                                            style="padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; flex: 1;">
+                                        ${generateMinuteOptions('00')}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             `;
         });
         
         container.innerHTML = html;
+    }
+    
+    // Helper: สร้าง hour options (0-23)
+    function generateHourOptions(defaultHour = 12) {
+        let html = '';
+        for (let i = 0; i <= 23; i++) {
+            const hourStr = i.toString().padStart(2, '0');
+            const selected = i === defaultHour ? 'selected' : '';
+            html += `<option value="${hourStr}" ${selected}>${hourStr}</option>`;
+        }
+        return html;
+    }
+    
+    // Helper: สร้าง minute options
+    function generateMinuteOptions(defaultMinute = '00') {
+        const minutes = ['00', '15', '30', '45'];
+        let html = '';
+        minutes.forEach(min => {
+            const selected = min === defaultMinute ? 'selected' : '';
+            html += `<option value="${min}" ${selected}>${min}</option>`;
+        });
+        return html;
+    }
+    
+    // Phase 2: เลือก All Day / Time สำหรับ duty นี้
+    function selectDutyTimeMode(dutyId, mode) {
+        const alldayBtn = document.getElementById(`${dutyId}_allday`);
+        const timeBtn = document.getElementById(`${dutyId}_time`);
+        const timePicker = document.getElementById(`${dutyId}_timepicker`);
+        
+        if (mode === 'allday') {
+            // All Day active
+            alldayBtn.style.background = '#667eea';
+            alldayBtn.style.color = 'white';
+            timeBtn.style.background = '#e0e0e0';
+            timeBtn.style.color = '#666';
+            timePicker.style.display = 'none';
+            
+            console.log(`📅 ${dutyId}: All Day mode`);
+        } else {
+            // Time active
+            alldayBtn.style.background = '#e0e0e0';
+            alldayBtn.style.color = '#666';
+            timeBtn.style.background = '#667eea';
+            timeBtn.style.color = 'white';
+            timePicker.style.display = 'block';
+            
+            console.log(`🕐 ${dutyId}: Time mode`);
+        }
+        
+        // เลือก radio button ของ duty นี้
+        document.getElementById(`${dutyId}_radio`).checked = true;
+    }
+    
+    // Phase 2: อัพเดท end time ให้เท่ากับ start time
+    function updateDutyEndTime(dutyId) {
+        const startHour = document.getElementById(`${dutyId}_startHour`).value;
+        const startMinute = document.getElementById(`${dutyId}_startMinute`).value;
+        
+        document.getElementById(`${dutyId}_endHour`).value = startHour;
+        document.getElementById(`${dutyId}_endMinute`).value = startMinute;
+        
+        console.log(`⏰ ${dutyId}: End time updated to ${startHour}:${startMinute}`);
     }
     
     // GEN4 V2 Phase 1: เพิ่ม Duty ใหม่ (Dual Storage)
@@ -1943,9 +2006,6 @@
         
         // Clear textbox
         document.getElementById('newDutyName').value = '';
-        
-        // Phase 2: Initialize Time Pickers
-        initializeTimePickers();
         
         document.getElementById('dutyModal').classList.add('show');
     }
@@ -2089,114 +2149,6 @@
     // ========================================
     // Phase 2: Time Toggle + Picker Functions
     // ========================================
-    
-    let currentTimeMode = 'allday'; // 'allday' or 'time'
-    
-    // Initialize Time Pickers (เรียกตอน Modal เปิด)
-    function initializeTimePickers() {
-        // สร้าง options สำหรับชั่วโมง (0-23)
-        const startHourSelect = document.getElementById('startHour');
-        const endHourSelect = document.getElementById('endHour');
-        
-        startHourSelect.innerHTML = '';
-        endHourSelect.innerHTML = '';
-        
-        for (let i = 0; i <= 23; i++) {
-            const hourStr = i.toString().padStart(2, '0');
-            
-            const startOption = document.createElement('option');
-            startOption.value = hourStr;
-            startOption.textContent = hourStr;
-            if (i === 12) startOption.selected = true; // Default 12:00
-            startHourSelect.appendChild(startOption);
-            
-            const endOption = document.createElement('option');
-            endOption.value = hourStr;
-            endOption.textContent = hourStr;
-            if (i === 12) endOption.selected = true;
-            endHourSelect.appendChild(endOption);
-        }
-        
-        // Reset นาที
-        document.getElementById('startMinute').value = '00';
-        document.getElementById('endMinute').value = '00';
-        
-        // Reset mode เป็น All Day
-        currentTimeMode = 'allday';
-        updateToggleButtons();
-    }
-    
-    // Toggle ระหว่าง All Day / Time
-    function toggleTimeMode(mode) {
-        currentTimeMode = mode;
-        updateToggleButtons();
-        
-        // แสดง/ซ่อน Time Picker
-        const timePicker = document.getElementById('timePicker');
-        if (mode === 'time') {
-            timePicker.style.display = 'block';
-            console.log('🕐 Time mode activated');
-        } else {
-            timePicker.style.display = 'none';
-            console.log('📅 All Day mode activated');
-        }
-    }
-    
-    // Update สีของ Toggle Buttons
-    function updateToggleButtons() {
-        const allDayBtn = document.getElementById('toggleAllDay');
-        const timeBtn = document.getElementById('toggleTime');
-        
-        if (currentTimeMode === 'allday') {
-            // All Day active
-            allDayBtn.style.background = '#667eea';
-            allDayBtn.style.color = 'white';
-            
-            timeBtn.style.background = '#e0e0e0';
-            timeBtn.style.color = '#666';
-        } else {
-            // Time active
-            allDayBtn.style.background = '#e0e0e0';
-            allDayBtn.style.color = '#666';
-            
-            timeBtn.style.background = '#667eea';
-            timeBtn.style.color = 'white';
-        }
-    }
-    
-    // อัพเดท end time ให้เท่ากับ start time (เมื่อเปลี่ยน start)
-    function updateEndTimeDefault() {
-        const startHour = document.getElementById('startHour').value;
-        const startMinute = document.getElementById('startMinute').value;
-        
-        // Set end time = start time
-        document.getElementById('endHour').value = startHour;
-        document.getElementById('endMinute').value = startMinute;
-        
-        console.log(`⏰ Updated end time to match start: ${startHour}:${startMinute}`);
-    }
-    
-    // ดึงข้อมูลเวลาจาก UI
-    function getSelectedTime() {
-        if (currentTimeMode === 'allday') {
-            return {
-                isAllDay: true,
-                startTime: null,
-                endTime: null
-            };
-        } else {
-            const startHour = document.getElementById('startHour').value;
-            const startMinute = document.getElementById('startMinute').value;
-            const endHour = document.getElementById('endHour').value;
-            const endMinute = document.getElementById('endMinute').value;
-            
-            return {
-                isAllDay: false,
-                startTime: `${startHour}:${startMinute}`,
-                endTime: `${endHour}:${endMinute}`
-            };
-        }
-    }
     
     // GEN4 V2: Verify ว่า Backend มีข้อมูลจริง
     async function verifyDutyExists(departmentId, dutyName) {
