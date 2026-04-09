@@ -1933,6 +1933,7 @@
         }
 
         try {
+            // บันทึก Backend
             const response = await fetch(`${API_URL}/api/duties`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1946,17 +1947,84 @@
             
             if (response.ok && data.success) {
                 closeDutyModal();
-                loadDepartments();
                 
-                const listMessage = document.getElementById('listMessage');
-                listMessage.className = 'message success show';
-                listMessage.textContent = '✅ เพิ่ม Duty สำเร็จ';
-                setTimeout(() => listMessage.classList.remove('show'), 3000);
+                // GEN4 V2: Reload + Highlight + Verify
+                await loadDepartments();
+                
+                // รอ DOM render เสร็จ
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                // Highlight duty ที่เพิ่มใหม่ (สีเหลือง)
+                highlightNewDuty(dutyName);
+                
+                // Verify ว่า Backend มีข้อมูลจริง (หลัง 1.5 วินาที)
+                setTimeout(async () => {
+                    const verified = await verifyDutyExists(currentDepartmentId, dutyName);
+                    
+                    if (verified) {
+                        // ✅ สำเร็จ
+                        const listMessage = document.getElementById('listMessage');
+                        listMessage.className = 'message success show';
+                        listMessage.textContent = '✅ บันทึก Duty สำเร็จ';
+                        setTimeout(() => listMessage.classList.remove('show'), 3000);
+                    } else {
+                        // ❌ ไม่สำเร็จ - Rollback
+                        const listMessage = document.getElementById('listMessage');
+                        listMessage.className = 'message error show';
+                        listMessage.textContent = '❌ บันทึกไม่สำเร็จ กรุณาลองใหม่';
+                        setTimeout(() => listMessage.classList.remove('show'), 3000);
+                        
+                        // Reload เพื่อลบ duty ที่ไม่สำเร็จออก
+                        await loadDepartments();
+                    }
+                }, 1500);
             } else {
                 throw new Error(data.message || 'ไม่สามารถเพิ่ม Duty ได้');
             }
         } catch (error) {
             alert('❌ ' + error.message);
+        }
+    }
+    
+    // GEN4 V2: Highlight duty ที่เพิ่มใหม่
+    function highlightNewDuty(dutyName) {
+        // หา duty card ที่มีชื่อตรงกัน
+        const dutyCards = document.querySelectorAll('.duty-item');
+        
+        dutyCards.forEach(card => {
+            const dutyNameSpan = card.querySelector('span');
+            if (dutyNameSpan && dutyNameSpan.textContent.trim() === dutyName) {
+                // เพิ่ม highlight สีเหลือง
+                card.style.transition = 'background-color 0.3s ease';
+                card.style.backgroundColor = '#fff59d'; // สีเหลืองอ่อน
+                
+                // ลบ highlight หลัง 2 วินาที
+                setTimeout(() => {
+                    card.style.backgroundColor = '';
+                }, 2000);
+            }
+        });
+    }
+    
+    // GEN4 V2: Verify ว่า Backend มีข้อมูลจริง
+    async function verifyDutyExists(departmentId, dutyName) {
+        try {
+            const response = await fetch(`${API_URL}/api/duties/department/${departmentId}`);
+            const data = await response.json();
+            
+            if (data.success && data.data) {
+                const exists = data.data.some(d => 
+                    d.duty_name.toLowerCase() === dutyName.toLowerCase()
+                );
+                
+                console.log(`🔍 Verify "${dutyName}":`, exists ? '✅ พบ' : '❌ ไม่พบ');
+                return exists;
+            }
+            
+            return false;
+        } catch (error) {
+            console.error('Verify error:', error);
+            return false;
         }
     }
 
