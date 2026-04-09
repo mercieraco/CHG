@@ -1957,9 +1957,9 @@
                 // GEN4 V2 Fix: Highlight ใน Modal ก่อนปิด
                 highlightDutyInModal(dutyName);
                 
-                // รอให้เห็น highlight (1.5 วินาที - ไม่นานเกินไป)
-                console.log(`⏳ รอ highlight 1.5 วินาที...`);
-                await new Promise(resolve => setTimeout(resolve, 1500));
+                // รอให้เห็น highlight (0.5 วินาที - เร็ว)
+                console.log(`⏳ รอ highlight 0.5 วินาที...`);
+                await new Promise(resolve => setTimeout(resolve, 500));
                 
                 closeDutyModal();
                 
@@ -1970,9 +1970,9 @@
                 // รอ DOM render เสร็จ
                 await new Promise(resolve => setTimeout(resolve, 200));
                 
-                // GEN4 V2: Smart Retry Verify (ลองหลายครั้ง ถ้าไม่เจอ)
+                // GEN4 V2: Smart Retry Verify (5 ครั้ง, 500ms ต่อครั้ง)
                 console.log(`🔍 กำลัง verify "${dutyName}" ในแผนก ${savedDepartmentId}...`);
-                const verified = await verifyDutyWithRetry(savedDepartmentId, dutyName, 3, 500);
+                const verified = await verifyDutyWithRetry(savedDepartmentId, dutyName, 5, 500);
                 
                 if (verified) {
                     // ✅ สำเร็จ
@@ -1983,11 +1983,11 @@
                     setTimeout(() => listMessage.classList.remove('show'), 3000);
                 } else {
                     // ❌ ไม่สำเร็จ - Rollback
-                    console.error(`❌ Verify failed! ไม่พบ "${dutyName}" ใน Backend หลัง retry`);
+                    console.error(`❌ Verify failed! ไม่พบ "${dutyName}" ใน Backend หลัง retry 5 ครั้ง`);
                     const listMessage = document.getElementById('listMessage');
                     listMessage.className = 'message error show';
-                    listMessage.textContent = '❌ บันทึกไม่สำเร็จ กรุณาลองใหม่';
-                    setTimeout(() => listMessage.classList.remove('show'), 3000);
+                    listMessage.textContent = '❌ บันทึกไม่สำเร็จ กรุณาตรวจสอบ';
+                    setTimeout(() => listMessage.classList.remove('show'), 5000);
                     
                     // Reload เพื่อลบ duty ที่ไม่สำเร็จออก
                     await loadDepartments();
