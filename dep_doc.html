@@ -2063,25 +2063,67 @@
         
         // Phase 2: ดึงข้อมูลเวลาจาก duty ที่เลือก
         const timeData = getSelectedDutyTime(dutyId);
+        
+        // Phase 2: สร้างชื่อ duty ตามเวลา
+        let finalDutyName = dutyName;
+        if (!timeData.isAllDay) {
+            finalDutyName = `${dutyName} (${timeData.startTime}-${timeData.endTime})`;
+        }
+        
         console.log('📋 Duty Information:');
-        console.log('   - Name:', dutyName);
+        console.log('   - Base Name:', dutyName);
+        console.log('   - Final Name:', finalDutyName);
         console.log('   - Department:', savedDepartmentName);
         console.log('   - Is All Day:', timeData.isAllDay);
         console.log('   - Start Time:', timeData.startTime);
         console.log('   - End Time:', timeData.endTime);
 
-        // GEN4 V0: เช็คชื่อซ้ำ
+        // Phase 2: เช็คและลบ duties ที่ขัดแย้ง
         try {
             const dutiesResponse = await fetch(`${API_URL}/api/duties/department/${savedDepartmentId}`);
             const dutiesData = await dutiesResponse.json();
             
             if (dutiesData.success && dutiesData.data) {
+                // หา duties ที่ต้องลบ
+                const dutiesToDelete = [];
+                
+                if (timeData.isAllDay) {
+                    // บันทึก All Day → ลบ Time duties ทั้งหมด
+                    dutiesData.data.forEach(d => {
+                        // ลบที่มี (08:00-12:00) ในชื่อ
+                        if (d.duty_name.startsWith(dutyName + ' (') && d.duty_name.includes('-')) {
+                            dutiesToDelete.push(d);
+                            console.log(`🗑️ จะลบ Time duty: ${d.duty_name}`);
+                        }
+                    });
+                } else {
+                    // บันทึก Time → ลบ All Day duty (ถ้ามี)
+                    dutiesData.data.forEach(d => {
+                        // ลบที่ชื่อเหมือนกันแบบไม่มีเวลา
+                        if (d.duty_name === dutyName) {
+                            dutiesToDelete.push(d);
+                            console.log(`🗑️ จะลบ All Day duty: ${d.duty_name}`);
+                        }
+                    });
+                }
+                
+                // ลบ duties ที่ขัดแย้ง
+                for (const duty of dutiesToDelete) {
+                    try {
+                        await fetch(`${API_URL}/api/duties/${duty.id}`, { method: 'DELETE' });
+                        console.log(`✅ ลบ "${duty.duty_name}" สำเร็จ`);
+                    } catch (error) {
+                        console.error(`❌ ลบ "${duty.duty_name}" ไม่สำเร็จ:`, error);
+                    }
+                }
+                
+                // เช็คซ้ำ (หลังลบแล้ว)
                 const existingDuty = dutiesData.data.find(d => 
-                    d.duty_name.toLowerCase() === dutyName.toLowerCase()
+                    d.duty_name.toLowerCase() === finalDutyName.toLowerCase()
                 );
                 
-                if (existingDuty) {
-                    alert(`❌ ชื่อ "${dutyName}" มีอยู่แล้ว\nกรุณาใช้ชื่ออื่น`);
+                if (existingDuty && !dutiesToDelete.some(d => d.id === existingDuty.id)) {
+                    alert(`❌ ชื่อ "${finalDutyName}" มีอยู่แล้ว\nกรุณาใช้ชื่ออื่นหรือเวลาอื่น`);
                     return;
                 }
             }
@@ -2090,7 +2132,7 @@
         }
 
         try {
-            console.log(`📝 กำลังบันทึก: "${dutyName}" ในแผนก ${savedDepartmentId} (${savedDepartmentName})`);
+            console.log(`📝 กำลังบันทึก: "${finalDutyName}" ในแผนก ${savedDepartmentId} (${savedDepartmentName})`);
             
             // บันทึก Backend
             const response = await fetch(`${API_URL}/api/duties`, {
@@ -2098,7 +2140,7 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     departmentId: savedDepartmentId,
-                    dutyName: dutyName
+                    dutyName: finalDutyName
                 })
             });
 
@@ -2108,7 +2150,7 @@
                 console.log(`✅ Backend บันทึกสำเร็จ`);
                 
                 // GEN4 V2 Fix: Highlight ใน Modal ก่อนปิด
-                highlightDutyInModal(dutyName);
+                highlightDutyInModal(finalDutyName);
                 
                 // รอให้เห็น highlight (0.5 วินาที - เร็ว)
                 console.log(`⏳ รอ highlight 0.5 วินาที...`);
@@ -2125,7 +2167,7 @@
                 
                 // GEN4 V2: Smart Retry Verify (5 ครั้ง, 500ms ต่อครั้ง)
                 console.log(`🔍 กำลัง verify "${dutyName}" ในแผนก ${savedDepartmentId}...`);
-                const verified = await verifyDutyWithRetry(savedDepartmentId, dutyName, 5, 500);
+                const verified = await verifyDutyWithRetry(savedDepartmentId, finalDutyName, 5, 500);
                 
                 if (verified) {
                     // ✅ สำเร็จ
