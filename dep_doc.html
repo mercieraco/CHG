@@ -864,6 +864,62 @@
             </div>
         </div>
         
+        <!-- Phase 2: Time Toggle + Picker -->
+        <div style="text-align: left; margin: 20px 0;">
+            <label style="margin-bottom: 10px; display: block; font-weight: 600;">ประเภทเวลา:</label>
+            
+            <!-- Toggle Buttons -->
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <button id="toggleAllDay" onclick="toggleTimeMode('allday')" 
+                        style="flex: 1; padding: 10px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500; font-size: 14px;">
+                    ทั้งวัน (All Day)
+                </button>
+                <button id="toggleTime" onclick="toggleTimeMode('time')" 
+                        style="flex: 1; padding: 10px; background: #e0e0e0; color: #666; border: none; border-radius: 4px; cursor: pointer; font-weight: 500; font-size: 14px;">
+                    ระบุเวลา (Time)
+                </button>
+            </div>
+            
+            <!-- Time Picker (ซ่อนไว้ตอนแรก) -->
+            <div id="timePicker" style="display: none; background: #f8f9fa; padding: 15px; border-radius: 4px; border: 1px solid #ddd;">
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px;">เวลาเริ่ม:</label>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <select id="startHour" onchange="updateEndTimeDefault()" 
+                                style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; flex: 1;">
+                            <!-- 0-23 -->
+                        </select>
+                        <span style="font-weight: 600; font-size: 18px;">:</span>
+                        <select id="startMinute" onchange="updateEndTimeDefault()" 
+                                style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; flex: 1;">
+                            <option value="00">00</option>
+                            <option value="15">15</option>
+                            <option value="30">30</option>
+                            <option value="45">45</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div>
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px;">เวลาสิ้นสุด:</label>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <select id="endHour" 
+                                style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; flex: 1;">
+                            <!-- 0-23 -->
+                        </select>
+                        <span style="font-weight: 600; font-size: 18px;">:</span>
+                        <select id="endMinute" 
+                                style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; flex: 1;">
+                            <option value="00">00</option>
+                            <option value="15">15</option>
+                            <option value="30">30</option>
+                            <option value="45">45</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <div class="modal-actions">
             <button onclick="closeDutyModal()" class="btn btn-secondary">ยกเลิก</button>
             <button onclick="confirmAddDuty()" class="btn btn-primary">บันทึก Duty</button>
@@ -1888,6 +1944,9 @@
         // Clear textbox
         document.getElementById('newDutyName').value = '';
         
+        // Phase 2: Initialize Time Pickers
+        initializeTimePickers();
+        
         document.getElementById('dutyModal').classList.add('show');
     }
 
@@ -1916,6 +1975,15 @@
         // เก็บ departmentId ไว้ (เพราะ currentDepartmentId อาจเปลี่ยนหลัง close modal)
         const savedDepartmentId = currentDepartmentId;
         const savedDepartmentName = currentDepartmentName;
+        
+        // Phase 2: ดึงข้อมูลเวลา
+        const timeData = getSelectedTime();
+        console.log('📋 Duty Information:');
+        console.log('   - Name:', dutyName);
+        console.log('   - Department:', savedDepartmentName);
+        console.log('   - Is All Day:', timeData.isAllDay);
+        console.log('   - Start Time:', timeData.startTime);
+        console.log('   - End Time:', timeData.endTime);
 
         // GEN4 V0: เช็คชื่อซ้ำ
         try {
@@ -2016,6 +2084,118 @@
                 console.log(`🟡 Highlighting "${dutyName}" in modal`);
             }
         });
+    }
+    
+    // ========================================
+    // Phase 2: Time Toggle + Picker Functions
+    // ========================================
+    
+    let currentTimeMode = 'allday'; // 'allday' or 'time'
+    
+    // Initialize Time Pickers (เรียกตอน Modal เปิด)
+    function initializeTimePickers() {
+        // สร้าง options สำหรับชั่วโมง (0-23)
+        const startHourSelect = document.getElementById('startHour');
+        const endHourSelect = document.getElementById('endHour');
+        
+        startHourSelect.innerHTML = '';
+        endHourSelect.innerHTML = '';
+        
+        for (let i = 0; i <= 23; i++) {
+            const hourStr = i.toString().padStart(2, '0');
+            
+            const startOption = document.createElement('option');
+            startOption.value = hourStr;
+            startOption.textContent = hourStr;
+            if (i === 12) startOption.selected = true; // Default 12:00
+            startHourSelect.appendChild(startOption);
+            
+            const endOption = document.createElement('option');
+            endOption.value = hourStr;
+            endOption.textContent = hourStr;
+            if (i === 12) endOption.selected = true;
+            endHourSelect.appendChild(endOption);
+        }
+        
+        // Reset นาที
+        document.getElementById('startMinute').value = '00';
+        document.getElementById('endMinute').value = '00';
+        
+        // Reset mode เป็น All Day
+        currentTimeMode = 'allday';
+        updateToggleButtons();
+    }
+    
+    // Toggle ระหว่าง All Day / Time
+    function toggleTimeMode(mode) {
+        currentTimeMode = mode;
+        updateToggleButtons();
+        
+        // แสดง/ซ่อน Time Picker
+        const timePicker = document.getElementById('timePicker');
+        if (mode === 'time') {
+            timePicker.style.display = 'block';
+            console.log('🕐 Time mode activated');
+        } else {
+            timePicker.style.display = 'none';
+            console.log('📅 All Day mode activated');
+        }
+    }
+    
+    // Update สีของ Toggle Buttons
+    function updateToggleButtons() {
+        const allDayBtn = document.getElementById('toggleAllDay');
+        const timeBtn = document.getElementById('toggleTime');
+        
+        if (currentTimeMode === 'allday') {
+            // All Day active
+            allDayBtn.style.background = '#667eea';
+            allDayBtn.style.color = 'white';
+            
+            timeBtn.style.background = '#e0e0e0';
+            timeBtn.style.color = '#666';
+        } else {
+            // Time active
+            allDayBtn.style.background = '#e0e0e0';
+            allDayBtn.style.color = '#666';
+            
+            timeBtn.style.background = '#667eea';
+            timeBtn.style.color = 'white';
+        }
+    }
+    
+    // อัพเดท end time ให้เท่ากับ start time (เมื่อเปลี่ยน start)
+    function updateEndTimeDefault() {
+        const startHour = document.getElementById('startHour').value;
+        const startMinute = document.getElementById('startMinute').value;
+        
+        // Set end time = start time
+        document.getElementById('endHour').value = startHour;
+        document.getElementById('endMinute').value = startMinute;
+        
+        console.log(`⏰ Updated end time to match start: ${startHour}:${startMinute}`);
+    }
+    
+    // ดึงข้อมูลเวลาจาก UI
+    function getSelectedTime() {
+        if (currentTimeMode === 'allday') {
+            return {
+                isAllDay: true,
+                startTime: null,
+                endTime: null
+            };
+        } else {
+            const startHour = document.getElementById('startHour').value;
+            const startMinute = document.getElementById('startMinute').value;
+            const endHour = document.getElementById('endHour').value;
+            const endMinute = document.getElementById('endMinute').value;
+            
+            return {
+                isAllDay: false,
+                startTime: `${startHour}:${startMinute}`,
+                endTime: `${endHour}:${endMinute}`
+            };
+        }
     }
     
     // GEN4 V2: Verify ว่า Backend มีข้อมูลจริง
