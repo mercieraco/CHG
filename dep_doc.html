@@ -1912,10 +1912,14 @@
         }
 
         if (!currentDepartmentId) return;
+        
+        // เก็บ departmentId ไว้ (เพราะ currentDepartmentId อาจเปลี่ยนหลัง close modal)
+        const savedDepartmentId = currentDepartmentId;
+        const savedDepartmentName = currentDepartmentName;
 
         // GEN4 V0: เช็คชื่อซ้ำ
         try {
-            const dutiesResponse = await fetch(`${API_URL}/api/duties/department/${currentDepartmentId}`);
+            const dutiesResponse = await fetch(`${API_URL}/api/duties/department/${savedDepartmentId}`);
             const dutiesData = await dutiesResponse.json();
             
             if (dutiesData.success && dutiesData.data) {
@@ -1933,12 +1937,14 @@
         }
 
         try {
+            console.log(`📝 กำลังบันทึก: "${dutyName}" ในแผนก ${savedDepartmentId} (${savedDepartmentName})`);
+            
             // บันทึก Backend
             const response = await fetch(`${API_URL}/api/duties`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    departmentId: currentDepartmentId,
+                    departmentId: savedDepartmentId,
                     dutyName: dutyName
                 })
             });
@@ -1946,31 +1952,38 @@
             const data = await response.json();
             
             if (response.ok && data.success) {
+                console.log(`✅ Backend บันทึกสำเร็จ`);
+                
                 // GEN4 V2 Fix: Highlight ใน Modal ก่อนปิด
                 highlightDutyInModal(dutyName);
                 
-                // รอให้เห็น highlight (2 วินาที)
-                await new Promise(resolve => setTimeout(resolve, 2000));
+                // รอให้เห็น highlight + ให้ Backend save ทัน (3 วินาที)
+                console.log(`⏳ รอ 3 วินาที...`);
+                await new Promise(resolve => setTimeout(resolve, 3000));
                 
                 closeDutyModal();
                 
                 // Reload หน้าจอ
+                console.log(`🔄 Reloading departments...`);
                 await loadDepartments();
                 
                 // รอ DOM render เสร็จ
-                await new Promise(resolve => setTimeout(resolve, 200));
+                await new Promise(resolve => setTimeout(resolve, 300));
                 
-                // Verify ว่า Backend มีข้อมูลจริง (รอนานขึ้น 2 วินาที)
-                const verified = await verifyDutyExists(currentDepartmentId, dutyName);
+                // Verify ว่า Backend มีข้อมูลจริง
+                console.log(`🔍 กำลัง verify "${dutyName}" ในแผนก ${savedDepartmentId}...`);
+                const verified = await verifyDutyExists(savedDepartmentId, dutyName);
                 
                 if (verified) {
                     // ✅ สำเร็จ
+                    console.log(`✅ Verified! พบ "${dutyName}" ใน Backend`);
                     const listMessage = document.getElementById('listMessage');
                     listMessage.className = 'message success show';
                     listMessage.textContent = '✅ บันทึก Duty สำเร็จ';
                     setTimeout(() => listMessage.classList.remove('show'), 3000);
                 } else {
                     // ❌ ไม่สำเร็จ - Rollback
+                    console.error(`❌ Verify failed! ไม่พบ "${dutyName}" ใน Backend`);
                     const listMessage = document.getElementById('listMessage');
                     listMessage.className = 'message error show';
                     listMessage.textContent = '❌ บันทึกไม่สำเร็จ กรุณาลองใหม่';
@@ -2008,21 +2021,27 @@
     // GEN4 V2: Verify ว่า Backend มีข้อมูลจริง
     async function verifyDutyExists(departmentId, dutyName) {
         try {
+            console.log(`   → Fetching duties from API...`);
             const response = await fetch(`${API_URL}/api/duties/department/${departmentId}`);
             const data = await response.json();
             
+            console.log(`   → API Response:`, data);
+            
             if (data.success && data.data) {
+                console.log(`   → Duties in Backend:`, data.data.map(d => d.duty_name));
+                
                 const exists = data.data.some(d => 
                     d.duty_name.toLowerCase() === dutyName.toLowerCase()
                 );
                 
-                console.log(`🔍 Verify "${dutyName}":`, exists ? '✅ พบ' : '❌ ไม่พบ');
+                console.log(`   → "${dutyName}" exists?`, exists);
                 return exists;
             }
             
+            console.log(`   → No data returned`);
             return false;
         } catch (error) {
-            console.error('Verify error:', error);
+            console.error('   → Verify error:', error);
             return false;
         }
     }
