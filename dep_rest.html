@@ -1129,35 +1129,36 @@
                     console.warn('⚠️ selectedDoctorId is empty! Cannot filter out selected doctor.');
                 }
                 
-                // *** ขั้นตอนที่ 1: กรองแพทย์ที่มี Duty ซ้ำในวันใดวันหนึ่ง ***
+                // *** GEN4 V3: กรองแพทย์ที่ว่างโดยใช้ time overlap check ***
+                // เช็คทุก duty ทุกวันที่ลา — ต้องว่างทุกวัน
                 const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
                 
-                doctors = doctors.filter(doc => {
-                    // เช็คทุกวันที่ลา
-                    for (const day of currentDutyData) {
-                        if (day.duties.length > 0) {
-                            const dayOfWeek = new Date(day.duty_date).getDay();
-                            const dayName = dayNames[dayOfWeek];
+                // รวม unavailable doctor IDs จากทุก duty ทุกวัน
+                const unavailableDoctorIds = new Set();
+                
+                for (const day of currentDutyData) {
+                    if (day.duties.length > 0) {
+                        const dayOfWeek = dayNames[new Date(day.duty_date).getDay()];
+                        
+                        for (const duty of day.duties) {
+                            // เรียก available-replacements API ต่อ duty ต่อวัน
+                            const res = await fetch(
+                                `${API_URL}/api/available-replacements?dutyId=${duty.duty_id}&departmentId=${filterDept}&dayOfWeek=${dayOfWeek}&doctorId=${selectedDoctorId}`
+                            );
+                            const data = await res.json();
                             
-                            // เช็คว่าแพทย์คนนี้มี Duty ซ้ำกับวันนี้หรือไม่
-                            for (const duty of day.duties) {
-                                const hasBusyDuty = dutiesData.data.some(dd => 
-                                    dd.doctor_id === doc.id && 
-                                    dd.duty_id === duty.duty_id && 
-                                    dd[dayName] === 1
-                                );
-                                
-                                if (hasBusyDuty) {
-                                    console.log(`❌ ${doc.name} ไม่ว่าง: มี ${duty.duty_name} วันที่ ${day.duty_date}`);
-                                    return false; // กรองออก
-                                }
+                            if (data.success) {
+                                // เก็บ doctor ที่ unavailable
+                                data.unavailable.forEach(d => unavailableDoctorIds.add(d.id));
+                                console.log(`📅 ${day.duty_date} ${duty.duty_name}: unavailable=${data.unavailable.length}`);
                             }
                         }
                     }
-                    return true; // ว่างทุกวัน
-                });
+                }
                 
-                console.log('After busy check:', doctors.length);
+                // กรองออกเฉพาะที่ไม่มี conflict ในทุก duty ทุกวัน
+                doctors = doctors.filter(d => !unavailableDoctorIds.has(d.id));
+                console.log('After time overlap check:', doctors.length);
                 
                 // *** ขั้นตอนที่ 2: กรองแพทย์ที่ลาอยู่แล้ว ***
                 doctors = doctors.filter(doc => {
@@ -3711,73 +3712,51 @@
         }
     }
 
-    // กรองแพทย์ที่มี Duty ซ้ำกับวันที่ลา (ต้องเป็น Duty ID เดียวกัน)
+    // GEN4 V3: กรองแพทย์โดยใช้ time overlap check (same baseName only)
     async function filterDoctorsWithoutConflicts(doctors, dates, departmentId) {
         if (!doctors || doctors.length === 0 || !dates || dates.length === 0) {
             return doctors;
         }
         
         try {
-            // 1. หา Duties ของแพทย์ที่กำลังลา (ในแผนกนี้)
             const currentDoctorId = parseInt(document.getElementById('doctorSelect').value);
-            if (!currentDoctorId) {
-                return doctors; // ถ้ายังไม่เลือกแพทย์ → คืนทั้งหมด
-            }
+            if (!currentDoctorId) return doctors;
+
+            const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
             
+            // รวม unavailable doctor IDs จากทุก duty ทุกวัน
+            const unavailableDoctorIds = new Set();
+
+            // หา duties ของแพทย์ที่ลาในแผนกนี้
             const currentDoctorDutiesRes = await fetch(`${API_URL}/api/doctor-duties/doctor/${currentDoctorId}`);
             const currentDoctorDutiesData = await currentDoctorDutiesRes.json();
-            const currentDoctorDuties = currentDoctorDutiesData.success ? 
+            const currentDoctorDuties = currentDoctorDutiesData.success ?
                 currentDoctorDutiesData.data.filter(d => d.department_id == departmentId) : [];
-            
-            // 2. สร้างแผนที่: วันที่ → Duty IDs ที่แพทย์กำลังลา
-            const dateToLeaveDutyIds = {};
-            dates.forEach(date => {
-                const dayName = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][new Date(date).getDay()];
-                const dutiesOnThisDay = currentDoctorDuties.filter(duty => duty[dayName] === 1);
-                dateToLeaveDutyIds[date] = dutiesOnThisDay.map(d => d.duty_id);
-            });
-            
-            // 3. โหลด Duties ของแพทย์ทดแทนทั้งหมด
-            const doctorIds = doctors.map(d => d.id);
-            const dutiesPromises = doctorIds.map(id => 
-                fetch(`${API_URL}/api/doctor-duties/doctor/${id}`)
-                    .then(res => res.json())
-                    .then(data => ({ 
-                        doctorId: id, 
-                        duties: data.success ? data.data.filter(d => d.department_id == departmentId) : [] 
-                    }))
-            );
-            
-            const allDutiesData = await Promise.all(dutiesPromises);
-            
-            // 4. เช็คแต่ละแพทย์ว่ามี Duty ID ชนกันหรือไม่
-            const availableDoctors = doctors.filter(doctor => {
-                const doctorDuties = allDutiesData.find(d => d.doctorId === doctor.id)?.duties || [];
-                
-                // เช็คทุกวันที่ลา
-                for (const date of dates) {
-                    const leaveDutyIds = dateToLeaveDutyIds[date] || [];
-                    if (leaveDutyIds.length === 0) continue;
-                    
-                    const dayName = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][new Date(date).getDay()];
-                    const replacementDutiesOnThisDay = doctorDuties.filter(duty => duty[dayName] === 1);
-                    const replacementDutyIds = replacementDutiesOnThisDay.map(d => d.duty_id);
-                    
-                    // เช็คว่า Duty ID ชนกันหรือไม่
-                    const hasConflict = leaveDutyIds.some(id => replacementDutyIds.includes(id));
-                    if (hasConflict) {
-                        return false;
+
+            for (const date of dates) {
+                const dayName = dayNames[new Date(date).getDay()];
+                const dutiesOnThisDay = currentDoctorDuties.filter(d => d[dayName] === 1);
+
+                for (const duty of dutiesOnThisDay) {
+                    // เรียก available-replacements API ต่อ duty ต่อวัน
+                    const res = await fetch(
+                        `${API_URL}/api/available-replacements?dutyId=${duty.duty_id}&departmentId=${departmentId}&dayOfWeek=${dayName}&doctorId=${currentDoctorId}`
+                    );
+                    const data = await res.json();
+
+                    if (data.success) {
+                        data.unavailable.forEach(d => unavailableDoctorIds.add(d.id));
+                        console.log(`📅 ${date} ${duty.duty_name}: unavailable=${data.unavailable.length}`);
                     }
                 }
-                
-                return true;
-            });
-            
-            return availableDoctors;
-            
+            }
+
+            // คืนเฉพาะแพทย์ที่ว่างทุก duty ทุกวัน
+            return doctors.filter(d => !unavailableDoctorIds.has(d.id));
+
         } catch (error) {
             console.error('Filter doctors error:', error);
-            return doctors; // ถ้า error → คืนทั้งหมด
+            return doctors;
         }
     }
 
