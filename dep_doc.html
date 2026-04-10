@@ -1511,6 +1511,125 @@
     });
 
     // โหลดรายการแผนก
+    // ========================================
+    // Phase 2: Group Duties by Base Name
+    // ========================================
+
+    /**
+     * Parse duty name → baseName + time
+     * "OPD i (12:00-13:00)" → { baseName: "OPD i", startTime: "12:00", endTime: "13:00" }
+     * "Consult"             → { baseName: "Consult", startTime: null, endTime: null }
+     */
+    function parseDutyName(dutyName) {
+        const match = dutyName.match(/^(.+?)\s*\((\d{2}:\d{2})-(\d{2}:\d{2})\)$/);
+        if (match) {
+            return {
+                baseName: match[1].trim(),
+                startTime: match[2],
+                endTime: match[3]
+            };
+        }
+        return {
+            baseName: dutyName,
+            startTime: null,
+            endTime: null
+        };
+    }
+
+    /**
+     * รับ duties array → return grouped structure
+     *
+     * Output format:
+     * [
+     *   { type: 'single', duty: { ...duty object } },
+     *   {
+     *     type: 'group',
+     *     baseName: 'OPD i',
+     *     duties: [ ...duty objects ],   // แต่ละ time slot เรียงตาม startTime
+     *     summary: {
+     *         startTime: '12:00',        // เร็วสุด
+     *         endTime: '18:00',          // ช้าสุด
+     *         mon: 4, tue: 5, ...        // ผลรวมแต่ละวัน
+     *     }
+     *   }
+     * ]
+     */
+    function groupDutiesByBaseName(duties) {
+        // Step 1: Parse ทุก duty
+        const parsed = duties.map(duty => ({
+            ...duty,
+            _parsed: parseDutyName(duty.duty_name)
+        }));
+
+        // Step 2: หา baseName ที่มี time slot >= 2
+        const baseNameMap = {};
+        parsed.forEach(duty => {
+            const { baseName, startTime } = duty._parsed;
+            if (startTime !== null) {
+                if (!baseNameMap[baseName]) baseNameMap[baseName] = [];
+                baseNameMap[baseName].push(duty);
+            }
+        });
+
+        // baseName ที่จะถูก group = มี time slot >= 2
+        const groupNames = new Set(
+            Object.keys(baseNameMap).filter(name => baseNameMap[name].length >= 2)
+        );
+
+        // Step 3: สร้าง result โดยรักษาลำดับ (ตาม sort เดิม)
+        const result = [];
+        const addedGroups = new Set();
+
+        parsed.forEach(duty => {
+            const { baseName, startTime } = duty._parsed;
+
+            if (groupNames.has(baseName) && startTime !== null) {
+                // เป็นส่วนหนึ่งของ group
+                if (!addedGroups.has(baseName)) {
+                    addedGroups.add(baseName);
+
+                    // เรียง sub-duties ตาม startTime
+                    const groupDuties = baseNameMap[baseName].sort((a, b) =>
+                        a._parsed.startTime.localeCompare(b._parsed.startTime)
+                    );
+
+                    // คำนวณ summary
+                    const startTimes = groupDuties.map(d => d._parsed.startTime);
+                    const endTimes   = groupDuties.map(d => d._parsed.endTime);
+                    const summaryStart = startTimes.reduce((a, b) => a < b ? a : b);
+                    const summaryEnd   = endTimes.reduce((a, b) => a > b ? a : b);
+
+                    const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+                    const summaryDays = {};
+                    days.forEach(day => {
+                        const key = `${day}_count`;
+                        summaryDays[day] = groupDuties.reduce((sum, d) => sum + (d[key] || 0), 0);
+                    });
+
+                    result.push({
+                        type: 'group',
+                        baseName,
+                        duties: groupDuties,
+                        summary: {
+                            startTime: summaryStart,
+                            endTime: summaryEnd,
+                            ...summaryDays
+                        }
+                    });
+                }
+                // ถ้า addedGroups มีแล้ว → skip (ถูก handle ใน group แล้ว)
+            } else {
+                // Single duty (All Day หรือ time เดี่ยว)
+                result.push({
+                    type: 'single',
+                    duty
+                });
+            }
+        });
+
+        return result;
+    }
+
     async function loadDepartments() {
         const departmentsList = document.getElementById('departmentsList');
         departmentsList.innerHTML = '<div class="loading">กำลังโหลดข้อมูล...</div>';
