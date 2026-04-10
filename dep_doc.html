@@ -304,7 +304,50 @@
         background: #ff3838;
     }
 
-    .doctor-item {
+    /* Phase 2: Group duty styles */
+    .duty-group-header {
+        background: #f0f2ff;
+        border: 1px solid #c5caf5;
+        border-radius: 6px;
+        margin-bottom: 4px;
+    }
+
+    .duty-group-header .duty-name {
+        color: #3d4db7;
+    }
+
+    .duty-group-summary {
+        background: #fafafa;
+        border: 1px dashed #d0d0d0;
+        margin-bottom: 4px;
+        margin-left: 8px;
+    }
+
+    .duty-group-subrow {
+        background: white;
+        border: 1px solid #e8e8e8;
+        margin-bottom: 4px;
+        margin-left: 8px;
+    }
+
+    .btn-toggle-group {
+        background: #667eea;
+        color: white;
+        border: none;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        white-space: nowrap;
+        margin-left: auto;
+    }
+
+    .btn-toggle-group:hover {
+        background: #5568d3;
+        transform: translateY(-1px);
+    }
         background: #f9f9f9;
         padding: 15px 20px;
         border-radius: 10px;
@@ -1630,6 +1673,27 @@
         return result;
     }
 
+    // Phase 2: Toggle แสดง/ซ่อน sub-rows ของ group
+    function toggleDutyGroup(groupId) {
+        const subrows = document.getElementById('subrows_' + groupId);
+        const summary = document.getElementById('summary_' + groupId);
+        const btn     = document.getElementById('btn_' + groupId);
+
+        const isExpanded = subrows.style.display !== 'none';
+
+        if (isExpanded) {
+            // กำลังแสดงอยู่ → ซ่อน (collapsed)
+            subrows.style.display = 'none';
+            summary.style.display = '';
+            btn.textContent = 'แสดง';
+        } else {
+            // กำลังซ่อนอยู่ → แสดง (expanded)
+            subrows.style.display = 'block';
+            summary.style.display = 'none';
+            btn.textContent = 'ซ่อน';
+        }
+    }
+
     async function loadDepartments() {
         const departmentsList = document.getElementById('departmentsList');
         departmentsList.innerHTML = '<div class="loading">กำลังโหลดข้อมูล...</div>';
@@ -1698,33 +1762,89 @@
                             const nameB = b.duty_name || '';
                             return nameA.localeCompare(nameB, ['en', 'th']);
                         });
-                        
-                        html += '<div class="duty-list">';
-                        duties.forEach(duty => {
-                            // ฟังก์ชันแสดงจำนวน (0 = สีแดง, ≥1 = สีดำ)
-                            const formatCount = (count) => {
-                                const color = count === 0 ? 'color: #ff4757; font-weight: 700;' : '';
-                                return `<span style="${color}">${count}</span>`;
-                            };
-                            
-                            const dutyId = duty.duty_id || duty.id;
-                            const dutyName = duty.duty_name;
-                            
-                            html += `
-                                <div class="duty-item">
-                                    <span class="duty-name">${dutyName}</span>
-                                    <div class="duty-schedule">
-                                        <span class="duty-day">จ ${formatCount(duty.mon_count)}</span>
-                                        <span class="duty-day">อ ${formatCount(duty.tue_count)}</span>
-                                        <span class="duty-day">พ ${formatCount(duty.wed_count)}</span>
-                                        <span class="duty-day">พฤ ${formatCount(duty.thu_count)}</span>
-                                        <span class="duty-day">ศ ${formatCount(duty.fri_count)}</span>
-                                        <span class="duty-day">ส ${formatCount(duty.sat_count)}</span>
-                                        <span class="duty-day">อา ${formatCount(duty.sun_count)}</span>
-                                    </div>
-                                    <button onclick="showDeleteDutyModal(${dutyId}, '${dutyName.replace(/'/g, "\\'")}')" class="btn-delete-duty">ลบ</button>
+
+                        // Phase 2: จัดกลุ่ม duties
+                        const grouped = groupDutiesByBaseName(duties);
+
+                        // ฟังก์ชันแสดงจำนวน (0 = สีแดง, ≥1 = สีดำ)
+                        const formatCount = (count) => {
+                            const color = count === 0 ? 'color: #ff4757; font-weight: 700;' : '';
+                            return `<span style="${color}">${count}</span>`;
+                        };
+
+                        // render schedule spans รองรับทั้ง duty object และ summary object
+                        const renderSchedule = (d, isSummary = false) => {
+                            const mon = isSummary ? d.mon : d.mon_count;
+                            const tue = isSummary ? d.tue : d.tue_count;
+                            const wed = isSummary ? d.wed : d.wed_count;
+                            const thu = isSummary ? d.thu : d.thu_count;
+                            const fri = isSummary ? d.fri : d.fri_count;
+                            const sat = isSummary ? d.sat : d.sat_count;
+                            const sun = isSummary ? d.sun : d.sun_count;
+                            return `
+                                <div class="duty-schedule">
+                                    <span class="duty-day">จ ${formatCount(mon)}</span>
+                                    <span class="duty-day">อ ${formatCount(tue)}</span>
+                                    <span class="duty-day">พ ${formatCount(wed)}</span>
+                                    <span class="duty-day">พฤ ${formatCount(thu)}</span>
+                                    <span class="duty-day">ศ ${formatCount(fri)}</span>
+                                    <span class="duty-day">ส ${formatCount(sat)}</span>
+                                    <span class="duty-day">อา ${formatCount(sun)}</span>
                                 </div>
                             `;
+                        };
+
+                        html += '<div class="duty-list">';
+                        grouped.forEach(item => {
+                            if (item.type === 'single') {
+                                // --- Single duty (เดิม) ---
+                                const duty = item.duty;
+                                const dutyId = duty.duty_id || duty.id;
+                                const dutyName = duty.duty_name;
+                                html += `
+                                    <div class="duty-item">
+                                        <span class="duty-name">${dutyName}</span>
+                                        ${renderSchedule(duty, false)}
+                                        <button onclick="showDeleteDutyModal(${dutyId}, '${dutyName.replace(/'/g, "\\'")}')" class="btn-delete-duty">ลบ</button>
+                                    </div>
+                                `;
+                            } else {
+                                // --- Group duty (Phase 2) ---
+                                const groupId = 'group_' + dept.id + '_' + item.baseName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+                                const { summary, duties: subDuties } = item;
+
+                                // Group header row (ชื่อ baseName + ปุ่ม toggle)
+                                html += `
+                                    <div class="duty-item duty-group-header">
+                                        <span class="duty-name" style="font-weight: 700;">${item.baseName}</span>
+                                        <button onclick="toggleDutyGroup('${groupId}')" id="btn_${groupId}" class="btn-toggle-group">แสดง</button>
+                                    </div>
+                                `;
+
+                                // Summary row (แสดง default = collapsed)
+                                html += `
+                                    <div class="duty-item duty-group-summary" id="summary_${groupId}">
+                                        <span class="duty-name" style="color: #888; padding-left: 16px;">(${summary.startTime}-${summary.endTime})</span>
+                                        ${renderSchedule(summary, true)}
+                                    </div>
+                                `;
+
+                                // Sub-rows (ซ่อน default = collapsed)
+                                html += `<div id="subrows_${groupId}" style="display: none;">`;
+                                subDuties.forEach(duty => {
+                                    const dutyId = duty.duty_id || duty.id;
+                                    const dutyName = duty.duty_name;
+                                    const timeLabel = '(' + duty._parsed.startTime + '-' + duty._parsed.endTime + ')';
+                                    html += `
+                                        <div class="duty-item duty-group-subrow">
+                                            <span class="duty-name" style="color: #555; padding-left: 16px;">${timeLabel}</span>
+                                            ${renderSchedule(duty, false)}
+                                            <button onclick="showDeleteDutyModal(${dutyId}, '${dutyName.replace(/'/g, "\\'")}')" class="btn-delete-duty">ลบ</button>
+                                        </div>
+                                    `;
+                                });
+                                html += `</div>`;
+                            }
                         });
                         html += '</div>';
                     }
