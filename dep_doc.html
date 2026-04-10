@@ -2906,31 +2906,7 @@
                 `;
                 
                 if (deptDuties.length > 0) {
-                    deptDuties.sort((a, b) => a.duty_name.localeCompare(b.duty_name, ['en', 'th']));
-                    
-                    html += '<div class="doctor-duties-list">';
-                    deptDuties.forEach(duty => {
-                        const days = [];
-                        if (duty.monday) days.push('จ');
-                        if (duty.tuesday) days.push('อ');
-                        if (duty.wednesday) days.push('พ');
-                        if (duty.thursday) days.push('พฤ');
-                        if (duty.friday) days.push('ศ');
-                        if (duty.saturday) days.push('ส');
-                        if (duty.sunday) days.push('อา');
-                        
-                        html += `
-                            <div class="duty-item" style="display: flex; justify-content: space-between; align-items: center;">
-                                <div>
-                                    <strong>${duty.duty_name}</strong>
-                                    ${duty.duty_details ? `<small style="color: #666; display: block; margin-top: 2px;">${duty.duty_details}</small>` : ''}
-                                    <span class="duty-days">${days.join(', ')}</span>
-                                </div>
-                                <button onclick="event.stopPropagation(); showDeleteDoctorDutyModal(${duty.id}, '${duty.duty_name.replace(/'/g, "\\'")}', ${doctorId}, ${dept.department_id})" class="btn-delete-doctor-duty" style="font-size: 11px; padding: 3px 8px;">ลบ</button>
-                            </div>
-                        `;
-                    });
-                    html += '</div>';
+                    html += renderDoctorDutiesHTML(deptDuties, doctorId, `docx${doctorId}_dept${dept.department_id}`);
                 } else {
                     html += '<div style="color: #999; font-size: 13px; padding: 10px 0;">ไม่มี Duty ในแผนกนี้</div>';
                 }
