@@ -2373,13 +2373,16 @@
         try {
             console.log(`📝 กำลังบันทึก: "${finalDutyName}" ในแผนก ${savedDepartmentId} (${savedDepartmentName})`);
             
-            // บันทึก Backend
+            // บันทึก Backend — GEN4 V3: ส่ง time fields ด้วย
             const response = await fetch(`${API_URL}/api/duties`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     departmentId: savedDepartmentId,
-                    dutyName: finalDutyName
+                    dutyName: finalDutyName,
+                    startTime: timeData.isAllDay ? null : timeData.startTime,
+                    endTime:   timeData.isAllDay ? null : timeData.endTime,
+                    isAllDay:  timeData.isAllDay
                 })
             });
 
