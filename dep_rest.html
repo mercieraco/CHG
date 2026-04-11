@@ -3627,7 +3627,11 @@
         const replacementSelect = document.getElementById(`replacementDoctorSelect_${deptId}`);
         
         if (!filterDeptSelect || !replacementSelect) return;
-        
+
+        // ประกาศตัวแปรหลักก่อน
+        const currentDoctorId = parseInt(document.getElementById('doctorSelect').value);
+        const workType = filterWorkTypeSelect ? filterWorkTypeSelect.value : 'full';
+
         // โหลด Departments ที่มีแพทย์รับฝากได้เท่านั้น (GEN4 V3.3)
         if (filterDeptSelect.options.length === 1) {
             try {
@@ -3640,7 +3644,7 @@
                     ? dutiesData.data.filter(d => d.department_id == deptId)
                     : [];
 
-                // รวม available doctors จากทุก duty ทุกวัน
+                // รวม department_id ของ available doctors จากทุก duty ทุกวัน
                 const availableDeptIds = new Set();
                 availableDeptIds.add(deptId); // แผนกที่ลาต้องมีเสมอ
 
@@ -3649,16 +3653,15 @@
                     const dutiesOnThisDay = leaveDoctorDuties.filter(d => d[dayName] === 1);
 
                     for (const duty of dutiesOnThisDay) {
-                        // ใช้แผนกที่ลา (deptId) เพื่อดึง available doctors ทั้งหมด
                         const res = await fetch(
                             `${API_URL}/api/available-replacements?dutyId=${duty.duty_id}&departmentId=${deptId}&dayOfWeek=${dayName}&doctorId=${currentDoctorId}`
                         );
                         const data = await res.json();
                         if (data.success) {
-                            // เก็บ primary department_id ของแต่ละ available doctor
                             data.available.forEach(d => {
                                 if (d.department_id) availableDeptIds.add(d.department_id);
                             });
+                            console.log(`📅 dept filter: ${date} ${duty.duty_name} → depts: ${[...availableDeptIds].join(',')}`);
                         }
                     }
                 }
@@ -3682,8 +3685,6 @@
             }
         }
 
-        const currentDoctorId = parseInt(document.getElementById('doctorSelect').value);
-        const workType = filterWorkTypeSelect ? filterWorkTypeSelect.value : 'full';
         // ใช้แผนกที่ user เลือกใน dropdown (ถ้ายังไม่เลือก ใช้ deptId ของแผนกที่ลา)
         const selectedDeptId = parseInt(filterDeptSelect.value) || deptId;
 
