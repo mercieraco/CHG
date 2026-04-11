@@ -3499,19 +3499,41 @@
         
         if (!filterDeptSelect || !doctorSelect) return;
 
-        // โหลด Departments ถ้ายังไม่มี — แสดงแค่แผนกที่ลา (defaultDeptId)
+        // โหลด Departments ที่มีแพทย์รับฝากได้เท่านั้น (GEN4 V3.3)
         if (filterDeptSelect.options.length === 1) {
             try {
+                const dayNames = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+                const dutyDateForDept = doctorSelect.getAttribute('data-date');
+                const dutyIdForDept = doctorSelect.getAttribute('data-duty-id');
+
+                const availableDeptIds = new Set();
+                availableDeptIds.add(defaultDeptId); // แผนกที่ลาต้องมีเสมอ
+
+                if (dutyIdForDept && dutyDateForDept) {
+                    const dayName = dayNames[new Date(dutyDateForDept).getDay()];
+                    const res = await fetch(
+                        `${API_URL}/api/available-replacements?dutyId=${dutyIdForDept}&departmentId=${defaultDeptId}&dayOfWeek=${dayName}&doctorId=${currentDoctorId}`
+                    );
+                    const data = await res.json();
+                    if (data.success) {
+                        data.available.forEach(d => {
+                            if (d.department_id) availableDeptIds.add(d.department_id);
+                        });
+                    }
+                }
+
                 const response = await fetch(`${API_URL}/api/departments`);
                 const data = await response.json();
                 if (response.ok && data.success) {
-                    data.data.forEach(dept => {
-                        const option = document.createElement('option');
-                        option.value = dept.id;
-                        option.textContent = dept.name;
-                        if (dept.id === defaultDeptId) option.selected = true;
-                        filterDeptSelect.appendChild(option);
-                    });
+                    data.data
+                        .filter(dept => availableDeptIds.has(dept.id))
+                        .forEach(dept => {
+                            const option = document.createElement('option');
+                            option.value = dept.id;
+                            option.textContent = dept.name;
+                            if (dept.id === defaultDeptId) option.selected = true;
+                            filterDeptSelect.appendChild(option);
+                        });
                 }
             } catch (error) {
                 console.error('Load departments error:', error);
@@ -3606,19 +3628,54 @@
         
         if (!filterDeptSelect || !replacementSelect) return;
         
-        // โหลด Departments ถ้ายังไม่มี
+        // โหลด Departments ที่มีแพทย์รับฝากได้เท่านั้น (GEN4 V3.3)
         if (filterDeptSelect.options.length === 1) {
             try {
+                const dayNames = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+
+                // ดึง duties ของแพทย์ที่ลาในแผนกนี้
+                const dutiesRes = await fetch(`${API_URL}/api/doctor-duties/doctor/${currentDoctorId}`);
+                const dutiesData = await dutiesRes.json();
+                const leaveDoctorDuties = dutiesData.success
+                    ? dutiesData.data.filter(d => d.department_id == deptId)
+                    : [];
+
+                // รวม available doctors จากทุก duty ทุกวัน
+                const availableDeptIds = new Set();
+                availableDeptIds.add(deptId); // แผนกที่ลาต้องมีเสมอ
+
+                for (const date of selectedDates) {
+                    const dayName = dayNames[new Date(date).getDay()];
+                    const dutiesOnThisDay = leaveDoctorDuties.filter(d => d[dayName] === 1);
+
+                    for (const duty of dutiesOnThisDay) {
+                        // ใช้แผนกที่ลา (deptId) เพื่อดึง available doctors ทั้งหมด
+                        const res = await fetch(
+                            `${API_URL}/api/available-replacements?dutyId=${duty.duty_id}&departmentId=${deptId}&dayOfWeek=${dayName}&doctorId=${currentDoctorId}`
+                        );
+                        const data = await res.json();
+                        if (data.success) {
+                            // เก็บ primary department_id ของแต่ละ available doctor
+                            data.available.forEach(d => {
+                                if (d.department_id) availableDeptIds.add(d.department_id);
+                            });
+                        }
+                    }
+                }
+
+                // ดึงรายชื่อแผนกทั้งหมด แล้วแสดงเฉพาะที่อยู่ใน availableDeptIds
                 const response = await fetch(`${API_URL}/api/departments`);
                 const data = await response.json();
                 if (response.ok && data.success) {
-                    data.data.forEach(dept => {
-                        const option = document.createElement('option');
-                        option.value = dept.id;
-                        option.textContent = dept.name;
-                        if (dept.id === deptId) option.selected = true;
-                        filterDeptSelect.appendChild(option);
-                    });
+                    data.data
+                        .filter(dept => availableDeptIds.has(dept.id))
+                        .forEach(dept => {
+                            const option = document.createElement('option');
+                            option.value = dept.id;
+                            option.textContent = dept.name;
+                            if (dept.id === deptId) option.selected = true;
+                            filterDeptSelect.appendChild(option);
+                        });
                 }
             } catch (error) {
                 console.error('Load departments error:', error);
