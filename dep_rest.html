@@ -3206,9 +3206,9 @@
             <!-- Single Delegation -->
             <div id="singleDelegationSection_${deptId}">
                 <div class="filter-row">
-                    <div class="form-group" style="display:none;">
+                    <div class="form-group">
                         <select id="filterDepartment_${deptId}" onchange="loadReplacementDoctorsForDept(${deptId})">
-                            <option value="${deptId}" selected>แผนกนี้</option>
+                            <option value="">-- เลือกแผนก --</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -3307,8 +3307,8 @@
                     <select 
                         id="customFilterDept_${uniqueId}" 
                         onchange="loadDoctorsForCustomDuty('${uniqueId}', ${deptId})"
-                        style="display: none;">
-                        <option value="${deptId}" selected>แผนกนี้</option>
+                        style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                        <option value="">-- เลือกแผนก --</option>
                     </select>
                     <select 
                         id="customFilterWorkType_${uniqueId}" 
@@ -3456,13 +3456,13 @@
                         
                         <!-- GEN4 V2 Step 3: Content Container -->
                         <div id="delegationContent_${uniqueId}">
-                            <!-- Filter Work Type สำหรับ Duty นี้ -->
+                            <!-- Filter แผนก + Work Type สำหรับ Duty นี้ -->
                             <div style="display: flex; gap: 10px; margin-bottom: 10px;">
                                 <select 
                                     id="customFilterDept_${uniqueId}" 
                                     onchange="loadDoctorsForCustomDuty('${uniqueId}', ${deptId})"
-                                    style="display: none;">
-                                    <option value="${deptId}" selected>แผนกนี้</option>
+                                    style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                                    <option value="">-- เลือกแผนก --</option>
                                 </select>
                                 <select 
                                     id="customFilterWorkType_${uniqueId}" 
@@ -3522,6 +3522,8 @@
         const workType = filterWorkTypeSelect ? filterWorkTypeSelect.value : 'full';
         const dutyDate = doctorSelect.getAttribute('data-date');
         const dutyId = doctorSelect.getAttribute('data-duty-id');
+        // ใช้แผนกที่ user เลือกใน dropdown (ถ้ายังไม่เลือก ใช้ defaultDeptId)
+        const selectedDeptId = parseInt(filterDeptSelect.value) || defaultDeptId;
 
         if (!currentDoctorId || !dutyDate) return;
 
@@ -3535,18 +3537,17 @@
             let availableDoctors = [];
 
             if (dutyId) {
-                // มี duty_id → เรียก available-replacements โดยตรง
+                // มี duty_id → เรียก available-replacements โดยตรง ใช้แผนกที่ user เลือก
                 const res = await fetch(
-                    `${API_URL}/api/available-replacements?dutyId=${dutyId}&departmentId=${defaultDeptId}&dayOfWeek=${dayName}&doctorId=${currentDoctorId}`
+                    `${API_URL}/api/available-replacements?dutyId=${dutyId}&departmentId=${selectedDeptId}&dayOfWeek=${dayName}&doctorId=${currentDoctorId}`
                 );
                 const data = await res.json();
                 if (data.success) {
                     availableDoctors = data.available;
-                    console.log(`📅 custom ${dutyDate} duty:${dutyId}: avail=${data.available.length} unavail=${data.unavailable.length}`);
+                    console.log(`📅 custom ${dutyDate} duty:${dutyId} dept:${selectedDeptId}: avail=${data.available.length} unavail=${data.unavailable.length}`);
                 }
             } else {
-                // ไม่มี duty_id → ใช้ filterDoctorsWithoutConflicts เหมือนเดิม
-                availableDoctors = await filterDoctorsWithoutConflicts([], [dutyDate], defaultDeptId);
+                availableDoctors = await filterDoctorsWithoutConflicts([], [dutyDate], selectedDeptId);
             }
 
             // กรอง work_type
@@ -3626,6 +3627,8 @@
 
         const currentDoctorId = parseInt(document.getElementById('doctorSelect').value);
         const workType = filterWorkTypeSelect ? filterWorkTypeSelect.value : 'full';
+        // ใช้แผนกที่ user เลือกใน dropdown (ถ้ายังไม่เลือก ใช้ deptId ของแผนกที่ลา)
+        const selectedDeptId = parseInt(filterDeptSelect.value) || deptId;
 
         if (!currentDoctorId || !selectedDates || selectedDates.length === 0) {
             replacementSelect.innerHTML = '<option value="">-- เลือกแพทย์ที่จะมาแทน --</option>';
@@ -3639,7 +3642,7 @@
             const unavailableDoctorIds = new Set();
             const availableDoctorMap = new Map();
 
-            // ดึง duties ของแพทย์ที่ลาในแผนกนี้
+            // ดึง duties ของแพทย์ที่ลาในแผนกที่ลา (deptId)
             const dutiesRes = await fetch(`${API_URL}/api/doctor-duties/doctor/${currentDoctorId}`);
             const dutiesData = await dutiesRes.json();
             const leaveDoctorDuties = dutiesData.success
@@ -3651,14 +3654,15 @@
                 const dutiesOnThisDay = leaveDoctorDuties.filter(d => d[dayName] === 1);
 
                 for (const duty of dutiesOnThisDay) {
+                    // ส่ง selectedDeptId เพื่อกรองแพทย์จากแผนกที่ user เลือก
                     const res = await fetch(
-                        `${API_URL}/api/available-replacements?dutyId=${duty.duty_id}&departmentId=${deptId}&dayOfWeek=${dayName}&doctorId=${currentDoctorId}`
+                        `${API_URL}/api/available-replacements?dutyId=${duty.duty_id}&departmentId=${selectedDeptId}&dayOfWeek=${dayName}&doctorId=${currentDoctorId}`
                     );
                     const data = await res.json();
                     if (data.success) {
                         data.unavailable.forEach(d => unavailableDoctorIds.add(d.id));
                         data.available.forEach(d => availableDoctorMap.set(d.id, d));
-                        console.log(`📅 ${date} dept:${deptId} ${duty.duty_name}: avail=${data.available.length} unavail=${data.unavailable.length}`);
+                        console.log(`📅 ${date} leaveDept:${deptId} replaceDept:${selectedDeptId} ${duty.duty_name}: avail=${data.available.length} unavail=${data.unavailable.length}`);
                     }
                 }
             }
