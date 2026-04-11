@@ -3499,26 +3499,31 @@
         
         if (!filterDeptSelect || !doctorSelect) return;
 
+        // ประกาศตัวแปรหลักก่อน (เหมือน loadReplacementDoctorsForDept)
+        const currentDoctorId = parseInt(document.getElementById('doctorSelect').value);
+        const workType = filterWorkTypeSelect ? filterWorkTypeSelect.value : 'full';
+        const dutyDate = doctorSelect.getAttribute('data-date');
+        const dutyId = doctorSelect.getAttribute('data-duty-id');
+
         // โหลด Departments ที่มีแพทย์รับฝากได้เท่านั้น (GEN4 V3.3)
         if (filterDeptSelect.options.length === 1) {
             try {
                 const dayNames = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
-                const dutyDateForDept = doctorSelect.getAttribute('data-date');
-                const dutyIdForDept = doctorSelect.getAttribute('data-duty-id');
 
                 const availableDeptIds = new Set();
                 availableDeptIds.add(defaultDeptId); // แผนกที่ลาต้องมีเสมอ
 
-                if (dutyIdForDept && dutyDateForDept) {
-                    const dayName = dayNames[new Date(dutyDateForDept).getDay()];
+                if (dutyId && dutyDate) {
+                    const dayName = dayNames[new Date(dutyDate).getDay()];
                     const res = await fetch(
-                        `${API_URL}/api/available-replacements?dutyId=${dutyIdForDept}&departmentId=${defaultDeptId}&dayOfWeek=${dayName}&doctorId=${currentDoctorId}`
+                        `${API_URL}/api/available-replacements?dutyId=${dutyId}&departmentId=${defaultDeptId}&dayOfWeek=${dayName}&doctorId=${currentDoctorId}`
                     );
                     const data = await res.json();
                     if (data.success) {
                         data.available.forEach(d => {
                             if (d.department_id) availableDeptIds.add(d.department_id);
                         });
+                        console.log(`📅 custom dept filter: duty:${dutyId} → depts: ${[...availableDeptIds].join(',')}`);
                     }
                 }
 
@@ -3540,10 +3545,6 @@
             }
         }
 
-        const currentDoctorId = parseInt(document.getElementById('doctorSelect').value);
-        const workType = filterWorkTypeSelect ? filterWorkTypeSelect.value : 'full';
-        const dutyDate = doctorSelect.getAttribute('data-date');
-        const dutyId = doctorSelect.getAttribute('data-duty-id');
         // ใช้แผนกที่ user เลือกใน dropdown (ถ้ายังไม่เลือก ใช้ defaultDeptId)
         const selectedDeptId = parseInt(filterDeptSelect.value) || defaultDeptId;
 
