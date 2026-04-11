@@ -3206,9 +3206,9 @@
             <!-- Single Delegation -->
             <div id="singleDelegationSection_${deptId}">
                 <div class="filter-row">
-                    <div class="form-group">
+                    <div class="form-group" style="display:none;">
                         <select id="filterDepartment_${deptId}" onchange="loadReplacementDoctorsForDept(${deptId})">
-                            <option value="">-- เลือกแผนก --</option>
+                            <option value="${deptId}" selected>แผนกนี้</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -3307,8 +3307,8 @@
                     <select 
                         id="customFilterDept_${uniqueId}" 
                         onchange="loadDoctorsForCustomDuty('${uniqueId}', ${deptId})"
-                        style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
-                        <option value="">-- เลือกแผนก --</option>
+                        style="display: none;">
+                        <option value="${deptId}" selected>แผนกนี้</option>
                     </select>
                     <select 
                         id="customFilterWorkType_${uniqueId}" 
@@ -3456,13 +3456,13 @@
                         
                         <!-- GEN4 V2 Step 3: Content Container -->
                         <div id="delegationContent_${uniqueId}">
-                            <!-- Filter แผนก + Work Type สำหรับ Duty นี้ -->
+                            <!-- Filter Work Type สำหรับ Duty นี้ -->
                             <div style="display: flex; gap: 10px; margin-bottom: 10px;">
                                 <select 
                                     id="customFilterDept_${uniqueId}" 
                                     onchange="loadDoctorsForCustomDuty('${uniqueId}', ${deptId})"
-                                    style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
-                                    <option value="">-- เลือกแผนก --</option>
+                                    style="display: none;">
+                                    <option value="${deptId}" selected>แผนกนี้</option>
                                 </select>
                                 <select 
                                     id="customFilterWorkType_${uniqueId}" 
@@ -3498,22 +3498,18 @@
         const doctorSelect = document.querySelector(`.custom-delegation-select[data-unique-id="${uniqueId}"]`);
         
         if (!filterDeptSelect || !doctorSelect) return;
-        
-        // โหลด Departments ถ้ายังไม่มี (ครั้งแรก)
+
+        // โหลด Departments ถ้ายังไม่มี — แสดงแค่แผนกที่ลา (defaultDeptId)
         if (filterDeptSelect.options.length === 1) {
             try {
                 const response = await fetch(`${API_URL}/api/departments`);
                 const data = await response.json();
-                
                 if (response.ok && data.success) {
                     data.data.forEach(dept => {
                         const option = document.createElement('option');
                         option.value = dept.id;
                         option.textContent = dept.name;
-                        // Default เป็นแผนกของ Duty (defaultDeptId)
-                        if (dept.id === defaultDeptId) {
-                            option.selected = true;
-                        }
+                        if (dept.id === defaultDeptId) option.selected = true;
                         filterDeptSelect.appendChild(option);
                     });
                 }
@@ -3521,38 +3517,71 @@
                 console.error('Load departments error:', error);
             }
         }
-        
-        // โหลดแพทย์
-        const selectedDeptId = filterDeptSelect.value || defaultDeptId;
-        const workType = filterWorkTypeSelect.value;
-        
+
+        const currentDoctorId = parseInt(document.getElementById('doctorSelect').value);
+        const workType = filterWorkTypeSelect ? filterWorkTypeSelect.value : 'full';
+        const dutyDate = doctorSelect.getAttribute('data-date');
+        const dutyId = doctorSelect.getAttribute('data-duty-id');
+
+        if (!currentDoctorId || !dutyDate) return;
+
+        doctorSelect.innerHTML = '<option value="">กำลังโหลด...</option>';
+
         try {
-            const response = await fetch(`${API_URL}/api/doctors`);
-            const data = await response.json();
-            
-            if (response.ok && data.success) {
-                const currentDoctorId = parseInt(document.getElementById('doctorSelect').value);
-                let doctors = data.data.filter(d => 
-                    d.id !== currentDoctorId && 
-                    d.department_id == selectedDeptId &&
-                    d.work_type === workType
+            const dayNames = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+            const dayName = dayNames[new Date(dutyDate).getDay()];
+
+            // เรียก API โดยตรง — ใช้ duty_id ของ row นี้และ deptId
+            let availableDoctors = [];
+
+            if (dutyId) {
+                // มี duty_id → เรียก available-replacements โดยตรง
+                const res = await fetch(
+                    `${API_URL}/api/available-replacements?dutyId=${dutyId}&departmentId=${defaultDeptId}&dayOfWeek=${dayName}&doctorId=${currentDoctorId}`
                 );
-                
-                // กรองแพทย์ที่มี Duty ซ้ำในวันนี้เท่านั้น
-                const dutyDate = doctorSelect.getAttribute('data-date');
-                const availableDoctors = await filterDoctorsWithoutConflicts(doctors, [dutyDate], selectedDeptId);
-                
-                // อัพเดท Dropdown แพทย์
-                doctorSelect.innerHTML = '<option value="">-- เลือกแพทย์ที่จะมาแทน --</option>';
-                availableDoctors.forEach(doc => {
-                    const option = document.createElement('option');
-                    option.value = doc.id;
-                    option.textContent = doc.name;
-                    doctorSelect.appendChild(option);
-                });
+                const data = await res.json();
+                if (data.success) {
+                    availableDoctors = data.available;
+                    console.log(`📅 custom ${dutyDate} duty:${dutyId}: avail=${data.available.length} unavail=${data.unavailable.length}`);
+                }
+            } else {
+                // ไม่มี duty_id → ใช้ filterDoctorsWithoutConflicts เหมือนเดิม
+                availableDoctors = await filterDoctorsWithoutConflicts([], [dutyDate], defaultDeptId);
             }
+
+            // กรอง work_type
+            if (workType === 'full') {
+                availableDoctors = availableDoctors.filter(d => d.work_type === 'full');
+            } else if (workType === 'part') {
+                availableDoctors = availableDoctors.filter(d => d.work_type === 'part');
+            }
+
+            // กรองคนที่ลาอยู่แล้ว
+            availableDoctors = availableDoctors.filter(doc => {
+                const isOnLeave = doctorLeaves.some(leave =>
+                    leave.doctor_id === doc.id &&
+                    dutyDate >= leave.start_date && dutyDate <= leave.end_date
+                );
+                return !isOnLeave;
+            });
+
+            availableDoctors.sort((a, b) => a.name.localeCompare(b.name, ['en', 'th']));
+
+            doctorSelect.innerHTML = '<option value="">-- เลือกแพทย์ที่จะมาแทน --</option>';
+            availableDoctors.forEach(doc => {
+                const option = document.createElement('option');
+                option.value = doc.id;
+                option.textContent = `${doc.name} (${doc.work_type === 'full' ? 'Full' : 'Part'})`;
+                doctorSelect.appendChild(option);
+            });
+
+            if (availableDoctors.length === 0) {
+                doctorSelect.innerHTML = '<option value="">-- ไม่มีแพทย์ว่าง --</option>';
+            }
+
         } catch (error) {
-            console.error('Load doctors error:', error);
+            console.error('loadDoctorsForCustomDuty error:', error);
+            doctorSelect.innerHTML = '<option value="">-- เกิดข้อผิดพลาด --</option>';
         }
     }
 
