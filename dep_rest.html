@@ -3581,15 +3581,12 @@
             try {
                 const response = await fetch(`${API_URL}/api/departments`);
                 const data = await response.json();
-                
                 if (response.ok && data.success) {
                     data.data.forEach(dept => {
                         const option = document.createElement('option');
                         option.value = dept.id;
                         option.textContent = dept.name;
-                        if (dept.id === deptId) {
-                            option.selected = true;
-                        }
+                        if (dept.id === deptId) option.selected = true;
                         filterDeptSelect.appendChild(option);
                     });
                 }
@@ -3597,48 +3594,100 @@
                 console.error('Load departments error:', error);
             }
         }
-        
-        // โหลดแพทย์
-        const selectedDeptId = filterDeptSelect.value || deptId;
-        const workType = filterWorkTypeSelect.value;
-        
+
+        const currentDoctorId = parseInt(document.getElementById('doctorSelect').value);
+        const workType = filterWorkTypeSelect ? filterWorkTypeSelect.value : 'full';
+
+        if (!currentDoctorId || !selectedDates || selectedDates.length === 0) {
+            replacementSelect.innerHTML = '<option value="">-- เลือกแพทย์ที่จะมาแทน --</option>';
+            return;
+        }
+
+        replacementSelect.innerHTML = '<option value="">กำลังโหลด...</option>';
+
         try {
-            const response = await fetch(`${API_URL}/api/doctors`);
-            const data = await response.json();
-            
-            if (response.ok && data.success) {
-                const currentDoctorId = parseInt(document.getElementById('doctorSelect').value);
-                let doctors = data.data.filter(d => 
-                    d.id !== currentDoctorId && 
-                    d.department_id == selectedDeptId &&
-                    d.work_type === workType
-                );
-                
-                // กรองแพทย์ที่มี Duty ซ้ำกับวันที่ลา
-                const availableDoctors = await filterDoctorsWithoutConflicts(doctors, selectedDates, selectedDeptId);
-                
-                replacementSelect.innerHTML = '<option value="">-- เลือกแพทย์ที่จะมาแทน --</option>';
+            const dayNames = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+            const unavailableDoctorIds = new Set();
+            const availableDoctorMap = new Map();
+
+            // ดึง duties ของแพทย์ที่ลาในแผนกนี้
+            const dutiesRes = await fetch(`${API_URL}/api/doctor-duties/doctor/${currentDoctorId}`);
+            const dutiesData = await dutiesRes.json();
+            const leaveDoctorDuties = dutiesData.success
+                ? dutiesData.data.filter(d => d.department_id == deptId)
+                : [];
+
+            for (const date of selectedDates) {
+                const dayName = dayNames[new Date(date).getDay()];
+                const dutiesOnThisDay = leaveDoctorDuties.filter(d => d[dayName] === 1);
+
+                for (const duty of dutiesOnThisDay) {
+                    const res = await fetch(
+                        `${API_URL}/api/available-replacements?dutyId=${duty.duty_id}&departmentId=${deptId}&dayOfWeek=${dayName}&doctorId=${currentDoctorId}`
+                    );
+                    const data = await res.json();
+                    if (data.success) {
+                        data.unavailable.forEach(d => unavailableDoctorIds.add(d.id));
+                        data.available.forEach(d => availableDoctorMap.set(d.id, d));
+                        console.log(`📅 ${date} dept:${deptId} ${duty.duty_name}: avail=${data.available.length} unavail=${data.unavailable.length}`);
+                    }
+                }
+            }
+
+            // คนที่ available ในทุก duty ทุกวัน
+            let availableDoctors = [...availableDoctorMap.values()]
+                .filter(d => !unavailableDoctorIds.has(d.id));
+
+            // กรอง work_type
+            if (workType === 'full') {
+                availableDoctors = availableDoctors.filter(d => d.work_type === 'full');
+            } else if (workType === 'part') {
+                availableDoctors = availableDoctors.filter(d => d.work_type === 'part');
+            }
+
+            // กรองคนที่ลาอยู่แล้ว
+            availableDoctors = availableDoctors.filter(doc => {
+                for (const date of selectedDates) {
+                    const isOnLeave = doctorLeaves.some(leave =>
+                        leave.doctor_id === doc.id &&
+                        date >= leave.start_date && date <= leave.end_date
+                    );
+                    if (isOnLeave) return false;
+                }
+                return true;
+            });
+
+            availableDoctors.sort((a, b) => a.name.localeCompare(b.name, ['en', 'th']));
+
+            replacementSelect.innerHTML = '<option value="">-- เลือกแพทย์ที่จะมาแทน --</option>';
+            availableDoctors.forEach(doc => {
+                const option = document.createElement('option');
+                option.value = doc.id;
+                option.textContent = `${doc.name} (${doc.work_type === 'full' ? 'Full' : 'Part'})`;
+                replacementSelect.appendChild(option);
+            });
+
+            if (availableDoctors.length === 0) {
+                replacementSelect.innerHTML = '<option value="">-- ไม่มีแพทย์ว่างในช่วงนี้ --</option>';
+            }
+
+            // โหลด custom delegation selects ด้วย
+            const customSelects = document.querySelectorAll(`.custom-delegation-select[data-dept-id="${deptId}"]`);
+            customSelects.forEach(select => {
+                select.innerHTML = '<option value="">-- เลือกแพทย์ที่จะมาแทน --</option>';
                 availableDoctors.forEach(doc => {
                     const option = document.createElement('option');
                     option.value = doc.id;
                     option.textContent = doc.name;
-                    replacementSelect.appendChild(option);
+                    select.appendChild(option);
                 });
-                
-                // โหลดสำหรับ Custom Delegation ด้วย
-                const customSelects = document.querySelectorAll(`.custom-delegation-select[data-dept-id="${deptId}"]`);
-                customSelects.forEach(select => {
-                    select.innerHTML = '<option value="">-- เลือกแพทย์ที่จะมาแทน --</option>';
-                    availableDoctors.forEach(doc => {
-                        const option = document.createElement('option');
-                        option.value = doc.id;
-                        option.textContent = doc.name;
-                        select.appendChild(option);
-                    });
-                });
-            }
+            });
+
+            console.log(`✅ dept:${deptId} available: ${availableDoctors.length}`);
+
         } catch (error) {
-            console.error('Load doctors error:', error);
+            console.error('loadReplacementDoctorsForDept error:', error);
+            replacementSelect.innerHTML = '<option value="">-- เกิดข้อผิดพลาด --</option>';
         }
     }
 
