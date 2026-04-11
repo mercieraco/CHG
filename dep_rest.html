@@ -3562,7 +3562,7 @@
             if (dutyId) {
                 // มี duty_id → เรียก available-replacements โดยตรง ใช้แผนกที่ user เลือก
                 const res = await fetch(
-                    `${API_URL}/api/available-replacements?dutyId=${dutyId}&departmentId=${selectedDeptId}&dayOfWeek=${dayName}&doctorId=${currentDoctorId}`
+                    `${API_URL}/api/available-replacements?dutyId=${dutyId}&departmentId=${selectedDeptId}&leaveDepartmentId=${defaultDeptId}&dayOfWeek=${dayName}&doctorId=${currentDoctorId}`
                 );
                 const data = await res.json();
                 if (data.success) {
@@ -3715,7 +3715,7 @@
                 for (const duty of dutiesOnThisDay) {
                     // ส่ง selectedDeptId เพื่อกรองแพทย์จากแผนกที่ user เลือก
                     const res = await fetch(
-                        `${API_URL}/api/available-replacements?dutyId=${duty.duty_id}&departmentId=${selectedDeptId}&dayOfWeek=${dayName}&doctorId=${currentDoctorId}`
+                        `${API_URL}/api/available-replacements?dutyId=${duty.duty_id}&departmentId=${selectedDeptId}&leaveDepartmentId=${deptId}&dayOfWeek=${dayName}&doctorId=${currentDoctorId}`
                     );
                     const data = await res.json();
                     if (data.success) {
