@@ -2837,7 +2837,7 @@
             const primaryDeptName = primaryDeptData.success ? primaryDeptData.data.name : 'ไม่ระบุ';
             
             // 3. โหลดแผนกเสริมจาก doctor_departments
-            const deptsResponse = await fetch(`${API_URL}/api/doctor-departments?doctor_id=${doctorId}`);
+            const deptsResponse = await fetch(`${API_URL}/api/doctors/${doctorId}/departments`);
             const deptsData = await deptsResponse.json();
             
             console.log('📦 Doctor departments from API:', deptsData);
@@ -2845,22 +2845,15 @@
             let secondaryDepartments = [];
             
             if (deptsData.success && deptsData.data && deptsData.data.length > 0) {
-                // แยกเฉพาะแผนกที่ไม่ใช่แผนกหลัก
-                const allDeptIds = [...new Set(deptsData.data.map(d => d.department_id))];
-                const secondaryDeptIds = allDeptIds.filter(id => id !== doctor.department_id);
-                
-                // โหลดชื่อแผนกเสริม
-                const deptNamesPromises = secondaryDeptIds.map(id => 
-                    fetch(`${API_URL}/api/departments/${id}`)
-                        .then(res => res.json())
-                        .then(data => ({
-                            department_id: id,
-                            department_name: data.success ? data.data.name : 'ไม่ระบุ',
-                            is_primary: false
-                        }))
-                );
-                
-                secondaryDepartments = await Promise.all(deptNamesPromises);
+                // endpoint นี้ return ทั้ง primary + secondary แล้ว → filter เฉพาะ secondary
+                secondaryDepartments = deptsData.data
+                    .filter(d => !d.is_primary && d.department_id !== doctor.department_id)
+                    .map(d => ({
+                        id: d.id,
+                        department_id: d.department_id,
+                        department_name: d.department_name,
+                        is_primary: false
+                    }));
             }
             
             console.log('📦 Secondary departments:', secondaryDepartments);
