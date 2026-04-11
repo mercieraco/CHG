@@ -1179,7 +1179,7 @@
             // แสดงใน dropdown
             replacementSelect.innerHTML = '<option value="">-- เลือกแพทย์ที่จะมาแทน --</option>';
             availableDoctors.forEach(doc => {
-                replacementSelect.innerHTML += `<option value="${doc.id}">${doc.name} (${doc.work_type === 'full' ? 'Full time' : 'Part time'})</option>`;
+                replacementSelect.innerHTML += `<option value="${doc.id}">${doc.name}</option>`;
             });
 
             if (availableDoctors.length === 0) {
@@ -3572,7 +3572,7 @@
             availableDoctors.forEach(doc => {
                 const option = document.createElement('option');
                 option.value = doc.id;
-                option.textContent = `${doc.name} (${doc.work_type === 'full' ? 'Full' : 'Part'})`;
+                option.textContent = `${doc.name}`;
                 doctorSelect.appendChild(option);
             });
 
@@ -3696,7 +3696,7 @@
             availableDoctors.forEach(doc => {
                 const option = document.createElement('option');
                 option.value = doc.id;
-                option.textContent = `${doc.name} (${doc.work_type === 'full' ? 'Full' : 'Part'})`;
+                option.textContent = `${doc.name}`;
                 replacementSelect.appendChild(option);
             });
 
