@@ -3516,7 +3516,7 @@
                 if (dutyId && dutyDate) {
                     const dayName = dayNames[new Date(dutyDate).getDay()];
                     const res = await fetch(
-                        `${API_URL}/api/available-replacements?dutyId=${dutyId}&departmentId=${defaultDeptId}&dayOfWeek=${dayName}&doctorId=${currentDoctorId}`
+                        `${API_URL}/api/available-replacements?dutyId=${dutyId}&departmentId=${defaultDeptId}&mode=dept&dayOfWeek=${dayName}&doctorId=${currentDoctorId}`
                     );
                     const data = await res.json();
                     if (data.success) {
@@ -3655,7 +3655,7 @@
 
                     for (const duty of dutiesOnThisDay) {
                         const res = await fetch(
-                            `${API_URL}/api/available-replacements?dutyId=${duty.duty_id}&departmentId=${deptId}&dayOfWeek=${dayName}&doctorId=${currentDoctorId}`
+                            `${API_URL}/api/available-replacements?dutyId=${duty.duty_id}&departmentId=${deptId}&mode=dept&dayOfWeek=${dayName}&doctorId=${currentDoctorId}`
                         );
                         const data = await res.json();
                         if (data.success) {
