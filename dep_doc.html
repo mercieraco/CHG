@@ -2368,6 +2368,18 @@
                     });
                 }
                 
+                // ⚠️ ถ้ามีข้อมูลเดิมที่จะถูกลบ → ถามยืนยันก่อน
+                if (dutiesToDelete.length > 0) {
+                    const deleteNames = dutiesToDelete.map(d => `• ${d.duty_name}`).join('\n');
+                    const confirmed = confirm(
+                        `⚠️ การบันทึกครั้งนี้จะลบข้อมูลเดิมต่อไปนี้:\n\n${deleteNames}\n\nต้องการลบข้อมูลเดิมใช่หรือไม่?`
+                    );
+                    if (!confirmed) {
+                        console.log('❌ ยกเลิกการบันทึก (ผู้ใช้ไม่ยืนยัน)');
+                        return;
+                    }
+                }
+
                 // ลบ duties ที่ขัดแย้ง
                 for (const duty of dutiesToDelete) {
                     try {
