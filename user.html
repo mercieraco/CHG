@@ -1260,7 +1260,7 @@
                     const dayOfWeek = dayNames[new Date(day.duty_date).getDay()];
                     for (const duty of day.duties) {
                         const res = await fetch(
-                            `${API_URL}/api/available-replacements?dutyId=${duty.duty_id}&departmentId=${mainDeptId}&dayOfWeek=${dayOfWeek}&doctorId=${selectedDoctorId}`
+                            `${API_URL}/api/available-replacements?dutyId=${duty.duty_id}&departmentId=${mainDeptId}&dayOfWeek=${dayOfWeek}&dutyDate=${day.duty_date}&doctorId=${selectedDoctorId}`
                         );
                         const data = await res.json();
                         if (data.success) {
@@ -3973,7 +3973,7 @@
 
             if (dutyId) {
                 const res = await fetch(
-                    `${API_URL}/api/available-replacements?dutyId=${dutyId}&departmentId=${selectedDeptId}&leaveDepartmentId=${defaultDeptId}&dayOfWeek=${dayName}&doctorId=${currentDoctorId}`
+                    `${API_URL}/api/available-replacements?dutyId=${dutyId}&departmentId=${selectedDeptId}&leaveDepartmentId=${defaultDeptId}&dayOfWeek=${dayName}&dutyDate=${dutyDate}&doctorId=${currentDoctorId}`
                 );
                 const data = await res.json();
                 if (data.success) {
@@ -4108,7 +4108,7 @@
                 const dutiesOnThisDay = leaveDoctorDuties.filter(d => d[dayName] === 1);
                 for (const duty of dutiesOnThisDay) {
                     const res = await fetch(
-                        `${API_URL}/api/available-replacements?dutyId=${duty.duty_id}&departmentId=${selectedDeptId}&leaveDepartmentId=${deptId}&dayOfWeek=${dayName}&doctorId=${currentDoctorId}`
+                        `${API_URL}/api/available-replacements?dutyId=${duty.duty_id}&departmentId=${selectedDeptId}&leaveDepartmentId=${deptId}&dayOfWeek=${dayName}&dutyDate=${date}&doctorId=${currentDoctorId}`
                     );
                     const data = await res.json();
                     if (data.success) {
