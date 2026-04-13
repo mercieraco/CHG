@@ -483,6 +483,35 @@
         background: #ff3838;
     }
 
+    /* GEN3 V1: Custom duty list */
+    .duty-list-item {
+        padding: 9px 14px;
+        cursor: pointer;
+        font-size: 13px;
+        border-bottom: 1px solid #f5f5f5;
+        transition: background 0.15s;
+        display: flex;
+        align-items: center;
+    }
+    .duty-list-item:hover {
+        background: #f0f2ff;
+    }
+    .duty-list-item.duty-list-selected {
+        background: #667eea;
+        color: white;
+        font-weight: 600;
+    }
+    .duty-list-item.duty-list-selected span {
+        color: white !important;
+    }
+    .duty-list-subitem {
+        padding-left: 28px;
+        background: #fafafa;
+    }
+    .duty-list-subitem:hover {
+        background: #e8eaff;
+    }
+
     /* Phase 2: Doctor Duty Group styles */
     .doctor-duty-group-header {
         background: #f0f2ff;
@@ -1011,10 +1040,20 @@
         <p><strong id="doctorDutyDoctorName"></strong></p>
         
         <div class="form-group" style="text-align: left;">
-            <label for="doctorDutySelect">เลือก Duty:</label>
-            <select id="doctorDutySelect">
-                <option value="">-- เลือก Duty --</option>
-            </select>
+            <label>เลือก Duty:</label>
+            <!-- hidden input เก็บ id ของ duty ที่เลือก -->
+            <input type="hidden" id="doctorDutySelectedId" value="">
+            <div id="doctorDutySelectedLabel" style="
+                padding: 8px 12px; background: #f0f2ff; border: 1px solid #c5caf5;
+                border-radius: 6px; font-size: 13px; color: #667eea; font-weight: 600;
+                margin-bottom: 8px; min-height: 36px; display: flex; align-items: center;">
+                <span style="color: #aaa; font-weight: 400;">-- กรุณาเลือก Duty --</span>
+            </div>
+            <div id="doctorDutyList" style="
+                border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;
+                max-height: 280px; overflow-y: auto; background: white;">
+                <div style="padding: 10px; color: #aaa; font-size: 13px;">กำลังโหลด...</div>
+            </div>
         </div>
 
         <div class="form-group" style="text-align: left;">
@@ -3376,35 +3415,189 @@
     }
 
     // Modal เพิ่ม Duty ให้แพทย์
+    // ============================================================
+    // GEN3 V1: Helper — แยก base name จาก duty_name
+    // "OPD i (08:00-09:00)" → "OPD i"
+    // "Round"               → "Round"
+    // ============================================================
+    function getDutyBaseName(dutyName) {
+        return dutyName.replace(/\s*\(\d{2}:\d{2}-\d{2}:\d{2}\)$/, '').trim();
+    }
+
+    function getDutyTimeLabel(dutyName) {
+        const match = dutyName.match(/\((\d{2}:\d{2}-\d{2}:\d{2})\)$/);
+        return match ? match[1] : null;
+    }
+
+    // ============================================================
+    // GEN3 V1: จัดกลุ่ม duties → allDay list + timeGroups map
+    // ============================================================
+    function groupDutiesForList(duties) {
+        const allDay = [];       // duties ที่ไม่มีเวลา (is_all_day หรือไม่มี time suffix)
+        const timeGroups = {};   // baseName → [duty, duty, ...]
+
+        duties.forEach(duty => {
+            const timeLabel = getDutyTimeLabel(duty.duty_name);
+            if (timeLabel) {
+                // Time duty → จัดกลุ่มตาม baseName
+                const base = getDutyBaseName(duty.duty_name);
+                if (!timeGroups[base]) timeGroups[base] = [];
+                timeGroups[base].push(duty);
+            } else {
+                // All Day duty
+                allDay.push(duty);
+            }
+        });
+
+        // เรียงลำดับ timeSlots ใน group
+        Object.keys(timeGroups).forEach(base => {
+            timeGroups[base].sort((a, b) => a.duty_name.localeCompare(b.duty_name));
+        });
+
+        return { allDay, timeGroups };
+    }
+
+    // State ซ่อน/แสดง per group (baseName → boolean)
+    let dutyGroupExpanded = {};
+
+    // ============================================================
+    // GEN3 V1: Render custom duty list
+    // ============================================================
+    function renderDoctorDutyList(duties) {
+        const container = document.getElementById('doctorDutyList');
+        const { allDay, timeGroups } = groupDutiesForList(duties);
+
+        // รวม baseName ทั้งหมด (allDay + timeGroup keys) แล้วเรียงตัวอักษร
+        const allBaseNames = [
+            ...allDay.map(d => ({ type: 'allday', duty: d, base: getDutyBaseName(d.duty_name) })),
+            ...Object.keys(timeGroups).map(base => ({ type: 'timegroup', base }))
+        ].sort((a, b) => a.base.localeCompare(b.base));
+
+        if (allBaseNames.length === 0) {
+            container.innerHTML = '<div style="padding: 12px; color: #aaa; font-size: 13px;">ไม่มี Duty ในแผนกนี้</div>';
+            return;
+        }
+
+        let html = '';
+        allBaseNames.forEach(item => {
+            if (item.type === 'allday') {
+                const d = item.duty;
+                html += `
+                <div class="duty-list-item" data-id="${d.id}" data-name="${d.duty_name}"
+                     onclick="selectDoctorDutyItem(this, '${d.id}', '${d.duty_name.replace(/'/g,"\\'")}')">
+                    <span>${d.duty_name}</span>
+                </div>`;
+            } else {
+                const base = item.base;
+                const group = timeGroups[base];
+                const isExpanded = !!dutyGroupExpanded[base];
+                const toggleLabel = isExpanded ? '▲ ซ่อน' : '▼ แสดง';
+                const toggleBg = isExpanded ? '#e8f5e9' : '#fff3e0';
+                const toggleColor = isExpanded ? '#2e7d32' : '#e65100';
+
+                // หา range เวลา (min-max) สำหรับแสดงตอนซ่อน
+                const times = group.map(d => getDutyTimeLabel(d.duty_name));
+                const allStart = times.map(t => t.split('-')[0]);
+                const allEnd   = times.map(t => t.split('-')[1]);
+                const minTime  = allStart.sort()[0];
+                const maxTime  = allEnd.sort().slice(-1)[0];
+                const rangeLabel = `(${minTime}-${maxTime})`;
+
+                html += `
+                <div style="border-bottom: 1px solid #f0f0f0;">
+                    <!-- Group Header (toggle button) -->
+                    <div onclick="toggleDutyGroup('${base}')" style="
+                        display: flex; align-items: center; justify-content: space-between;
+                        padding: 9px 12px; cursor: pointer; background: ${toggleBg};
+                        user-select: none;">
+                        <span style="font-weight: 600; color: #333; font-size: 13px;">
+                            ${base}
+                            ${!isExpanded ? `<span style="color: #999; font-size: 12px; font-weight: 400; margin-left: 6px;">${rangeLabel}</span>` : ''}
+                        </span>
+                        <span style="font-size: 11px; font-weight: 600; color: ${toggleColor};
+                            background: white; padding: 2px 8px; border-radius: 10px;
+                            border: 1px solid ${toggleColor};">${toggleLabel}</span>
+                    </div>
+                    <!-- Time slots (shown when expanded) -->
+                    <div id="dutygroup_${base.replace(/\s/g,'_')}" style="display: ${isExpanded ? 'block' : 'none'};">
+                        ${group.map(d => {
+                            const timeLabel = getDutyTimeLabel(d.duty_name);
+                            return `
+                            <div class="duty-list-item duty-list-subitem"
+                                 data-id="${d.id}" data-name="${d.duty_name}"
+                                 onclick="selectDoctorDutyItem(this, '${d.id}', '${d.duty_name.replace(/'/g,"\\'")}')">
+                                <span style="color: #555;">⏱ (${timeLabel})</span>
+                            </div>`;
+                        }).join('')}
+                    </div>
+                </div>`;
+            }
+        });
+
+        container.innerHTML = html;
+    }
+
+    // Toggle expand/collapse ของ time group
+    function toggleDutyGroup(base) {
+        dutyGroupExpanded[base] = !dutyGroupExpanded[base];
+        // Re-render list โดยใช้ duties ที่ cache ไว้
+        renderDoctorDutyList(cachedDepartmentDuties);
+        // คืน selection ที่เลือกไว้ (ถ้ามี)
+        const selectedId = document.getElementById('doctorDutySelectedId').value;
+        if (selectedId) {
+            const items = document.querySelectorAll('.duty-list-item[data-id="' + selectedId + '"]');
+            items.forEach(el => el.classList.add('duty-list-selected'));
+        }
+    }
+
+    // เลือก duty item
+    function selectDoctorDutyItem(el, id, name) {
+        // ล้าง selection เดิม
+        document.querySelectorAll('.duty-list-item').forEach(i => i.classList.remove('duty-list-selected'));
+        // เซ็ตใหม่
+        el.classList.add('duty-list-selected');
+        document.getElementById('doctorDutySelectedId').value = id;
+        // อัพเดท label
+        const label = document.getElementById('doctorDutySelectedLabel');
+        label.innerHTML = `<span>✅ ${name}</span>`;
+    }
+
+    // Cache duties ของแผนกที่เปิด modal อยู่
+    let cachedDepartmentDuties = [];
+
     async function showDoctorDutyModal(doctorId, departmentId, doctorName) {
         currentDoctorId = doctorId;
         currentDoctorDepartmentId = departmentId;
         document.getElementById('doctorDutyDoctorName').textContent = doctorName;
-        
+
+        // Reset selection
+        document.getElementById('doctorDutySelectedId').value = '';
+        document.getElementById('doctorDutySelectedLabel').innerHTML =
+            '<span style="color: #aaa; font-weight: 400;">-- กรุณาเลือก Duty --</span>';
+        dutyGroupExpanded = {};
+
         // โหลด Duties ของแผนก
         try {
             const response = await fetch(`${API_URL}/api/duties/department/${departmentId}`);
             const data = await response.json();
-            
+
             if (response.ok && data.success) {
-                const duties = data.data;
-                const select = document.getElementById('doctorDutySelect');
-                select.innerHTML = '<option value="">-- เลือก Duty --</option>';
-                
-                duties.forEach(duty => {
-                    const option = document.createElement('option');
-                    option.value = duty.id;
-                    option.textContent = duty.duty_name;
-                    select.appendChild(option);
-                });
+                cachedDepartmentDuties = data.data;
+                renderDoctorDutyList(cachedDepartmentDuties);
+            } else {
+                document.getElementById('doctorDutyList').innerHTML =
+                    '<div style="padding: 12px; color: #f00; font-size: 13px;">โหลดข้อมูลไม่สำเร็จ</div>';
             }
         } catch (error) {
             console.error('Error loading duties:', error);
+            document.getElementById('doctorDutyList').innerHTML =
+                '<div style="padding: 12px; color: #f00; font-size: 13px;">เกิดข้อผิดพลาด</div>';
         }
-        
-        // รีเซ็ต checkbox
+
+        // รีเซ็ต checkbox และ details
         document.querySelectorAll('input[name="dutyDays"]').forEach(cb => cb.checked = false);
-        
+        document.getElementById('dutyDetailsInput').value = '';
+
         document.getElementById('doctorDutyModal').classList.add('show');
     }
 
@@ -3415,7 +3608,7 @@
     }
 
     async function confirmAddDoctorDuty() {
-        const dutyId = document.getElementById('doctorDutySelect').value;
+        const dutyId = document.getElementById('doctorDutySelectedId').value;
         
         if (!dutyId) {
             alert('กรุณาเลือก Duty');
