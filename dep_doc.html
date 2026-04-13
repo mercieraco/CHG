@@ -483,6 +483,14 @@
         background: #ff3838;
     }
 
+    /* GEN3 V3: ตาราง hourly summary */
+    .hourly-summary-table {
+        font-size: 13px;
+    }
+    .hourly-summary-table td {
+        padding: 2px 6px;
+    }
+
     /* GEN3 V3: ปุ่มสรุป */
     .btn-summary-group {
         padding: 4px 12px;
@@ -760,6 +768,26 @@
 
         .checkbox-group {
             grid-template-columns: 1fr;
+        }
+    }
+
+    /* iPad / iPhone landscape (768px+) — ปุ่มซ่อน/แสดง/สรุป ขนาดใหญ่ขึ้น */
+    @media (min-width: 768px) {
+        .btn-toggle-group {
+            font-size: 15px;
+            padding: 6px 16px;
+            border-radius: 14px;
+        }
+        .btn-summary-group {
+            font-size: 15px;
+            padding: 6px 16px;
+            border-radius: 14px;
+        }
+        .hourly-summary-table {
+            font-size: 15px;
+        }
+        .hourly-summary-table td {
+            padding: 3px 10px;
         }
     }
 </style>
@@ -1841,7 +1869,7 @@
 
         if (rows.length === 0) return '<div style="color:#aaa; font-size:13px;">ไม่มีข้อมูล</div>';
 
-        let html = '<table style="border-collapse:collapse; font-size:13px; width:100%;">';
+        let html = '<table class="hourly-summary-table" style="border-collapse:collapse; width:100%;">';
         rows.forEach(row => {
             const hourLabel = row.hour.toString().padStart(2, '0') + ':00';
             const dayCells = dayKeys.map((d, i) =>
