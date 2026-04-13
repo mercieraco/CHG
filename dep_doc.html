@@ -1859,7 +1859,7 @@
             .map(h => ({ hour: h, ...hourMap[h] }));
     }
 
-    // render hourly summary HTML
+    // render hourly summary HTML — ใช้ class เดียวกับ sub-rows เพื่อ font/responsive ที่ตรงกัน
     function renderHourlySummaryHtml(rows) {
         const dayLabels = ['จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส', 'อา'];
         const dayKeys   = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
@@ -1869,18 +1869,18 @@
 
         if (rows.length === 0) return '<div style="color:#aaa; font-size:13px;">ไม่มีข้อมูล</div>';
 
-        let html = '<table class="hourly-summary-table" style="border-collapse:collapse; width:100%;">';
+        let html = '';
         rows.forEach(row => {
             const hourLabel = row.hour.toString().padStart(2, '0') + ':00';
             const dayCells = dayKeys.map((d, i) =>
-                `<td style="padding:2px 6px; text-align:center;">${dayLabels[i]} ${formatC(row[d])}</td>`
+                `<span class="duty-day">${dayLabels[i]} ${formatC(row[d])}</span>`
             ).join('');
-            html += `<tr>
-                <td style="padding:2px 8px; font-weight:600; color:#333; white-space:nowrap;">${hourLabel}</td>
-                ${dayCells}
-            </tr>`;
+            html += `
+                <div class="duty-item duty-group-subrow">
+                    <span class="duty-name" style="color:#0abde3; padding-left:16px;">${hourLabel}</span>
+                    <div class="duty-schedule">${dayCells}</div>
+                </div>`;
         });
-        html += '</table>';
         return html;
     }
 
