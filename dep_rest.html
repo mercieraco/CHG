@@ -1108,7 +1108,7 @@
                     
                     for (const duty of day.duties) {
                         const res = await fetch(
-                            `${API_URL}/api/available-replacements?dutyId=${duty.duty_id}&departmentId=${mainDeptId}&dayOfWeek=${dayOfWeek}&doctorId=${selectedDoctorId}`
+                            `${API_URL}/api/available-replacements?dutyId=${duty.duty_id}&departmentId=${mainDeptId}&dayOfWeek=${dayOfWeek}&dutyDate=${day.duty_date}&doctorId=${selectedDoctorId}`
                         );
                         const data = await res.json();
                         
@@ -3562,7 +3562,7 @@
             if (dutyId) {
                 // มี duty_id → เรียก available-replacements โดยตรง ใช้แผนกที่ user เลือก
                 const res = await fetch(
-                    `${API_URL}/api/available-replacements?dutyId=${dutyId}&departmentId=${selectedDeptId}&leaveDepartmentId=${defaultDeptId}&dayOfWeek=${dayName}&doctorId=${currentDoctorId}`
+                    `${API_URL}/api/available-replacements?dutyId=${dutyId}&departmentId=${selectedDeptId}&leaveDepartmentId=${defaultDeptId}&dayOfWeek=${dayName}&dutyDate=${dutyDate}&doctorId=${currentDoctorId}`
                 );
                 const data = await res.json();
                 if (data.success) {
@@ -3715,7 +3715,7 @@
                 for (const duty of dutiesOnThisDay) {
                     // ส่ง selectedDeptId เพื่อกรองแพทย์จากแผนกที่ user เลือก
                     const res = await fetch(
-                        `${API_URL}/api/available-replacements?dutyId=${duty.duty_id}&departmentId=${selectedDeptId}&leaveDepartmentId=${deptId}&dayOfWeek=${dayName}&doctorId=${currentDoctorId}`
+                        `${API_URL}/api/available-replacements?dutyId=${duty.duty_id}&departmentId=${selectedDeptId}&leaveDepartmentId=${deptId}&dayOfWeek=${dayName}&dutyDate=${date}&doctorId=${currentDoctorId}`
                     );
                     const data = await res.json();
                     if (data.success) {
@@ -3811,7 +3811,7 @@
                 for (const duty of dutiesOnThisDay) {
                     // เรียก available-replacements API ต่อ duty ต่อวัน
                     const res = await fetch(
-                        `${API_URL}/api/available-replacements?dutyId=${duty.duty_id}&departmentId=${departmentId}&dayOfWeek=${dayName}&doctorId=${currentDoctorId}`
+                        `${API_URL}/api/available-replacements?dutyId=${duty.duty_id}&departmentId=${departmentId}&dayOfWeek=${dayName}&dutyDate=${date}&doctorId=${currentDoctorId}`
                     );
                     const data = await res.json();
 
