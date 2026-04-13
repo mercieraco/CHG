@@ -1734,8 +1734,8 @@
         return result;
     }
 
-    // Phase 2: Toggle แสดง/ซ่อน sub-rows ของ group
-    function toggleDutyGroup(groupId) {
+    // Phase 2: Toggle แสดง/ซ่อน sub-rows ของ group (หน้าจัดการแผนก + แสดง duty แพทย์)
+    function toggleDeptDutyGroup(groupId) {
         const subrows = document.getElementById('subrows_' + groupId);
         const summary = document.getElementById('summary_' + groupId);
         const btn     = document.getElementById('btn_' + groupId);
@@ -1878,7 +1878,7 @@
                                 html += `
                                     <div class="duty-item duty-group-header">
                                         <span class="duty-name" style="font-weight: 700;">${item.baseName}</span>
-                                        <button onclick="toggleDutyGroup('${groupId}')" id="btn_${groupId}" class="btn-toggle-group">แสดง</button>
+                                        <button onclick="toggleDeptDutyGroup('${groupId}')" id="btn_${groupId}" class="btn-toggle-group">แสดง</button>
                                     </div>
                                 `;
 
@@ -3506,7 +3506,7 @@
                 html += `
                 <div style="border-bottom: 1px solid #f0f0f0;">
                     <!-- Group Header (toggle button) -->
-                    <div onclick="toggleDutyGroup('${base}')" style="
+                    <div onclick="toggleModalDutyGroup('${base}')" style="
                         display: flex; align-items: center; justify-content: space-between;
                         padding: 9px 12px; cursor: pointer; background: ${toggleBg};
                         user-select: none;">
@@ -3537,8 +3537,8 @@
         container.innerHTML = html;
     }
 
-    // Toggle expand/collapse ของ time group
-    function toggleDutyGroup(base) {
+    // Toggle expand/collapse ของ time group (modal เพิ่ม duty แพทย์)
+    function toggleModalDutyGroup(base) {
         dutyGroupExpanded[base] = !dutyGroupExpanded[base];
         // Re-render list โดยใช้ duties ที่ cache ไว้
         renderDoctorDutyList(cachedDepartmentDuties);
