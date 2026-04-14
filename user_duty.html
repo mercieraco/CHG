@@ -84,9 +84,7 @@
         .section-body { padding: 18px 20px; }
 
         /* ── Dept Block ── */
-        .dept-block {
-            margin-bottom: 20px;
-        }
+        .dept-block { margin-bottom: 20px; }
         .dept-block:last-child { margin-bottom: 0; }
 
         .dept-label {
@@ -101,7 +99,7 @@
         }
         .dept-label.secondary { background: #a29bfe; }
 
-        /* ── Duty Items (reuse จาก dep_doc) ── */
+        /* ── Duty Items ── */
         .doctor-duties-list { margin-top: 4px; }
 
         .doctor-duty-item {
@@ -122,15 +120,7 @@
         .doctor-duty-group-header {
             background: #f0f2ff;
             border: 1px solid #c5caf5;
-            border-radius: 6px;
-            margin-bottom: 4px;
-            padding: 8px 12px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
         }
-        .doctor-duty-group-header .doctor-duty-name { flex: 1; }
-
         .doctor-duty-group-summary {
             background: #fafafa;
             border: 1px dashed #d0d0d0;
@@ -175,7 +165,6 @@
             overflow: hidden;
         }
 
-        /* Status สี header ของการ์ด */
         .rep-card-header {
             padding: 12px 16px;
             display: flex;
@@ -183,24 +172,20 @@
             gap: 10px;
             flex-wrap: wrap;
         }
+        .rep-card-header.status-pending  { background: #fff8e1; border-left: 5px solid #ffb300; }
         .rep-card-header.status-approved { background: #212121; border-left: 5px solid #000; }
         .rep-card-header.status-rejected {
             background: #f5f5f5;
             border-left: 5px solid #333;
-            position: relative;
         }
 
-        .rep-doctor-name {
-            font-weight: 700;
-            font-size: 15px;
-        }
+        .rep-doctor-name { font-weight: 700; font-size: 15px; }
         .rep-card-header.status-approved .rep-doctor-name { color: white; }
         .rep-card-header.status-rejected .rep-doctor-name {
             color: #555;
             position: relative;
             display: inline-block;
         }
-        /* แถบแดงพาดชื่อ */
         .rep-card-header.status-rejected .rep-doctor-name::after {
             content: '';
             position: absolute;
@@ -211,10 +196,7 @@
             transform: translateY(-50%);
         }
 
-        .rep-dept-name {
-            font-size: 13px;
-            opacity: 0.75;
-        }
+        .rep-dept-name { font-size: 13px; opacity: 0.75; }
         .rep-card-header.status-approved .rep-dept-name { color: #ddd; }
 
         .status-badge {
@@ -225,10 +207,9 @@
             font-weight: 700;
             white-space: nowrap;
         }
-        .status-badge.approved { background: #444;    color: white; border: 1px solid #888; }
-        .status-badge.rejected { background: #bbb;    color: #333; border: 1px solid #888; }
+        .status-badge.approved { background: #444; color: white; border: 1px solid #888; }
+        .status-badge.rejected { background: #bbb; color: #333; border: 1px solid #888; }
 
-        /* Date range bar */
         .rep-date-bar {
             padding: 8px 16px;
             font-size: 13px;
@@ -242,7 +223,6 @@
             border-bottom: 1px solid #555;
         }
 
-        /* Duty per day list */
         .rep-day-list { padding: 10px 16px; }
 
         .rep-day-row {
@@ -255,11 +235,7 @@
         }
         .rep-day-row:last-child { border-bottom: none; }
 
-        .rep-day-label {
-            min-width: 90px;
-            color: #555;
-            font-weight: 600;
-        }
+        .rep-day-label { min-width: 90px; color: #555; font-weight: 600; }
         .rep-day-duties { color: #333; flex: 1; }
         .rep-day-duties .no-duty { color: #bbb; font-style: italic; }
 
@@ -276,15 +252,12 @@
         .duty-chip.approved-chip { background: #444; color: #ddd; }
         .duty-chip.rejected-chip { background: #ddd; color: #888; }
 
-        /* Empty state */
         .empty-state {
             text-align: center;
             padding: 30px;
             color: #aaa;
             font-size: 15px;
         }
-
-        /* Loading */
         .loading {
             text-align: center;
             padding: 20px;
@@ -303,7 +276,6 @@
 <body>
 <div class="container">
 
-    <!-- Header -->
     <div class="header">
         <h1>⚡ ภาระงาน</h1>
         <div class="header-right">
@@ -312,7 +284,6 @@
         </div>
     </div>
 
-    <!-- Doctor Info -->
     <div class="doctor-info-bar">
         <div>
             <div class="name" id="doctorNameDisplay">กำลังโหลด...</div>
@@ -320,7 +291,6 @@
         </div>
     </div>
 
-    <!-- Section 1: ตารางเวรประจำ -->
     <div class="section-card">
         <div class="section-header">📅 ตารางเวรประจำ</div>
         <div class="section-body" id="scheduleBody">
@@ -328,7 +298,6 @@
         </div>
     </div>
 
-    <!-- Section 2: รายการรับฝาก -->
     <div class="section-card">
         <div class="section-header">🤝 รายการที่รับฝาก</div>
         <div class="section-body" id="replacementBody">
@@ -337,25 +306,18 @@
     </div>
 
 </div>
-
 <script>
     const API_URL = 'https://dep-doc-worker.9vk92zm5z2.workers.dev';
 
-    // ─── Auth check ────────────────────────────────────────
     window.onload = async function() {
-        const loggedIn  = sessionStorage.getItem('loggedIn');
-        const role      = sessionStorage.getItem('role');
-        const doctorId  = sessionStorage.getItem('doctor_id');
-
+        const loggedIn = sessionStorage.getItem('loggedIn');
+        const role     = sessionStorage.getItem('role');
+        const doctorId = sessionStorage.getItem('doctor_id');
         if (!loggedIn || role !== 'doctor' || !doctorId) {
             window.location.href = 'index.html';
             return;
         }
-
-        await Promise.all([
-            loadSchedule(doctorId),
-            loadReplacements(doctorId)
-        ]);
+        await Promise.all([loadSchedule(doctorId), loadReplacements(doctorId)]);
     };
 
     function logout() {
@@ -371,45 +333,30 @@
     async function loadSchedule(doctorId) {
         const body = document.getElementById('scheduleBody');
         try {
-            // 1. ดึงข้อมูลแพทย์
             const docRes  = await fetch(`${API_URL}/api/doctors/${doctorId}`);
             const docData = await docRes.json();
             if (!docData.success) throw new Error('ไม่พบข้อมูลแพทย์');
             const doctor = docData.data;
-
-            // แสดงชื่อ
             document.getElementById('doctorNameDisplay').textContent = doctor.name;
 
-            // 2. ดึงแผนกทั้งหมดของแพทย์ (primary + secondary)
             const deptsRes  = await fetch(`${API_URL}/api/doctors/${doctorId}/departments`);
             const deptsData = await deptsRes.json();
             const allDepts  = deptsData.success ? deptsData.data : [];
 
-            // แยก primary / secondary
-            const primaryDept = allDepts.find(d => d.is_primary) 
-                             || { department_id: doctor.department_id, department_name: doctor.department_name || 'แผนกหลัก', is_primary: 1 };
+            const primaryDept    = allDepts.find(d => d.is_primary)
+                                || { department_id: doctor.department_id, department_name: 'แผนกหลัก', is_primary: 1 };
             const secondaryDepts = allDepts.filter(d => !d.is_primary);
-
             document.getElementById('doctorDeptDisplay').textContent = `แผนกหลัก: ${primaryDept.department_name}`;
 
-            // 3. ดึง duties ทั้งหมดของแพทย์
             const dutiesRes  = await fetch(`${API_URL}/api/doctor-duties/doctor/${doctorId}`);
             const dutiesData = await dutiesRes.json();
             const allDuties  = dutiesData.success ? dutiesData.data : [];
 
-            // 4. Render
-            let html = '';
-
-            // แผนกหลัก
-            html += renderDeptBlock(primaryDept, allDuties, true);
-
-            // แผนกเสริม
+            let html = renderDeptBlock(primaryDept, allDuties, true);
             for (const dept of secondaryDepts) {
                 html += renderDeptBlock(dept, allDuties, false);
             }
-
             body.innerHTML = html || '<div class="empty-state">ไม่มีข้อมูลตารางเวร</div>';
-
         } catch (err) {
             body.innerHTML = `<div class="empty-state">❌ ${err.message}</div>`;
         }
@@ -421,23 +368,12 @@
         const labelText  = isPrimary
             ? `🏥 ${dept.department_name} (แผนกหลัก)`
             : `🔗 ${dept.department_name} (แผนกเสริม)`;
-
-        let inner = '';
-        if (deptDuties.length === 0) {
-            inner = '<div class="no-duty-text">ไม่มี Duty ที่กำหนด</div>';
-        } else {
-            inner = renderDoctorDutiesHTML(deptDuties, `dept${dept.department_id}`);
-        }
-
-        return `
-            <div class="dept-block">
-                <div class="dept-label ${labelClass}">${labelText}</div>
-                ${inner}
-            </div>
-        `;
+        const inner = deptDuties.length === 0
+            ? '<div class="no-duty-text">ไม่มี Duty ที่กำหนด</div>'
+            : renderDoctorDutiesHTML(deptDuties, `dept${dept.department_id}`);
+        return `<div class="dept-block"><div class="dept-label ${labelClass}">${labelText}</div>${inner}</div>`;
     }
 
-    // ── Helper: parse duty name เพื่อหา base + time ──────────────────
     function parseDutyName(dutyName) {
         const match = dutyName.match(/^(.*?)\s*\((\d{2}:\d{2})-(\d{2}:\d{2})\)$/);
         if (match) return { baseName: match[1].trim(), startTime: match[2], endTime: match[3] };
@@ -445,8 +381,8 @@
     }
 
     function groupDoctorDutiesByBaseName(duties) {
-        const parsed = duties.map(d => ({ ...d, _p: parseDutyName(d.duty_name) }));
-        const baseMap = {};
+        const parsed   = duties.map(d => ({ ...d, _p: parseDutyName(d.duty_name) }));
+        const baseMap  = {};
         parsed.forEach(d => {
             if (d._p.startTime !== null) {
                 if (!baseMap[d._p.baseName]) baseMap[d._p.baseName] = [];
@@ -454,21 +390,19 @@
             }
         });
         const groupNames = new Set(Object.keys(baseMap).filter(k => baseMap[k].length >= 2));
-
-        const result = [];
-        const added  = new Set();
+        const result = [], added = new Set();
         parsed.forEach(d => {
             const { baseName, startTime } = d._p;
             if (groupNames.has(baseName) && startTime !== null) {
                 if (!added.has(baseName)) {
                     added.add(baseName);
-                    const subs = baseMap[baseName].sort((a,b) => a._p.startTime.localeCompare(b._p.startTime));
+                    const subs    = baseMap[baseName].sort((a,b) => a._p.startTime.localeCompare(b._p.startTime));
                     const dayKeys = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
-                    const summaryDays = {};
-                    dayKeys.forEach(k => { summaryDays[k] = subs.reduce((s,x) => s + (x[k] ? 1 : 0), 0); });
+                    const sumDays = {};
+                    dayKeys.forEach(k => { sumDays[k] = subs.reduce((s,x) => s + (x[k] ? 1 : 0), 0); });
                     const sumStart = subs.map(x=>x._p.startTime).reduce((a,b)=>a<b?a:b);
                     const sumEnd   = subs.map(x=>x._p.endTime).reduce((a,b)=>a>b?a:b);
-                    result.push({ type:'group', baseName, duties:subs, summary:{ startTime:sumStart, endTime:sumEnd, ...summaryDays } });
+                    result.push({ type:'group', baseName, duties:subs, summary:{ startTime:sumStart, endTime:sumEnd, ...sumDays } });
                 }
             } else {
                 result.push({ type:'single', duty:d });
@@ -487,14 +421,13 @@
     }
 
     function renderDoctorDutiesHTML(duties, prefix) {
-        duties.sort((a,b)=>{
+        duties.sort((a,b) => {
             const ae=/^[a-zA-Z]/.test(a.duty_name), be=/^[a-zA-Z]/.test(b.duty_name);
-            if(ae&&!be) return -1; if(!ae&&be) return 1;
-            return a.duty_name.localeCompare(b.duty_name,['en','th']);
+            if (ae&&!be) return -1; if (!ae&&be) return 1;
+            return a.duty_name.localeCompare(b.duty_name, ['en','th']);
         });
         const grouped = groupDoctorDutiesByBaseName(duties);
         let html = '<div class="doctor-duties-list">';
-
         grouped.forEach(item => {
             if (item.type === 'single') {
                 const d = item.duty;
@@ -507,7 +440,7 @@
                 const gid = `${prefix}_${item.baseName.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'')}`;
                 const { summary, duties: subs } = item;
                 html += `
-                    <div class="doctor-duty-group-header doctor-duty-item">
+                    <div class="doctor-duty-item doctor-duty-group-header">
                         <span class="doctor-duty-name" style="font-weight:700;">${item.baseName}</span>
                         <button onclick="toggleDutyGroup('${gid}')" id="dg_btn_${gid}" class="btn-toggle-group">แสดง</button>
                     </div>
@@ -526,7 +459,6 @@
                 html += `</div>`;
             }
         });
-
         html += '</div>';
         return html;
     }
@@ -536,9 +468,9 @@
         const sum = document.getElementById('dg_sum_' + gid);
         const btn = document.getElementById('dg_btn_' + gid);
         const open = sub.style.display !== 'none';
-        sub.style.display = open ? 'none' : 'block';
-        sum.style.display = open ? ''     : 'none';
-        btn.textContent   = open ? 'แสดง' : 'ซ่อน';
+        sub.style.display = open ? 'none'  : 'block';
+        sum.style.display = open ? ''      : 'none';
+        btn.textContent   = open ? 'แสดง'  : 'ซ่อน';
     }
 
     // ================================================================
@@ -549,21 +481,12 @@
         try {
             const res  = await fetch(`${API_URL}/api/leaves/replacement/${doctorId}`);
             const data = await res.json();
-
             if (!data.success) throw new Error(data.message || 'เกิดข้อผิดพลาด');
-
             if (!data.data || data.data.length === 0) {
                 body.innerHTML = '<div class="empty-state">ไม่มีรายการที่รับฝาก</div>';
                 return;
             }
-
-            const filtered = data.data.filter(l => l.approval_status !== 'pending');
-            if (filtered.length === 0) {
-                body.innerHTML = '<div class="empty-state">ไม่มีรายการที่รับฝาก</div>';
-                return;
-            }
-            body.innerHTML = filtered.map(leave => renderRepCard(leave)).join('');
-
+            body.innerHTML = data.data.map(leave => renderRepCard(leave)).join('');
         } catch (err) {
             body.innerHTML = `<div class="empty-state">❌ ${err.message}</div>`;
         }
@@ -580,9 +503,10 @@
     }
 
     function renderRepCard(leave) {
-        const status    = leave.approval_status; // approved | rejected
+        const status   = leave.approval_status;
+        // pending ไม่มี label แสดง — แสดงแค่ approved / rejected
         const statusTH  = { approved:'✅ อนุมัติแล้ว', rejected:'❌ ปฏิเสธ' };
-        const chipClass = { approved:'approved-chip', rejected:'rejected-chip' };
+        const chipClass = { pending:'', approved:'approved-chip', rejected:'rejected-chip' };
 
         const dateRange = leave.start_date === leave.end_date
             ? formatDateThai(leave.start_date)
@@ -590,20 +514,13 @@
 
         const delegateLabel = leave.delegation_type === 'single' ? 'ฝาก 1 คน' : 'กำหนดเอง';
 
-        // Duty per day rows
         const dayRows = (leave.duty_per_day || []).map(day => {
             const dateLabel = `${formatDateShort(day.date)} (${day.day_label})`;
-            let dutiesHtml;
-            if (day.duties.length === 0) {
-                dutiesHtml = `<span class="no-duty">ไม่มี duty</span>`;
-            } else {
-                dutiesHtml = day.duties.map(du => {
-                    const timeLabel = du.start_time && !du.is_all_day
-                        ? ` <span style="font-weight:400;opacity:0.8">${du.start_time}-${du.end_time}</span>`
-                        : '';
-                    return `<span class="duty-chip ${chipClass[status]}">${du.duty_name}</span>`;
-                }).join('');
-            }
+            const dutiesHtml = day.duties.length === 0
+                ? `<span class="no-duty">ไม่มี duty</span>`
+                : day.duties.map(du =>
+                    `<span class="duty-chip ${chipClass[status] || ''}">${du.duty_name}</span>`
+                  ).join('');
             return `
                 <div class="rep-day-row">
                     <div class="rep-day-label">${dateLabel}</div>
@@ -611,22 +528,19 @@
                 </div>`;
         }).join('');
 
-        // Header style ตาม status
-        const headerClass = `status-${status}`;
-
-        // Doctor name — rejected ใส่ strikethrough via CSS ::after
-        const doctorNameHtml = `<span class="rep-doctor-name">${leave.doctor_name}</span>`;
+        // badge — pending ไม่มี badge
+        const badgeHtml = statusTH[status]
+            ? `<span class="status-badge ${status}">${statusTH[status]}</span>`
+            : '';
 
         return `
             <div class="rep-card">
-                <div class="rep-card-header ${headerClass}">
-                    ${doctorNameHtml}
+                <div class="rep-card-header status-${status}">
+                    <span class="rep-doctor-name">${leave.doctor_name}</span>
                     <span class="rep-dept-name">${leave.department_name} · ${delegateLabel}</span>
-                    <span class="status-badge ${status}">${statusTH[status]}</span>
+                    ${badgeHtml}
                 </div>
-                <div class="rep-date-bar">
-                    📅 ${dateRange}
-                </div>
+                <div class="rep-date-bar">📅 ${dateRange}</div>
                 ${dayRows ? `<div class="rep-day-list">${dayRows}</div>` : ''}
             </div>`;
     }
