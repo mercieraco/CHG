@@ -848,6 +848,8 @@
 
     <!-- แสดงข้อมูลการลาที่บันทึกแล้ว -->
     <div id="leaveRecords" class="leave-records"></div>
+    <!-- GEN3: แสดงการลาแผนกเสริม -->
+    <div id="leaveRecordsSecondary"></div>
 
     <!-- Message แสดงผล (ย้ายมาอยู่เหนือปุ่มบันทึก) -->
     <div id="message" class="message"></div>
@@ -867,6 +869,10 @@
 
     let currentYear = new Date().getFullYear();
     let currentMonth = new Date().getMonth();
+
+    // GEN3: state เดือน/ปี ปฏิทินแผนกเสริม
+    var deptCalendarState = {};
+
     let selectedDates = [];
     let isSelecting = false;
     let doctorLeaves = [];
@@ -1554,6 +1560,13 @@
             
             container.appendChild(recordDiv);
         });
+        // GEN3: re-render secondary เมื่อเรียก global
+        if (departmentId === null && typeof renderSecondaryLeaveRecords === "function" && userDepartments.length > 1) {
+            var cbox = document.getElementById("departmentCheckboxes");
+            if (cbox && cbox.querySelectorAll("input:checked").length > 0) {
+                renderSecondaryLeaveRecords(userDepartments);
+            }
+        }
     }
 
     // ดึงชื่อ (ไม่เอานามสกุล)
@@ -2403,6 +2416,68 @@
         renderCalendar();
     }
 
+    // GEN3: helper functions ปฏิทินแผนกเสริม
+    function getDeptCalState(deptId) {
+        if (!deptCalendarState[deptId]) {
+            deptCalendarState[deptId] = { year: currentYear, month: currentMonth };
+        }
+        return deptCalendarState[deptId];
+    }
+
+    function prevDeptMonth(deptId) {
+        var s = getDeptCalState(deptId);
+        s.month--;
+        if (s.month < 0) { s.month = 11; s.year--; }
+        updateDeptCalendarLabel(deptId);
+        renderDepartmentCalendar(deptId);
+    }
+
+    function nextDeptMonth(deptId) {
+        var s = getDeptCalState(deptId);
+        s.month++;
+        if (s.month > 11) { s.month = 0; s.year++; }
+        updateDeptCalendarLabel(deptId);
+        renderDepartmentCalendar(deptId);
+    }
+
+    function updateDeptCalendarLabel(deptId) {
+        var mn = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
+        var s = getDeptCalState(deptId);
+        var el = document.getElementById("dept-cal-label-" + deptId);
+        if (el) el.textContent = mn[s.month] + " " + (s.year + 543);
+    }
+
+    function renderSecondaryLeaveRecords(selectedDepts) {
+        var container = document.getElementById("leaveRecordsSecondary");
+        if (!container) return;
+        container.innerHTML = "";
+        var checkedIds = new Set(
+            Array.from(document.querySelectorAll("#departmentCheckboxes input[type='checkbox']:checked"))
+                .map(function(cb) { return parseInt(cb.value); })
+        );
+        var secondaryDepts = (selectedDepts || userDepartments).filter(function(d) {
+            var isPrimary = d.is_primary === true || d.is_primary === 1;
+            return !isPrimary && checkedIds.has(d.department_id);
+        });
+        if (secondaryDepts.length === 0) return;
+        secondaryDepts.forEach(function(dept) {
+            var wrapper = document.createElement("div");
+            wrapper.id = "leaveRecordsWrapper-" + dept.department_id;
+            wrapper.className = "leave-records";
+            wrapper.style.marginTop = "10px";
+            var header = document.createElement("div");
+            header.style.cssText = "padding:6px 12px;background:#f0f2ff;border-left:4px solid #667eea;border-radius:4px;margin-bottom:6px;font-size:13px;color:#667eea;font-weight:600;";
+            header.textContent = "📍 บันทึกการลา — " + dept.department_name;
+            wrapper.appendChild(header);
+            var inner = document.createElement("div");
+            inner.id = "leaveRecords-secondary-" + dept.department_id;
+            wrapper.appendChild(inner);
+            container.appendChild(wrapper);
+            displayLeaveRecords(dept.department_id, "leaveRecords-secondary-" + dept.department_id);
+        });
+    }
+
+
     // เดือนถัดไป
     function nextMonth() {
         currentMonth++;
@@ -3069,6 +3144,11 @@
                         <p style="margin: 0 0 10px 0; font-size: 13px; color: #666;">
                             แสดงการลาของทุกคนในแผนกนี้
                         </p>
+                        <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:10px;">
+                            <button onclick="prevDeptMonth(${dept.department_id})" style="padding:5px 14px;background:#667eea;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;">&#9664;</button>
+                            <span id="dept-cal-label-${dept.department_id}" style="font-weight:600;color:#333;font-size:15px;min-width:150px;text-align:center;"></span>
+                            <button onclick="nextDeptMonth(${dept.department_id})" style="padding:5px 14px;background:#667eea;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;">&#9654;</button>
+                        </div>
                         <div class="calendar" id="dept-calendar-${dept.department_id}"></div>
                     </div>
                     
@@ -3112,6 +3192,9 @@
         for (const dept of selectedDepts) {
             await loadReplacementDoctorsForDept(dept.department_id);
         }
+
+        // GEN3: แสดงการลาแผนกเสริม
+        renderSecondaryLeaveRecords(selectedDepts);
     }
 
     // โหลด Duties ของแผนก
@@ -3871,8 +3954,13 @@
         const monthNames = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
                           'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
         
-        const firstDay = new Date(currentYear, currentMonth, 1);
-        const lastDay = new Date(currentYear, currentMonth + 1, 0);
+        // GEN3: ใช้ state ของแผนกนี้
+        var _s = getDeptCalState(departmentId);
+        var useYear = _s.year;
+        var useMonth = _s.month;
+        updateDeptCalendarLabel(departmentId);
+        const firstDay = new Date(useYear, useMonth, 1);
+        const lastDay = new Date(useYear, useMonth + 1, 0);
         const startDayOfWeek = firstDay.getDay();
         const daysInMonth = lastDay.getDate();
         
@@ -4014,7 +4102,7 @@
         // วันในเดือน
         const today = new Date();
         for (let day = 1; day <= daysInMonth; day++) {
-            const date = new Date(currentYear, currentMonth, day);
+            const date = new Date(useYear, useMonth, day);
             const dateStr = formatDate(date);
             const dayOfWeek = date.getDay();
             
