@@ -183,7 +183,6 @@
             gap: 10px;
             flex-wrap: wrap;
         }
-        .rep-card-header.status-pending  { background: #fff8e1; border-left: 5px solid #ffb300; }
         .rep-card-header.status-approved { background: #212121; border-left: 5px solid #000; }
         .rep-card-header.status-rejected {
             background: #f5f5f5;
@@ -226,7 +225,6 @@
             font-weight: 700;
             white-space: nowrap;
         }
-        .status-badge.pending  { background: #ffb300; color: white; }
         .status-badge.approved { background: #444;    color: white; border: 1px solid #888; }
         .status-badge.rejected { background: #bbb;    color: #333; border: 1px solid #888; }
 
@@ -559,7 +557,12 @@
                 return;
             }
 
-            body.innerHTML = data.data.map(leave => renderRepCard(leave)).join('');
+            const filtered = data.data.filter(l => l.approval_status !== 'pending');
+            if (filtered.length === 0) {
+                body.innerHTML = '<div class="empty-state">ไม่มีรายการที่รับฝาก</div>';
+                return;
+            }
+            body.innerHTML = filtered.map(leave => renderRepCard(leave)).join('');
 
         } catch (err) {
             body.innerHTML = `<div class="empty-state">❌ ${err.message}</div>`;
@@ -577,9 +580,9 @@
     }
 
     function renderRepCard(leave) {
-        const status    = leave.approval_status; // pending | approved | rejected
-        const statusTH  = { pending:'⏳ รออนุมัติ', approved:'✅ อนุมัติแล้ว', rejected:'❌ ปฏิเสธ' };
-        const chipClass = { pending:'', approved:'approved-chip', rejected:'rejected-chip' };
+        const status    = leave.approval_status; // approved | rejected
+        const statusTH  = { approved:'✅ อนุมัติแล้ว', rejected:'❌ ปฏิเสธ' };
+        const chipClass = { approved:'approved-chip', rejected:'rejected-chip' };
 
         const dateRange = leave.start_date === leave.end_date
             ? formatDateThai(leave.start_date)
