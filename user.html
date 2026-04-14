@@ -2797,6 +2797,9 @@
             currentYear++;
         }
 
+        renderCalendar();
+    }
+
     // GEN3 V2: helper functions สำหรับปฏิทินแผนกเสริม
     function getDeptCalState(deptId) {
         if (!deptCalendarState[deptId]) {
@@ -2828,8 +2831,6 @@
         if (el) el.textContent = mn[s.month] + " " + (s.year + 543);
     }
 
-        renderCalendar();
-    }
 
     // บันทึกการลา
     // GEN4 V3 Step 5: ฟังก์ชัน Group วันติดกัน (ทั้ง delegate และ no-delegate)
