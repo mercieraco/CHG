@@ -1140,10 +1140,10 @@
                 <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 2px solid #667eea;">
                     <h4 style="margin: 0 0 10px 0; color: #667eea;">📅 ปฏิทินแผนก ${dept.department_name}</h4>
                     <p style="margin: 0 0 10px 0; font-size: 13px; color: #666;">แสดงการลาของทุกคนในแผนกนี้</p>
-                    <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 10px;">
-                        <button onclick="prevDeptMonth(${dept.department_id})" style="padding: 6px 14px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">◀</button>
-                        <span id="dept-cal-label-${dept.department_id}" style="font-weight: 600; color: #333; font-size: 15px; min-width: 140px; text-align: center;"></span>
-                        <button onclick="nextDeptMonth(${dept.department_id})" style="padding: 6px 14px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">▶</button>
+                    <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:10px;">
+                        <button onclick="prevDeptMonth(${dept.department_id})" style="padding:5px 14px;background:#667eea;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;">&#9664;</button>
+                        <span id="dept-cal-label-${dept.department_id}" style="font-weight:600;color:#333;font-size:15px;min-width:150px;text-align:center;"></span>
+                        <button onclick="nextDeptMonth(${dept.department_id})" style="padding:5px 14px;background:#667eea;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;">&#9654;</button>
                     </div>
                     <div class="calendar" id="dept-calendar-${dept.department_id}"></div>
                 </div>
@@ -1177,7 +1177,6 @@
             // GEN3: render ปฏิทินแผนกเสริม
             if (!isPrimary) {
                 await renderDepartmentCalendar(dept.department_id);
-                updateDeptCalendarLabel(dept.department_id);
             }
         }
 
@@ -3600,6 +3599,40 @@
         
         container.innerHTML = html;
         
+
+    // GEN3 V2: state เดือน/ปี แยกต่อแผนกเสริม
+    const deptCalendarState = {};
+
+    function getDeptCalState(deptId) {
+        if (!deptCalendarState[deptId]) {
+            deptCalendarState[deptId] = { year: currentYear, month: currentMonth };
+        }
+        return deptCalendarState[deptId];
+    }
+
+    function prevDeptMonth(deptId) {
+        const s = getDeptCalState(deptId);
+        s.month--;
+        if (s.month < 0) { s.month = 11; s.year--; }
+        updateDeptCalendarLabel(deptId);
+        renderDepartmentCalendar(deptId);
+    }
+
+    function nextDeptMonth(deptId) {
+        const s = getDeptCalState(deptId);
+        s.month++;
+        if (s.month > 11) { s.month = 0; s.year++; }
+        updateDeptCalendarLabel(deptId);
+        renderDepartmentCalendar(deptId);
+    }
+
+    function updateDeptCalendarLabel(deptId) {
+        const mn = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
+        const s = getDeptCalState(deptId);
+        const el = document.getElementById("dept-cal-label-" + deptId);
+        if (el) el.textContent = mn[s.month] + " " + (s.year + 543);
+    }
+
         // Render ปฏิทินแผนกเสริมสำหรับแต่ละแผนก
         for (const dept of selectedDepts) {
             await renderDepartmentCalendar(dept.department_id);
@@ -4293,40 +4326,6 @@
         return lastName.charAt(0);
     }
 
-    // GEN3: state เดือน/ปี แยกต่อแผนกเสริม
-    const deptCalendarState = {};
-
-    function getDeptCalState(deptId) {
-        if (!deptCalendarState[deptId]) {
-            deptCalendarState[deptId] = { year: currentYear, month: currentMonth };
-        }
-        return deptCalendarState[deptId];
-    }
-
-    function prevDeptMonth(deptId) {
-        const s = getDeptCalState(deptId);
-        s.month--;
-        if (s.month < 0) { s.month = 11; s.year--; }
-        renderDepartmentCalendar(deptId);
-        updateDeptCalendarLabel(deptId);
-    }
-
-    function nextDeptMonth(deptId) {
-        const s = getDeptCalState(deptId);
-        s.month++;
-        if (s.month > 11) { s.month = 0; s.year++; }
-        renderDepartmentCalendar(deptId);
-        updateDeptCalendarLabel(deptId);
-    }
-
-    function updateDeptCalendarLabel(deptId) {
-        const monthNames = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
-                            'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
-        const s = getDeptCalState(deptId);
-        const label = document.getElementById(`dept-cal-label-${deptId}`);
-        if (label) label.textContent = `${monthNames[s.month]} ${s.year + 543}`;
-    }
-
     // Render ปฏิทินแผนกเสริม (แสดงการลาทุกคนในแผนก)
     async function renderDepartmentCalendar(departmentId) {
         const calendar = document.getElementById(`dept-calendar-${departmentId}`);
@@ -4334,11 +4333,6 @@
         
         console.log(`🎨 Rendering calendar for department ${departmentId}`);
         
-        // GEN3: ใช้ state ของแผนกนี้ (ถ้าไม่มีให้ใช้ currentYear/currentMonth)
-        const state = getDeptCalState(departmentId);
-        const useYear  = state.year;
-        const useMonth = state.month;
-
         // โหลดการลาทั้งแผนก
         const response = await fetch(`${LEAVE_API_URL}/api/leaves/department/${departmentId}`);
         const data = await response.json();
@@ -4349,6 +4343,11 @@
         const monthNames = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
                           'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
         
+        // GEN3 V2: ใช้ state ของแผนกนี้
+        const _s = getDeptCalState(departmentId);
+        const useYear = _s.year;
+        const useMonth = _s.month;
+        updateDeptCalendarLabel(departmentId);
         const firstDay = new Date(useYear, useMonth, 1);
         const lastDay = new Date(useYear, useMonth + 1, 0);
         const startDayOfWeek = firstDay.getDay();
@@ -4494,6 +4493,11 @@
         const today = new Date();
         for (let day = 1; day <= daysInMonth; day++) {
             const date = new Date(useYear, useMonth, day);
+            const dateStr = formatDate(date);
+            const dayOfWeek = date.getDay();
+            
+            // *** Step 5: เช็คว่าวันนี้ถูกเลือกในปฏิทินหลักหรือไม่ ***
+            const isSelected = selectedDates && selectedDates.includes(dateStr);
             
             let classes = ['calendar-day'];
             
