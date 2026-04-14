@@ -848,6 +848,9 @@
 
     <!-- แสดงข้อมูลการลาที่บันทึกแล้ว -->
     <div id="leaveRecords" class="leave-records"></div>
+
+    <!-- GEN3: แสดงข้อมูลการลาของแผนกเสริม (แสดงเมื่อ checkbox แผนกเสริมถูกติ๊ก) -->
+    <div id="leaveRecordsSecondary"></div>
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
@@ -3581,6 +3584,47 @@
         
         // *** แสดงรายการลาหลังโหลดแผนกเสร็จ (แผนกหลัก) ***
         displayLeaveRecords();
+
+        // GEN3: แสดงรายการลาของแผนกเสริม
+        renderSecondaryLeaveRecords(selectedDepts);
+    }
+
+    // GEN3: render leaveRecords ของแผนกเสริมทุกแผนกที่ถูก check
+    function renderSecondaryLeaveRecords(selectedDepts) {
+        const container = document.getElementById('leaveRecordsSecondary');
+        if (!container) return;
+        container.innerHTML = '';
+
+        const secondaryDepts = selectedDepts.filter(d => {
+            const isPrimary = d.is_primary === true || d.is_primary === 1;
+            return !isPrimary;
+        });
+
+        if (secondaryDepts.length === 0) return;
+
+        secondaryDepts.forEach(dept => {
+            // สร้าง wrapper div ต่อแผนกเสริม
+            const wrapper = document.createElement('div');
+            wrapper.id = `leaveRecordsWrapper-${dept.department_id}`;
+            wrapper.className = 'leave-records';
+            wrapper.style.marginTop = '10px';
+
+            // header บอกชื่อแผนก
+            const header = document.createElement('div');
+            header.style.cssText = 'padding: 6px 12px; background: #f0f2ff; border-left: 4px solid #667eea; border-radius: 4px; margin-bottom: 6px; font-size: 13px; color: #667eea; font-weight: 600;';
+            header.textContent = `📍 บันทึกการลา — ${dept.department_name}`;
+            wrapper.appendChild(header);
+
+            // inner div สำหรับ displayLeaveRecords
+            const inner = document.createElement('div');
+            inner.id = `leaveRecords-secondary-${dept.department_id}`;
+            wrapper.appendChild(inner);
+
+            container.appendChild(wrapper);
+
+            // render records
+            displayLeaveRecords(dept.department_id, `leaveRecords-secondary-${dept.department_id}`);
+        });
     }
 
     // โหลด Duties ของแผนก
