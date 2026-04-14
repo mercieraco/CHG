@@ -1698,6 +1698,11 @@
             
             container.appendChild(recordDiv);
         });
+
+        // GEN3: ถ้าเรียกแบบ global (แผนกหลัก) → re-render secondary ด้วย
+        if (departmentId === null && typeof renderSecondaryLeaveRecords === 'function' && userDepartments.length > 1) {
+            renderSecondaryLeaveRecords(userDepartments);
+        }
     }
 
     // ดึงชื่อ (ไม่เอานามสกุล)
