@@ -1130,11 +1130,22 @@
         
         // Loop แต่ละแผนก
         for (const dept of selectedDepts) {
+            const isPrimary = userDepartments.find(d => d.department_id == dept.department_id)?.is_primary === 1;
             const deptSection = document.createElement('div');
             deptSection.className = 'department-section';
             deptSection.style.cssText = 'margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #667eea;';
             
+            // GEN3: เพิ่ม div ปฏิทินแผนกเสริม (ซ่อนแผนกหลัก)
+            const calendarHtml = isPrimary ? '' : `
+                <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 2px solid #667eea;">
+                    <h4 style="margin: 0 0 10px 0; color: #667eea;">📅 ปฏิทินแผนก ${dept.department_name}</h4>
+                    <p style="margin: 0 0 10px 0; font-size: 13px; color: #666;">แสดงการลาของทุกคนในแผนกนี้</p>
+                    <div class="calendar" id="dept-calendar-${dept.department_id}"></div>
+                </div>
+            `;
+
             deptSection.innerHTML = `
+                ${calendarHtml}
                 <h3 style="color: #667eea; margin-top: 0; margin-bottom: 15px;">
                     📋 แผนก: ${dept.department_name}
                 </h3>
@@ -1157,7 +1168,15 @@
             
             // โหลด delegation options
             await loadDepartmentDelegation(dept.department_id);
+
+            // GEN3: render ปฏิทินแผนกเสริม
+            if (!isPrimary) {
+                await renderDepartmentCalendar(dept.department_id);
+            }
         }
+
+        // GEN3: render secondary leave records ตาม checkbox state
+        renderSecondaryLeaveRecords(userDepartments);
     }
     
     // โหลด Duties ของแผนก
@@ -1700,8 +1719,13 @@
         });
 
         // GEN3: ถ้าเรียกแบบ global (แผนกหลัก) → re-render secondary ด้วย
+        // เช็คว่า checkbox container แสดงอยู่ก่อน (ป้องกัน render ก่อน user เลือก)
         if (departmentId === null && typeof renderSecondaryLeaveRecords === 'function' && userDepartments.length > 1) {
-            renderSecondaryLeaveRecords(userDepartments);
+            const checkboxContainer = document.getElementById('departmentCheckboxes');
+            const hasCheckedBoxes = checkboxContainer && checkboxContainer.querySelectorAll('input:checked').length > 0;
+            if (hasCheckedBoxes) {
+                renderSecondaryLeaveRecords(userDepartments);
+            }
         }
     }
 
@@ -3600,34 +3624,36 @@
         if (!container) return;
         container.innerHTML = '';
 
-        const secondaryDepts = selectedDepts.filter(d => {
+        // อ่าน checkbox state จริง — แสดงเฉพาะแผนกเสริมที่ถูก checked
+        const checkedIds = new Set(
+            Array.from(document.querySelectorAll('#departmentCheckboxes input[type="checkbox"]:checked'))
+                .map(cb => parseInt(cb.value))
+        );
+
+        const secondaryDepts = (selectedDepts || userDepartments).filter(d => {
             const isPrimary = d.is_primary === true || d.is_primary === 1;
-            return !isPrimary;
+            return !isPrimary && checkedIds.has(d.department_id);
         });
 
         if (secondaryDepts.length === 0) return;
 
         secondaryDepts.forEach(dept => {
-            // สร้าง wrapper div ต่อแผนกเสริม
             const wrapper = document.createElement('div');
             wrapper.id = `leaveRecordsWrapper-${dept.department_id}`;
             wrapper.className = 'leave-records';
             wrapper.style.marginTop = '10px';
 
-            // header บอกชื่อแผนก
             const header = document.createElement('div');
             header.style.cssText = 'padding: 6px 12px; background: #f0f2ff; border-left: 4px solid #667eea; border-radius: 4px; margin-bottom: 6px; font-size: 13px; color: #667eea; font-weight: 600;';
             header.textContent = `📍 บันทึกการลา — ${dept.department_name}`;
             wrapper.appendChild(header);
 
-            // inner div สำหรับ displayLeaveRecords
             const inner = document.createElement('div');
             inner.id = `leaveRecords-secondary-${dept.department_id}`;
             wrapper.appendChild(inner);
 
             container.appendChild(wrapper);
 
-            // render records
             displayLeaveRecords(dept.department_id, `leaveRecords-secondary-${dept.department_id}`);
         });
     }
