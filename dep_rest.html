@@ -1776,7 +1776,7 @@
                         
                         if (window.departmentDuties && window.departmentDuties.length > 0) {
                             hasDutyOnThisDay = window.departmentDuties.some(dd => 
-                                dd.doctor_id === doctorId && dd[dayName] === 1
+                                dd.doctor_id === doctorId && (dd.day_of_week ? dd.day_of_week === dayName : d(d.day_of_week ? d.day_of_week === dayName : d[dayName] === 1))
                             );
                         } else {
                             hasDutyOnThisDay = true;
@@ -1811,7 +1811,7 @@
                     
                     if (window.departmentDuties && window.departmentDuties.length > 0) {
                         hasDutyOnThisDay = window.departmentDuties.some(dd => 
-                            dd.doctor_id === doctorId && dd[dayName] === 1
+                            dd.doctor_id === doctorId && (dd.day_of_week ? dd.day_of_week === dayName : d(d.day_of_week ? d.day_of_week === dayName : d[dayName] === 1))
                         );
                     } else {
                         hasDutyOnThisDay = true;  // safe default
@@ -2299,7 +2299,7 @@
                 
                 // หาแพทย์ที่มี Duty ตรงกับ dutyId และ วันนี้
                 const busyDoctorIds = dutiesData.data
-                    .filter(dd => dd.duty_id === dutyId && dd[dayName] === 1)
+                    .filter(dd => dd.duty_id === dutyId && (dd.day_of_week ? dd.day_of_week === dayName : d(d.day_of_week ? d.day_of_week === dayName : d[dayName] === 1)))
                     .map(dd => dd.doctor_id);
                 
                 console.log('=== Filtering Busy Doctors ===');
@@ -3229,7 +3229,7 @@
                 const result = [];
                 selectedDates.forEach(date => {
                     const dayName = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][new Date(date).getDay()];
-                    const dutiesOnThisDay = allDuties.filter(duty => duty[dayName] === 1);
+                    const dutiesOnThisDay = allDuties.filter(duty => (duty.day_of_week ? duty.day_of_week === dayName : duty[dayName] === 1));
                     
                     result.push({
                         date: date,
@@ -3739,7 +3739,7 @@
 
                 for (const date of selectedDates) {
                     const dayName = dayNames[new Date(date).getDay()];
-                    const dutiesOnThisDay = leaveDoctorDuties.filter(d => d[dayName] === 1);
+                    const dutiesOnThisDay = leaveDoctorDuties.filter(d => (d.day_of_week ? d.day_of_week === dayName : d[dayName] === 1));
 
                     for (const duty of dutiesOnThisDay) {
                         const res = await fetch(
@@ -3798,7 +3798,7 @@
 
             for (const date of selectedDates) {
                 const dayName = dayNames[new Date(date).getDay()];
-                const dutiesOnThisDay = leaveDoctorDuties.filter(d => d[dayName] === 1);
+                const dutiesOnThisDay = leaveDoctorDuties.filter(d => (d.day_of_week ? d.day_of_week === dayName : d[dayName] === 1));
 
                 for (const duty of dutiesOnThisDay) {
                     // ส่ง selectedDeptId เพื่อกรองแพทย์จากแผนกที่ user เลือก
@@ -3894,7 +3894,7 @@
 
             for (const date of dates) {
                 const dayName = dayNames[new Date(date).getDay()];
-                const dutiesOnThisDay = currentDoctorDuties.filter(d => d[dayName] === 1);
+                const dutiesOnThisDay = currentDoctorDuties.filter(d => (d.day_of_week ? d.day_of_week === dayName : d[dayName] === 1));
 
                 for (const duty of dutiesOnThisDay) {
                     // เรียก available-replacements API ต่อ duty ต่อวัน
@@ -4072,7 +4072,7 @@
                         // เช็ค Duty ของแผนกนี้
                         if (deptDuties && deptDuties.length > 0) {
                             hasDutyOnThisDay = deptDuties.some(dd => 
-                                dd.doctor_id === leaveDoctorId && dd[dayName] === 1
+                                dd.doctor_id === leaveDoctorId && (dd.day_of_week ? dd.day_of_week === dayName : d(d.day_of_week ? d.day_of_week === dayName : d[dayName] === 1))
                             );
                         } else {
                             hasDutyOnThisDay = true;
