@@ -380,85 +380,101 @@
         return { baseName: dutyName, startTime: null, endTime: null };
     }
 
-    function groupDoctorDutiesByBaseName(duties) {
-        const parsed   = duties.map(d => ({ ...d, _p: parseDutyName(d.duty_name) }));
-        const baseMap  = {};
-        parsed.forEach(d => {
-            if (d._p.startTime !== null) {
-                if (!baseMap[d._p.baseName]) baseMap[d._p.baseName] = [];
-                baseMap[d._p.baseName].push(d);
-            }
-        });
-        const groupNames = new Set(Object.keys(baseMap).filter(k => baseMap[k].length >= 2));
-        const result = [], added = new Set();
-        parsed.forEach(d => {
-            const { baseName, startTime } = d._p;
-            if (groupNames.has(baseName) && startTime !== null) {
-                if (!added.has(baseName)) {
-                    added.add(baseName);
-                    const subs    = baseMap[baseName].sort((a,b) => a._p.startTime.localeCompare(b._p.startTime));
-                    const dayKeys = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
-                    const sumDays = {};
-                    dayKeys.forEach(k => { sumDays[k] = subs.reduce((s,x) => s + (x[k] ? 1 : 0), 0); });
-                    const sumStart = subs.map(x=>x._p.startTime).reduce((a,b)=>a<b?a:b);
-                    const sumEnd   = subs.map(x=>x._p.endTime).reduce((a,b)=>a>b?a:b);
-                    result.push({ type:'group', baseName, duties:subs, summary:{ startTime:sumStart, endTime:sumEnd, ...sumDays } });
-                }
-            } else {
-                result.push({ type:'single', duty:d });
-            }
-        });
-        return result;
-    }
+    const DAY_LABEL_UD = {
+        monday:'จ', tuesday:'อ', wednesday:'พ',
+        thursday:'พฤ', friday:'ศ', saturday:'ส', sunday:'อา'
+    };
 
-    function renderDutyDays(duty) {
-        const map = { monday:'จ', tuesday:'อ', wednesday:'พ', thursday:'พฤ', friday:'ศ', saturday:'ส', sunday:'อา' };
-        return Object.entries(map).filter(([k])=>duty[k]).map(([,v])=>v).join(', ');
-    }
-    function renderSummaryDays(s) {
-        const map = { monday:'จ', tuesday:'อ', wednesday:'พ', thursday:'พฤ', friday:'ศ', saturday:'ส', sunday:'อา' };
-        return Object.entries(map).filter(([k])=>s[k]).map(([k,v])=>`${s[k]} ${v}`).join(', ');
-    }
-
+    // GEN5 V1: renderDoctorDutiesHTML — ใช้ day_of_week + backward compat boolean
     function renderDoctorDutiesHTML(duties, prefix) {
-        duties.sort((a,b) => {
-            const ae=/^[a-zA-Z]/.test(a.duty_name), be=/^[a-zA-Z]/.test(b.duty_name);
-            if (ae&&!be) return -1; if (!ae&&be) return 1;
-            return a.duty_name.localeCompare(b.duty_name, ['en','th']);
-        });
-        const grouped = groupDoctorDutiesByBaseName(duties);
-        let html = '<div class="doctor-duties-list">';
-        grouped.forEach(item => {
-            if (item.type === 'single') {
-                const d = item.duty;
-                html += `
-                    <div class="doctor-duty-item">
-                        <span class="doctor-duty-name">${d.duty_name}</span>
-                        <span class="doctor-duty-days">${renderDutyDays(d)}</span>
-                    </div>`;
+        if (duties.length === 0) return '';
+
+        // Expand: record เดิม (day_of_week=null) → แตกตาม boolean
+        const dayKeys = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
+        const expanded = [];
+        duties.forEach(d => {
+            if (d.day_of_week) {
+                expanded.push(d);
             } else {
-                const gid = `${prefix}_${item.baseName.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'')}`;
-                const { summary, duties: subs } = item;
+                dayKeys.forEach(k => {
+                    if (d[k] === 1 || d[k] === true) expanded.push({ ...d, day_of_week: k });
+                });
+            }
+        });
+
+        // เรียง จ→อา → start_time
+        const dayOrder = dayKeys;
+        expanded.sort((a,b) => {
+            const dd = dayOrder.indexOf(a.day_of_week) - dayOrder.indexOf(b.day_of_week);
+            if (dd !== 0) return dd;
+            return (a.start_time||'00:00').localeCompare(b.start_time||'00:00');
+        });
+
+        // จัดกลุ่มตาม baseName
+        const groups = [];
+        let cur = null;
+        expanded.forEach(d => {
+            const p = parseDutyName(d.duty_name);
+            if (p.baseName !== (cur && cur.baseName)) {
+                cur = { baseName: p.baseName, rows: [] };
+                groups.push(cur);
+            }
+            cur.rows.push({ duty: d, parsed: p });
+        });
+
+        let html = '<div class="doctor-duties-list">';
+        groups.forEach((group, gi) => {
+            const gid = `${prefix}_${gi}_${group.baseName.replace(/[^a-zA-Z0-9]/g,'_')}`;
+            const hasTime = group.rows.some(r => r.parsed.startTime);
+
+            if (hasTime && group.rows.length > 1) {
+                // หลาย slot → header + toggle
+                const sumDays  = group.rows.map(r => DAY_LABEL_UD[r.duty.day_of_week]||'').join(', ');
+                const starts   = group.rows.map(r=>r.parsed.startTime).filter(Boolean);
+                const ends     = group.rows.map(r=>r.parsed.endTime).filter(Boolean);
+                const timeRange = starts.length
+                    ? `(${starts.reduce((a,b)=>a<b?a:b)}-${ends.reduce((a,b)=>a>b?a:b)})`
+                    : '';
+
                 html += `
-                    <div class="doctor-duty-item doctor-duty-group-header">
-                        <span class="doctor-duty-name" style="font-weight:700;">${item.baseName}</span>
+                    <div class="doctor-duty-group-header doctor-duty-item">
+                        <span class="doctor-duty-name" style="font-weight:700;">${group.baseName}</span>
                         <button onclick="toggleDutyGroup('${gid}')" id="dg_btn_${gid}" class="btn-toggle-group">แสดง</button>
                     </div>
                     <div class="doctor-duty-item doctor-duty-group-summary" id="dg_sum_${gid}">
-                        <span class="doctor-duty-name" style="color:#888;padding-left:16px;">(${summary.startTime}-${summary.endTime})</span>
-                        <span class="doctor-duty-days">${renderSummaryDays(summary)}</span>
+                        <span class="doctor-duty-name" style="color:#888;padding-left:16px;">${timeRange}</span>
+                        <span class="doctor-duty-days">${sumDays}</span>
                     </div>
                     <div id="dg_sub_${gid}" style="display:none;">`;
-                subs.forEach(d => {
+                group.rows.forEach(({ duty, parsed }) => {
+                    const dayLabel  = DAY_LABEL_UD[duty.day_of_week] || '';
+                    const timeLabel = parsed.startTime ? `(${parsed.startTime}-${parsed.endTime})` : '';
                     html += `
                         <div class="doctor-duty-item doctor-duty-group-subrow">
-                            <span class="doctor-duty-name" style="color:#555;padding-left:16px;">(${d._p.startTime}-${d._p.endTime})</span>
-                            <span class="doctor-duty-days">${renderDutyDays(d)}</span>
+                            <span class="doctor-duty-name" style="color:#555;padding-left:16px;">${dayLabel} ${timeLabel}</span>
+                        </div>`;
+                });
+                html += `</div>`;
+            } else {
+                // 1 row หรือไม่มีเวลา → แสดงตรงๆ
+                html += `
+                    <div class="doctor-duty-group-label">
+                        <span class="doctor-duty-base-name">${group.baseName}</span>
+                    </div>
+                    <div class="doctor-duty-group-rows">`;
+                group.rows.forEach(({ duty, parsed }) => {
+                    const dayLabel  = DAY_LABEL_UD[duty.day_of_week] || '';
+                    const timeLabel = parsed.startTime ? `(${parsed.startTime}-${parsed.endTime})` : '';
+                    html += `
+                        <div class="doctor-duty-item">
+                            <span class="doctor-duty-day-col">${dayLabel}</span>
+                            <span class="doctor-duty-time-col">${timeLabel}</span>
                         </div>`;
                 });
                 html += `</div>`;
             }
         });
+
         html += '</div>';
         return html;
     }
