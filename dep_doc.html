@@ -394,15 +394,51 @@
 
     .doctor-duty-item {
         background: white;
-        padding: 8px 12px;
+        padding: 7px 12px;
         border-radius: 6px;
-        margin-bottom: 8px;
+        margin-bottom: 4px;
         display: grid;
-        grid-template-columns: 100px 1fr auto;
-        gap: 15px;
+        grid-template-columns: 36px 1fr auto;
+        gap: 10px;
         align-items: center;
         border: 1px solid #e0e0e0;
         font-size: 14px;
+    }
+
+    /* GEN5: วันในคอลัมน์แรก */
+    .doctor-duty-day-col {
+        font-weight: 700;
+        color: #667eea;
+        text-align: center;
+        font-size: 13px;
+        min-width: 28px;
+    }
+
+    /* GEN5: เวลาในคอลัมน์ที่สอง */
+    .doctor-duty-time-col {
+        color: #555;
+        font-size: 13px;
+    }
+
+    /* GEN5: header ชื่อ duty (baseName) */
+    .doctor-duty-group-label {
+        padding: 6px 12px 2px 12px;
+        margin-top: 8px;
+    }
+    .doctor-duty-group-label:first-child { margin-top: 0; }
+
+    .doctor-duty-base-name {
+        font-weight: 700;
+        color: #333;
+        font-size: 14px;
+    }
+
+    /* GEN5: rows ของ group */
+    .doctor-duty-group-rows {
+        padding-left: 8px;
+        border-left: 3px solid #667eea;
+        margin-bottom: 8px;
+        margin-left: 4px;
     }
 
     .doctor-duty-info {
@@ -3165,179 +3201,52 @@
     }
 
     // ============================================
-    // Phase 2: Group Doctor Duties by Base Name (สำหรับแพทย์)
-    // reuse parseDutyName() เดิม แต่ใช้ monday/tuesday/... fields
+    // GEN5 V1: renderDoctorDutiesHTML
+    // Data จาก API มี day_of_week แล้ว (เรียงมาจาก worker จ→อา → เวลา)
+    // แสดง: วัน  (HH:MM-HH:MM)  [ลบ] แยกตาม baseName
     // ============================================
-    function groupDoctorDutiesByBaseName(duties) {
-        const parsed = duties.map(duty => ({
-            ...duty,
-            _parsed: parseDutyName(duty.duty_name)
-        }));
+    const DAY_LABEL = {
+        monday:'จ', tuesday:'อ', wednesday:'พ',
+        thursday:'พฤ', friday:'ศ', saturday:'ส', sunday:'อา'
+    };
 
-        // หา baseName ที่มี time slot >= 2
-        const baseNameMap = {};
-        parsed.forEach(duty => {
-            const { baseName, startTime } = duty._parsed;
-            if (startTime !== null) {
-                if (!baseNameMap[baseName]) baseNameMap[baseName] = [];
-                baseNameMap[baseName].push(duty);
-            }
-        });
-
-        const groupNames = new Set(
-            Object.keys(baseNameMap).filter(name => baseNameMap[name].length >= 2)
-        );
-
-        const result = [];
-        const addedGroups = new Set();
-
-        parsed.forEach(duty => {
-            const { baseName, startTime } = duty._parsed;
-
-            if (groupNames.has(baseName) && startTime !== null) {
-                if (!addedGroups.has(baseName)) {
-                    addedGroups.add(baseName);
-
-                    // เรียงตาม startTime
-                    const groupDuties = baseNameMap[baseName].sort((a, b) =>
-                        a._parsed.startTime.localeCompare(b._parsed.startTime)
-                    );
-
-                    // summary days — รวมจำนวนวัน (true/false → 0/1)
-                    const summaryStart = groupDuties.map(d => d._parsed.startTime).reduce((a, b) => a < b ? a : b);
-                    const summaryEnd   = groupDuties.map(d => d._parsed.endTime).reduce((a, b) => a > b ? a : b);
-
-                    // สร้าง summary days แบบนับจำนวน
-                    const dayKeys = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
-                    const summaryDays = {};
-                    dayKeys.forEach(day => {
-                        summaryDays[day] = groupDuties.reduce((sum, d) => sum + (d[day] ? 1 : 0), 0);
-                    });
-
-                    result.push({
-                        type: 'group',
-                        baseName,
-                        duties: groupDuties,
-                        summary: { startTime: summaryStart, endTime: summaryEnd, ...summaryDays }
-                    });
-                }
-            } else {
-                result.push({ type: 'single', duty });
-            }
-        });
-
-        return result;
-    }
-
-    // Phase 2: Toggle แสดง/ซ่อน doctor duty group
-    function toggleDoctorDutyGroup(groupId) {
-        const subrows = document.getElementById('dg_sub_' + groupId);
-        const summary = document.getElementById('dg_sum_' + groupId);
-        const btn     = document.getElementById('dg_btn_' + groupId);
-
-        const isExpanded = subrows.style.display !== 'none';
-        if (isExpanded) {
-            subrows.style.display = 'none';
-            summary.style.display = '';
-            btn.textContent = 'แสดง';
-        } else {
-            subrows.style.display = 'block';
-            summary.style.display = 'none';
-            btn.textContent = 'ซ่อน';
-        }
-    }
-
-    // helper: render days string จาก duty object (monday/tuesday/...)
-    function renderDoctorDutyDays(duty) {
-        const days = [];
-        if (duty.monday)    days.push('จ');
-        if (duty.tuesday)   days.push('อ');
-        if (duty.wednesday) days.push('พ');
-        if (duty.thursday)  days.push('พฤ');
-        if (duty.friday)    days.push('ศ');
-        if (duty.saturday)  days.push('ส');
-        if (duty.sunday)    days.push('อา');
-        return days.join(', ');
-    }
-
-    // helper: render summary days string จาก summary object (นับจำนวน)
-    function renderDoctorDutySummaryDays(summary) {
-        const parts = [];
-        if (summary.monday)    parts.push(`${summary.monday} จ`);
-        if (summary.tuesday)   parts.push(`${summary.tuesday} อ`);
-        if (summary.wednesday) parts.push(`${summary.wednesday} พ`);
-        if (summary.thursday)  parts.push(`${summary.thursday} พฤ`);
-        if (summary.friday)    parts.push(`${summary.friday} ศ`);
-        if (summary.saturday)  parts.push(`${summary.saturday} ส`);
-        if (summary.sunday)    parts.push(`${summary.sunday} อา`);
-        return parts.join(', ');
-    }
-
-    // helper: render doctor duties HTML (reuse ทั้ง primary + secondary)
     function renderDoctorDutiesHTML(duties, doctorId, groupPrefix) {
         if (duties.length === 0) return '';
 
-        duties.sort((a, b) => {
-            const aIsEng = /^[a-zA-Z]/.test(a.duty_name);
-            const bIsEng = /^[a-zA-Z]/.test(b.duty_name);
-            if (aIsEng && !bIsEng) return -1;
-            if (!aIsEng && bIsEng) return 1;
-            return a.duty_name.localeCompare(b.duty_name, ['en', 'th']);
-        });
-
-        const grouped = groupDoctorDutiesByBaseName(duties);
         let html = '<div class="doctor-duties-list">';
+        let lastBaseName = null;
 
-        grouped.forEach(item => {
-            if (item.type === 'single') {
-                const duty = item.duty;
+        duties.forEach(duty => {
+            const p = parseDutyName(duty.duty_name);
+            const baseName = p.baseName;
+            const dayLabel = DAY_LABEL[duty.day_of_week] || duty.day_of_week || '';
+            const timeLabel = (p.startTime && p.endTime) ? `(${p.startTime}-${p.endTime})` : '';
+            const safeName  = duty.duty_name.replace(/'/g, "\'");
+
+            // header baseName เมื่อเปลี่ยน duty group
+            if (baseName !== lastBaseName) {
+                if (lastBaseName !== null) html += `</div>`; // ปิด group เดิม
                 html += `
-                    <div class="doctor-duty-item">
-                        <span class="doctor-duty-name">${duty.duty_name}</span>
-                        <span class="doctor-duty-days">${renderDoctorDutyDays(duty)}</span>
-                        <button onclick="event.stopPropagation(); showDeleteDoctorDutyModal(${duty.id}, '${duty.duty_name.replace(/'/g, "\\'")}')" class="btn-delete-doctor-duty">ลบ</button>
+                    <div class="doctor-duty-group-label">
+                        <span class="doctor-duty-base-name">${baseName}</span>
                     </div>
-                `;
-            } else {
-                // group
-                const gid = groupPrefix + '_' + item.baseName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
-                const { summary, duties: subDuties } = item;
-
-                // header row
-                html += `
-                    <div class="doctor-duty-item doctor-duty-group-header">
-                        <span class="doctor-duty-name" style="font-weight:700;">${item.baseName}</span>
-                        <button onclick="event.stopPropagation(); toggleDoctorDutyGroup('${gid}')" id="dg_btn_${gid}" class="btn-toggle-group">แสดง</button>
-                    </div>
-                `;
-
-                // summary row (default: แสดง = collapsed)
-                html += `
-                    <div class="doctor-duty-item doctor-duty-group-summary" id="dg_sum_${gid}">
-                        <span class="doctor-duty-name" style="color:#888; padding-left:16px;">(${summary.startTime}-${summary.endTime})</span>
-                        <span class="doctor-duty-days">${renderDoctorDutySummaryDays(summary)}</span>
-                    </div>
-                `;
-
-                // sub-rows (default: ซ่อน)
-                html += `<div id="dg_sub_${gid}" style="display:none;">`;
-                subDuties.forEach(duty => {
-                    const timeLabel = `(${duty._parsed.startTime}-${duty._parsed.endTime})`;
-                    html += `
-                        <div class="doctor-duty-item doctor-duty-group-subrow">
-                            <span class="doctor-duty-name" style="color:#555; padding-left:16px;">${timeLabel}</span>
-                            <span class="doctor-duty-days">${renderDoctorDutyDays(duty)}</span>
-                            <button onclick="event.stopPropagation(); showDeleteDoctorDutyModal(${duty.id}, '${duty.duty_name.replace(/'/g, "\\'")}')" class="btn-delete-doctor-duty">ลบ</button>
-                        </div>
-                    `;
-                });
-                html += `</div>`;
+                    <div class="doctor-duty-group-rows">`;
+                lastBaseName = baseName;
             }
+
+            html += `
+                <div class="doctor-duty-item">
+                    <span class="doctor-duty-day-col">${dayLabel}</span>
+                    <span class="doctor-duty-time-col">${timeLabel}</span>
+                    <button onclick="event.stopPropagation(); showDeleteDoctorDutyModal(${duty.id}, '${safeName}', ${doctorId}, ${duty.department_id || 'null'})" class="btn-delete-doctor-duty">ลบ</button>
+                </div>`;
         });
 
+        if (lastBaseName !== null) html += `</div>`; // ปิด group สุดท้าย
         html += '</div>';
         return html;
     }
+
 
     async function loadDoctorDuties(doctorId, primaryDepartmentId) {
         const dutiesContainer = document.getElementById(`duties-${doctorId}`);
@@ -3774,63 +3683,61 @@
 
     async function confirmAddDoctorDuty() {
         const dutyId = document.getElementById('doctorDutySelectedId').value;
-        
-        if (!dutyId) {
-            alert('กรุณาเลือก Duty');
-            return;
-        }
-        
-        const days = {
-            monday: document.querySelector('input[name="dutyDays"][value="monday"]').checked,
-            tuesday: document.querySelector('input[name="dutyDays"][value="tuesday"]').checked,
-            wednesday: document.querySelector('input[name="dutyDays"][value="wednesday"]').checked,
-            thursday: document.querySelector('input[name="dutyDays"][value="thursday"]').checked,
-            friday: document.querySelector('input[name="dutyDays"][value="friday"]').checked,
-            saturday: document.querySelector('input[name="dutyDays"][value="saturday"]').checked,
-            sunday: document.querySelector('input[name="dutyDays"][value="sunday"]').checked
-        };
-        
-        // ต้องเลือกอย่างน้อย 1 วัน
-        if (!Object.values(days).some(d => d)) {
-            alert('กรุณาเลือกวันที่ทำ Duty อย่างน้อย 1 วัน');
-            return;
-        }
+        if (!dutyId) { alert('กรุณาเลือก Duty'); return; }
 
-        // ⭐ ดึงค่า duty_details
+        // GEN5 V1: รวบรวมวันที่ติ๊ก
+        const dayNames = { monday:'จ', tuesday:'อ', wednesday:'พ', thursday:'พฤ', friday:'ศ', saturday:'ส', sunday:'อา' };
+        const checkedDays = Array.from(document.querySelectorAll('input[name="dutyDays"]:checked'))
+                                  .map(cb => cb.value);
+
+        if (checkedDays.length === 0) { alert('กรุณาเลือกวันที่ทำ Duty อย่างน้อย 1 วัน'); return; }
+
         const dutyDetails = document.getElementById('dutyDetailsInput').value.trim();
 
-        try {
-            const response = await fetch(`${API_URL}/api/doctor-duties`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    doctorId: currentDoctorId,
-                    dutyId: parseInt(dutyId),
-                    days: days,
-                    departmentId: currentDoctorDepartmentId,
-                    dutyDetails: dutyDetails || null  // ⭐ ส่ง dutyDetails
-                })
-            });
+        // POST ทีละวัน
+        const savedDays = [], skippedDays = [], failedDays = [];
 
-            const data = await response.json();
-            
-            if (response.ok && data.success) {
-                closeDoctorDutyModal();
-                
-                // Reload Duties ของแพทย์คนนี้ทันที
-                await loadDoctorDepartmentsAndDuties(currentDoctorId, currentDoctorDepartmentId);
-                
-                const doctorListMessage = document.getElementById('doctorListMessage');
-                doctorListMessage.className = 'message success show';
-                doctorListMessage.textContent = '✅ เพิ่ม Duty สำเร็จ';
-                setTimeout(() => doctorListMessage.classList.remove('show'), 3000);
-            } else {
-                throw new Error(data.message || 'ไม่สามารถเพิ่ม Duty ได้');
+        for (const day of checkedDays) {
+            try {
+                const res  = await fetch(`${API_URL}/api/doctor-duties`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        doctorId:     currentDoctorId,
+                        dutyId:       parseInt(dutyId),
+                        day:          day,
+                        departmentId: currentDoctorDepartmentId,
+                        dutyDetails:  dutyDetails || null
+                    })
+                });
+                const data = await res.json();
+                if (data.success && data.skipped) {
+                    skippedDays.push(dayNames[day]);
+                } else if (data.success) {
+                    savedDays.push(dayNames[day]);
+                } else {
+                    failedDays.push(dayNames[day]);
+                }
+            } catch(e) {
+                failedDays.push(dayNames[day]);
             }
-        } catch (error) {
-            alert('❌ ' + error.message);
         }
+
+        closeDoctorDutyModal();
+        await loadDoctorDepartmentsAndDuties(currentDoctorId, currentDoctorDepartmentId);
+
+        // แสดง summary
+        let msg = '';
+        if (savedDays.length)   msg += `✅ บันทึก ${savedDays.length} วัน (${savedDays.join(', ')})`;
+        if (skippedDays.length) msg += `${msg?' · ':''}⚠️ ข้าม ${skippedDays.length} วันที่มีแล้ว (${skippedDays.join(', ')})`;
+        if (failedDays.length)  msg += `${msg?' · ':''}❌ ผิดพลาด (${failedDays.join(', ')})`;
+
+        const doctorListMessage = document.getElementById('doctorListMessage');
+        doctorListMessage.className = `message ${failedDays.length ? 'error' : 'success'} show`;
+        doctorListMessage.textContent = msg;
+        setTimeout(() => doctorListMessage.classList.remove('show'), 5000);
     }
+
 
     // Modal ลบ Duty ของแพทย์
     function showDeleteDoctorDutyModal(dutyId, dutyName, doctorId, departmentId) {
