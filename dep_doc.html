@@ -3213,38 +3213,93 @@
     function renderDoctorDutiesHTML(duties, doctorId, groupPrefix) {
         if (duties.length === 0) return '';
 
-        let html = '<div class="doctor-duties-list">';
-        let lastBaseName = null;
-
+        // จัดกลุ่มตาม baseName ก่อน (รักษาลำดับ จ→อา จาก worker)
+        const groups = [];
+        let currentGroup = null;
         duties.forEach(duty => {
             const p = parseDutyName(duty.duty_name);
-            const baseName = p.baseName;
-            const dayLabel = DAY_LABEL[duty.day_of_week] || duty.day_of_week || '';
-            const timeLabel = (p.startTime && p.endTime) ? `(${p.startTime}-${p.endTime})` : '';
-            const safeName  = duty.duty_name.replace(/'/g, "\'");
-
-            // header baseName เมื่อเปลี่ยน duty group
-            if (baseName !== lastBaseName) {
-                if (lastBaseName !== null) html += `</div>`; // ปิด group เดิม
-                html += `
-                    <div class="doctor-duty-group-label">
-                        <span class="doctor-duty-base-name">${baseName}</span>
-                    </div>
-                    <div class="doctor-duty-group-rows">`;
-                lastBaseName = baseName;
+            if (p.baseName !== (currentGroup && currentGroup.baseName)) {
+                currentGroup = { baseName: p.baseName, rows: [] };
+                groups.push(currentGroup);
             }
-
-            html += `
-                <div class="doctor-duty-item">
-                    <span class="doctor-duty-day-col">${dayLabel}</span>
-                    <span class="doctor-duty-time-col">${timeLabel}</span>
-                    <button onclick="event.stopPropagation(); showDeleteDoctorDutyModal(${duty.id}, '${safeName}', ${doctorId}, ${duty.department_id || 'null'})" class="btn-delete-doctor-duty">ลบ</button>
-                </div>`;
+            currentGroup.rows.push({ duty, parsed: p });
         });
 
-        if (lastBaseName !== null) html += `</div>`; // ปิด group สุดท้าย
+        let html = '<div class="doctor-duties-list">';
+
+        groups.forEach((group, gi) => {
+            const gid = `${groupPrefix}_${gi}_${group.baseName.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'')}`;
+            const hasTime = group.rows.some(r => r.parsed.startTime);
+
+            if (hasTime && group.rows.length > 1) {
+                // หลาย row + มีเวลา → แสดง header + ปุ่มซ่อน/แสดง
+                const summaryDays = group.rows.map(r => DAY_LABEL[r.duty.day_of_week] || '').join(', ');
+                const timeRange   = (() => {
+                    const starts = group.rows.map(r=>r.parsed.startTime).filter(Boolean);
+                    const ends   = group.rows.map(r=>r.parsed.endTime).filter(Boolean);
+                    if (!starts.length) return '';
+                    return `(${starts.reduce((a,b)=>a<b?a:b)}-${ends.reduce((a,b)=>a>b?a:b)})`;
+                })();
+
+                html += `
+                    <div class="doctor-duty-group-label" style="display:flex;align-items:center;gap:8px;">
+                        <span class="doctor-duty-base-name">${group.baseName}</span>
+                        <button onclick="event.stopPropagation(); toggleDoctorDutyGroup('${gid}')" id="dg_btn_${gid}" class="btn-toggle-group">แสดง</button>
+                    </div>
+                    <div class="doctor-duty-group-summary-row doctor-duty-item" id="dg_sum_${gid}">
+                        <span class="doctor-duty-day-col" style="color:#888;font-weight:400;">${summaryDays}</span>
+                        <span class="doctor-duty-time-col" style="color:#888;">${timeRange}</span>
+                        <span></span>
+                    </div>
+                    <div id="dg_sub_${gid}" style="display:none;">`;
+
+                group.rows.forEach(({ duty, parsed }) => {
+                    const dayLabel  = DAY_LABEL[duty.day_of_week] || '';
+                    const timeLabel = parsed.startTime ? `(${parsed.startTime}-${parsed.endTime})` : '';
+                    const safeName  = duty.duty_name.replace(/'/g, "\'");
+                    html += `
+                        <div class="doctor-duty-item doctor-duty-group-rows">
+                            <span class="doctor-duty-day-col">${dayLabel}</span>
+                            <span class="doctor-duty-time-col">${timeLabel}</span>
+                            <button onclick="event.stopPropagation(); showDeleteDoctorDutyModal(${duty.id},'${safeName}',${doctorId},${duty.department_id||'null'})" class="btn-delete-doctor-duty">ลบ</button>
+                        </div>`;
+                });
+                html += `</div>`;
+
+            } else {
+                // 1 row หรือไม่มีเวลา → แสดง header + rows ตรงๆ ไม่ต้อง toggle
+                html += `
+                    <div class="doctor-duty-group-label">
+                        <span class="doctor-duty-base-name">${group.baseName}</span>
+                    </div>
+                    <div class="doctor-duty-group-rows">`;
+                group.rows.forEach(({ duty, parsed }) => {
+                    const dayLabel  = DAY_LABEL[duty.day_of_week] || '';
+                    const timeLabel = parsed.startTime ? `(${parsed.startTime}-${parsed.endTime})` : '';
+                    const safeName  = duty.duty_name.replace(/'/g, "\'");
+                    html += `
+                        <div class="doctor-duty-item">
+                            <span class="doctor-duty-day-col">${dayLabel}</span>
+                            <span class="doctor-duty-time-col">${timeLabel}</span>
+                            <button onclick="event.stopPropagation(); showDeleteDoctorDutyModal(${duty.id},'${safeName}',${doctorId},${duty.department_id||'null'})" class="btn-delete-doctor-duty">ลบ</button>
+                        </div>`;
+                });
+                html += `</div>`;
+            }
+        });
+
         html += '</div>';
         return html;
+    }
+
+    function toggleDoctorDutyGroup(gid) {
+        const sub = document.getElementById('dg_sub_' + gid);
+        const sum = document.getElementById('dg_sum_' + gid);
+        const btn = document.getElementById('dg_btn_' + gid);
+        const open = sub.style.display !== 'none';
+        sub.style.display = open ? 'none'  : 'block';
+        sum.style.display = open ? ''      : 'none';
+        btn.textContent   = open ? 'แสดง'  : 'ซ่อน';
     }
 
 
