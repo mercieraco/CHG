@@ -1975,10 +1975,16 @@
         departmentsList.innerHTML = '<div class="loading">กำลังโหลดข้อมูล...</div>';
 
         try {
-            const response = await fetch(`${API_URL}/api/departments`);
-            const data = await response.json();
-            
-            if (response.ok && data.success) {
+            // GEN6 V3: Batch fetch — 2 requests แทน N+1
+            const [deptRes, dutyRes] = await Promise.all([
+                fetch(`${API_URL}/api/departments`),
+                fetch(`${API_URL}/api/duty-count/all`)
+            ]);
+            const data     = await deptRes.json();
+            const dutyData = await dutyRes.json();
+            const dutyByDept = (dutyData.success && dutyData.data) ? dutyData.data : {};
+
+            if (deptRes.ok && data.success) {
                 const departments = data.data;
                 
                 if (departments.length === 0) {
@@ -1997,27 +2003,8 @@
                 for (const dept of departments) {
                     const safeName = dept.name.replace(/'/g, "\\'");
                     
-                    // ลองใช้ API นับจำนวนแพทย์จริงก่อน
-                    let duties = [];
-                    try {
-                        const dutyCountResponse = await fetch(`${API_URL}/api/duty-count/department/${dept.id}`);
-                        const dutyCountData = await dutyCountResponse.json();
-                        
-                        if (dutyCountResponse.ok && dutyCountData.success && dutyCountData.data.length > 0) {
-                            duties = dutyCountData.data;
-                        } else {
-                            // Fallback: ใช้ API เดิม
-                            const dutiesResponse = await fetch(`${API_URL}/api/duties/department/${dept.id}`);
-                            const dutiesData = await dutiesResponse.json();
-                            duties = dutiesData.success ? dutiesData.data : [];
-                        }
-                    } catch (error) {
-                        // ถ้า API ใหม่ error ให้ใช้ API เดิม
-                        console.error('Duty count error, using fallback:', error);
-                        const dutiesResponse = await fetch(`${API_URL}/api/duties/department/${dept.id}`);
-                        const dutiesData = await dutiesResponse.json();
-                        duties = dutiesData.success ? dutiesData.data : [];
-                    }
+                    // GEN6 V3: ใช้ข้อมูลจาก batch แทน fetch ต่อแผนก
+                    let duties = dutyByDept[dept.id] || [];
                     
                     html += `
                         <div class="department-item">
@@ -2820,10 +2807,10 @@
     // โหลดแผนกเข้า Dropdown (สำหรับเพิ่มแพทย์)
     async function loadDepartmentsDropdown() {
         try {
-            const response = await fetch(`${API_URL}/api/departments`);
-            const data = await response.json();
-            
-            if (response.ok && data.success) {
+            const deptRes = await fetch(`${API_URL}/api/departments`);
+            const data = await deptRes.json();
+
+            if (deptRes.ok && data.success) {
                 const departments = data.data;
                 departments.sort((a, b) => a.name.localeCompare(b.name, ['en', 'th']));
                 
@@ -2846,10 +2833,10 @@
     // โหลดแผนกเข้า Filter
     async function loadDepartmentsFilter() {
         try {
-            const response = await fetch(`${API_URL}/api/departments`);
-            const data = await response.json();
-            
-            if (response.ok && data.success) {
+            const deptRes = await fetch(`${API_URL}/api/departments`);
+            const data = await deptRes.json();
+
+            if (deptRes.ok && data.success) {
                 const departments = data.data;
                 departments.sort((a, b) => a.name.localeCompare(b.name, ['en', 'th']));
                 
@@ -3445,10 +3432,10 @@
         
         // โหลดแผนกทั้งหมด
         try {
-            const response = await fetch(`${API_URL}/api/departments`);
-            const data = await response.json();
-            
-            if (response.ok && data.success) {
+            const deptRes = await fetch(`${API_URL}/api/departments`);
+            const data = await deptRes.json();
+
+            if (deptRes.ok && data.success) {
                 const select = document.getElementById('addDepartmentSelect');
                 select.innerHTML = '<option value="">-- เลือกแผนก --</option>';
                 
@@ -3912,10 +3899,10 @@
         
         // โหลดแผนก
         try {
-            const response = await fetch(`${API_URL}/api/departments`);
-            const data = await response.json();
-            
-            if (response.ok && data.success) {
+            const deptRes = await fetch(`${API_URL}/api/departments`);
+            const data = await deptRes.json();
+
+            if (deptRes.ok && data.success) {
                 const departments = data.data;
                 departments.sort((a, b) => a.name.localeCompare(b.name, ['en', 'th']));
                 
@@ -3997,7 +3984,7 @@
 ```
 
 <div style="text-align:center; padding: 16px; color: #aaa; font-size: 12px;">
-    dep_doc GEN6 V2
+    dep_doc GEN6 V3
 </div>
 
 </body>
