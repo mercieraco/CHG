@@ -1291,6 +1291,7 @@
     let deleteDoctorDutyDoctorId = null;
     let deleteDoctorDutyDepartmentId = null;
     let allDoctors = [];
+    let allDepartmentsCache = [];  // cache departments list ไม่ต้องเรียก /:id แยก
     let pendingUserId = null;
     let pendingLicenseNumber = null;
 
@@ -2926,6 +2927,13 @@
         doctorsList.innerHTML = '<div class="loading">กำลังโหลดข้อมูล...</div>';
 
         try {
+            // โหลด departments cache ถ้ายังไม่มี
+            if (allDepartmentsCache.length === 0) {
+                const deptRes = await fetch(`${API_URL}/api/departments`);
+                const deptData = await deptRes.json();
+                if (deptData.success) allDepartmentsCache = deptData.data;
+            }
+
             const response = await fetch(`${API_URL}/api/doctors`);
             const data = await response.json();
             
@@ -3017,11 +3025,11 @@
                                 <button onclick="showAddDepartmentModal(${doctor.id}, '${safeName}')" class="btn-add-department">+แผนก</button>
                                 <button onclick="showDeleteDoctorModal(${doctor.id}, '${safeName}')" class="btn-delete-doctor">ลบ</button>
                                 <button onclick="showEditDoctorModal(${doctor.id}, '${safeName}', ${doctor.department_id}, '${doctor.work_type || 'full'}')" class="btn-edit-doctor">แก้ไข</button>
-                                <button id="toggle-duty-btn-${doctor.id}" onclick="toggleDutySection(${doctor.id})" class="btn-duty-doctor">ซ่อน</button>
+                                <button id="toggle-duty-btn-${doctor.id}" onclick="toggleDutySection(${doctor.id})" class="btn-duty-doctor">แสดง</button>
                             </div>
                             
-                            <!-- Duties -->
-                            <div id="duties-${doctor.id}"></div>
+                            <!-- Duties (default ซ่อน) -->
+                            <div id="duties-${doctor.id}" style="display:none;"></div>
                         </div>
                     </div>
             `;
@@ -3102,10 +3110,9 @@
             const doctor = doctorData.data;
             console.log('👤 Doctor data:', doctor);
             
-            // 2. โหลดชื่อแผนกหลัก
-            const primaryDeptResponse = await fetch(`${API_URL}/api/departments/${doctor.department_id}`);
-            const primaryDeptData = await primaryDeptResponse.json();
-            const primaryDeptName = primaryDeptData.success ? primaryDeptData.data.name : 'ไม่ระบุ';
+            // 2. หาชื่อแผนกหลักจาก cache (ไม่ต้องเรียก /api/departments/:id ซึ่งไม่มีใน worker)
+            const primaryDeptObj = allDepartmentsCache.find(d => d.id === doctor.department_id);
+            const primaryDeptName = primaryDeptObj ? primaryDeptObj.name : 'ไม่ระบุ';
             
             // 3. โหลดแผนกเสริมจาก doctor_departments
             const deptsResponse = await fetch(`${API_URL}/api/doctors/${doctorId}/departments`);
@@ -3992,7 +3999,7 @@
 ```
 
 <div style="text-align:center; padding: 16px; color: #aaa; font-size: 12px;">
-    dep_doc GEN5 V4
+    dep_doc GEN5 V5
 </div>
 
 </body>
