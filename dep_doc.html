@@ -1828,6 +1828,16 @@
     }
 
     // Phase 2: Toggle แสดง/ซ่อน sub-rows ของ group (หน้าจัดการแผนก + แสดง duty แพทย์)
+    // GEN6 V2: Toggle ซ่อน/แสดง duty list ของแผนก
+    function toggleDeptDuties(deptId) {
+        const list = document.getElementById('dept-duties-' + deptId);
+        const btn  = document.getElementById('dept-toggle-btn-' + deptId);
+        if (!list || !btn) return;
+        const isHidden = list.style.display === 'none';
+        list.style.display = isHidden ? 'block' : 'none';
+        btn.textContent   = isHidden ? 'ซ่อน' : 'แสดง';
+    }
+
     function toggleDeptDutyGroup(groupId) {
         const subrows = document.getElementById('subrows_' + groupId);
         const summary = document.getElementById('summary_' + groupId);
@@ -2016,6 +2026,7 @@
                                 <div class="department-actions">
                                     <button onclick="showDeleteModal(${dept.id}, '${safeName}')" class="btn-small btn-delete">🗑️ ลบ</button>
                                     <button onclick="showEditModal(${dept.id}, '${safeName}')" class="btn-small btn-edit">🔧 แก้ไข</button>
+                                    <button id="dept-toggle-btn-${dept.id}" onclick="toggleDeptDuties(${dept.id})" class="btn-toggle-group">แสดง</button>
                                     <button onclick="showDutyModal(${dept.id}, '${safeName}')" class="btn-small btn-duty">➕ Duty</button>
                                 </div>
                             </div>
@@ -2060,7 +2071,7 @@
                             `;
                         };
 
-                        html += '<div class="duty-list">';
+                        html += `<div id="dept-duties-${dept.id}" class="duty-list" style="display:none;">`;
                         grouped.forEach(item => {
                             if (item.type === 'single') {
                                 // --- Single duty (เดิม) ---
@@ -3986,7 +3997,7 @@
 ```
 
 <div style="text-align:center; padding: 16px; color: #aaa; font-size: 12px;">
-    dep_doc GEN6 V1
+    dep_doc GEN6 V2
 </div>
 
 </body>
