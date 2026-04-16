@@ -3017,7 +3017,7 @@
                                 <button onclick="showAddDepartmentModal(${doctor.id}, '${safeName}')" class="btn-add-department">+แผนก</button>
                                 <button onclick="showDeleteDoctorModal(${doctor.id}, '${safeName}')" class="btn-delete-doctor">ลบ</button>
                                 <button onclick="showEditDoctorModal(${doctor.id}, '${safeName}', ${doctor.department_id}, '${doctor.work_type || 'full'}')" class="btn-edit-doctor">แก้ไข</button>
-                                <button onclick="showDoctorDutyModal(${doctor.id}, ${doctor.department_id}, '${safeName}')" class="btn-duty-doctor">Duty</button>
+                                <button id="toggle-duty-btn-${doctor.id}" onclick="toggleDutySection(${doctor.id})" class="btn-duty-doctor">ซ่อน</button>
                             </div>
                             
                             <!-- Duties -->
@@ -3040,6 +3040,20 @@
     // Toggle Doctor Details (Collapsible)
     // ========================================
     let loadedDoctors = new Set();  // เก็บว่าแพทย์คนไหนโหลดแล้ว
+
+    function toggleDutySection(doctorId) {
+        const dutiesContainer = document.getElementById(`duties-${doctorId}`);
+        const btn = document.getElementById(`toggle-duty-btn-${doctorId}`);
+        if (!dutiesContainer || !btn) return;
+
+        if (dutiesContainer.style.display === 'none') {
+            dutiesContainer.style.display = 'block';
+            btn.textContent = 'ซ่อน';
+        } else {
+            dutiesContainer.style.display = 'none';
+            btn.textContent = 'แสดง';
+        }
+    }
 
     async function toggleDoctorDetails(doctorId, doctorName, departmentId, workType) {
         const detailsContainer = document.getElementById(`details-${doctorId}`);
@@ -3146,7 +3160,7 @@
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                             <h4 style="margin: 0; color: #333;">
                                 ${isPrimary ? '🏥' : '➕'} ${dept.department_name} 
-                                ${isPrimary ? '<span style="background: #667eea; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-left: 8px;">แผนกหลัก</span>' : '<span style="background: #ffa726; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-left: 8px;">แผนกเสริม</span>'}
+                                ${isPrimary ? '' : '<span style="background: #ffa726; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-left: 8px;">แผนกเสริม</span>'}
                             </h4>
                             <div style="display: flex; gap: 5px;">
                                 <button onclick="event.stopPropagation(); showDoctorDutyModal(${doctorId}, ${dept.department_id}, '${dept.department_name}')" class="btn-duty-doctor" style="font-size: 12px; padding: 4px 10px;">Duty</button>
@@ -3978,7 +3992,7 @@
 ```
 
 <div style="text-align:center; padding: 16px; color: #aaa; font-size: 12px;">
-    dep_doc GEN5 V3
+    dep_doc GEN5 V4
 </div>
 
 </body>
