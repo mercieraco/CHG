@@ -1776,7 +1776,7 @@
                         
                         if (window.departmentDuties && window.departmentDuties.length > 0) {
                             hasDutyOnThisDay = window.departmentDuties.some(dd => 
-                                dd.doctor_id === doctorId && (dd.day_of_week ? dd.day_of_week === dayName : d(d.day_of_week ? d.day_of_week === dayName : d[dayName] === 1))
+                                dd.doctor_id === doctorId && (dd.day_of_week ? dd.day_of_week === dayName : dd[dayName] === 1)
                             );
                         } else {
                             hasDutyOnThisDay = true;
@@ -1811,7 +1811,7 @@
                     
                     if (window.departmentDuties && window.departmentDuties.length > 0) {
                         hasDutyOnThisDay = window.departmentDuties.some(dd => 
-                            dd.doctor_id === doctorId && (dd.day_of_week ? dd.day_of_week === dayName : d(d.day_of_week ? d.day_of_week === dayName : d[dayName] === 1))
+                            dd.doctor_id === doctorId && (dd.day_of_week ? dd.day_of_week === dayName : dd[dayName] === 1)
                         );
                     } else {
                         hasDutyOnThisDay = true;  // safe default
@@ -2299,7 +2299,7 @@
                 
                 // หาแพทย์ที่มี Duty ตรงกับ dutyId และ วันนี้
                 const busyDoctorIds = dutiesData.data
-                    .filter(dd => dd.duty_id === dutyId && (dd.day_of_week ? dd.day_of_week === dayName : d(d.day_of_week ? d.day_of_week === dayName : d[dayName] === 1)))
+                    .filter(dd => dd.duty_id === dutyId && (dd.day_of_week ? dd.day_of_week === dayName : dd[dayName] === 1))
                     .map(dd => dd.doctor_id);
                 
                 console.log('=== Filtering Busy Doctors ===');
@@ -4072,7 +4072,7 @@
                         // เช็ค Duty ของแผนกนี้
                         if (deptDuties && deptDuties.length > 0) {
                             hasDutyOnThisDay = deptDuties.some(dd => 
-                                dd.doctor_id === leaveDoctorId && (dd.day_of_week ? dd.day_of_week === dayName : d(d.day_of_week ? d.day_of_week === dayName : d[dayName] === 1))
+                                dd.doctor_id === leaveDoctorId && (dd.day_of_week ? dd.day_of_week === dayName : dd[dayName] === 1)
                             );
                         } else {
                             hasDutyOnThisDay = true;
@@ -4142,6 +4142,10 @@
     }
 </script>
 ```
+
+<div style="text-align:center; padding: 16px; color: #aaa; font-size: 12px;">
+    dep_rest_GEN5_V2.html
+</div>
 
 </body>
 </html>
