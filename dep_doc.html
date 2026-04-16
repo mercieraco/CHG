@@ -1040,8 +1040,13 @@
             </div>
         </div>
         
+        <div id="deptDutySaveMessage" style="
+            display: none; margin-bottom: 12px; padding: 10px 14px;
+            background: #d4edda; color: #155724; border: 1px solid #c3e6cb;
+            border-radius: 8px; font-size: 14px; font-weight: 600;">
+        </div>
         <div class="modal-actions">
-            <button onclick="closeDutyModal()" class="btn btn-secondary">ยกเลิก</button>
+            <button onclick="closeDutyModal()" class="btn btn-secondary">ออก</button>
             <button onclick="confirmAddDuty()" class="btn btn-primary">บันทึก Duty</button>
         </div>
     </div>
@@ -2335,8 +2340,28 @@
         
         container.innerHTML = html;
     }
-    
-    // Helper: สร้าง hour options (0-23)
+
+    // GEN6 V0: Re-fetch duties จาก backend แล้ว re-render radio options ใน modal
+    async function renderDutyRadioOptionsForDept(deptId) {
+        try {
+            const response = await fetch(`${API_URL}/api/duties/department/${deptId}`);
+            const data = await response.json();
+            if (response.ok && data.success && data.data) {
+                // อัปเดต local cache ด้วย structure เดิม
+                const dutyNames = data.data.map(d => d.duty_name);
+                if (!departmentDefaultDuties[deptId]) {
+                    departmentDefaultDuties[deptId] = { duties: dutyNames, synced: true, lastSync: new Date().toISOString() };
+                } else {
+                    departmentDefaultDuties[deptId].duties = dutyNames;
+                }
+                // Re-render radio options
+                renderDutyRadioOptions();
+            }
+        } catch (e) {
+            console.error('renderDutyRadioOptionsForDept error:', e);
+        }
+    }
+
     function generateHourOptions(defaultHour = 12) {
         let html = '';
         for (let i = 0; i <= 23; i++) {
@@ -2546,9 +2571,15 @@
     }
 
     function closeDutyModal() {
+        const savedDeptId = currentDepartmentId;
         document.getElementById('dutyModal').classList.remove('show');
+        document.getElementById('deptDutySaveMessage').style.display = 'none';
         currentDepartmentId = null;
         currentDepartmentName = null;
+        // Refresh รายการ duties ของแผนกเมื่อกดออก
+        if (savedDeptId) {
+            loadDepartments();
+        }
     }
 
     async function confirmAddDuty() {
@@ -2671,53 +2702,34 @@
             if (response.ok && data.success) {
                 console.log(`✅ Backend บันทึกสำเร็จ`);
                 
-                // GEN4 V2 Fix: Highlight ใน Modal ก่อนปิด
-                highlightDutyInModal(finalDutyName);
-                
-                // รอให้เห็น highlight (0.5 วินาที - เร็ว)
-                console.log(`⏳ รอ highlight 0.5 วินาที...`);
-                await new Promise(resolve => setTimeout(resolve, 500));
-                
-                closeDutyModal();
-                
-                // Reload หน้าจอ
-                console.log(`🔄 Reloading departments...`);
-                await loadDepartments();
-                
-                // รอ DOM render เสร็จ
-                await new Promise(resolve => setTimeout(resolve, 200));
-                
-                // GEN4 V2: Smart Retry Verify (5 ครั้ง, 500ms ต่อครั้ง)
-                console.log(`🔍 กำลัง verify "${dutyName}" ในแผนก ${savedDepartmentId}...`);
-                const verified = await verifyDutyWithRetry(savedDepartmentId, finalDutyName, 5, 500);
-                
-                if (verified) {
-                    // ✅ สำเร็จ
-                    console.log(`✅ Verified! พบ "${dutyName}" ใน Backend`);
-                    const listMessage = document.getElementById('listMessage');
-                    listMessage.className = 'message success show';
-                    listMessage.textContent = '✅ บันทึก Duty สำเร็จ';
-                    setTimeout(() => listMessage.classList.remove('show'), 3000);
-                } else {
-                    // ❌ ไม่สำเร็จ - Rollback
-                    console.error(`❌ Verify failed! ไม่พบ "${dutyName}" ใน Backend หลัง retry 5 ครั้ง`);
-                    const listMessage = document.getElementById('listMessage');
-                    listMessage.className = 'message error show';
-                    listMessage.textContent = '❌ บันทึกไม่สำเร็จ กรุณาตรวจสอบ';
-                    setTimeout(() => listMessage.classList.remove('show'), 5000);
-                    
-                    // Reload เพื่อลบ duty ที่ไม่สำเร็จออก
-                    await loadDepartments();
-                }
+                // แสดง success message ใน modal — ไม่ปิด modal
+                const saveMsg = document.getElementById('deptDutySaveMessage');
+                saveMsg.style.display = 'block';
+                saveMsg.style.background = '#d4edda';
+                saveMsg.style.color = '#155724';
+                saveMsg.style.borderColor = '#c3e6cb';
+                saveMsg.textContent = `✅ บันทึก "${finalDutyName}" สำเร็จ`;
+
+                // Reset form เพื่อเพิ่ม duty ต่อได้เลย
+                document.querySelector('input[name="dutyType"]:checked') &&
+                    (document.querySelector('input[name="dutyType"]:checked').checked = false);
+                document.getElementById('newDutyName').value = '';
+
+                // Reload radio options ใน modal เพื่อให้เห็น duty ที่เพิ่งเพิ่ม
+                await renderDutyRadioOptionsForDept(savedDepartmentId);
+
             } else {
                 throw new Error(data.message || 'ไม่สามารถเพิ่ม Duty ได้');
             }
         } catch (error) {
-            alert('❌ ' + error.message);
+            const saveMsg = document.getElementById('deptDutySaveMessage');
+            saveMsg.style.display = 'block';
+            saveMsg.style.background = '#f8d7da';
+            saveMsg.style.color = '#721c24';
+            saveMsg.style.borderColor = '#f5c6cb';
+            saveMsg.textContent = '❌ ' + error.message;
         }
     }
-    
-    // GEN4 V2 Fix: Highlight duty ใน Modal (ก่อนปิด)
     function highlightDutyInModal(dutyName) {
         // หา radio button container ใน Modal
         const radioOptions = document.querySelectorAll('#dutyRadioOptions > div');
@@ -3999,7 +4011,7 @@
 ```
 
 <div style="text-align:center; padding: 16px; color: #aaa; font-size: 12px;">
-    dep_doc GEN5 V5
+    dep_doc GEN6 V0
 </div>
 
 </body>
