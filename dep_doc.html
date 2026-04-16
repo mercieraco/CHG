@@ -856,11 +856,11 @@
     <div class="menu-grid" style="grid-template-columns: repeat(2, 1fr);">
         <div class="menu-card" onclick="showDepartmentForm()">
             <div class="icon">🏥</div>
-            <h3>แผนก</h3>
+            <h3>เพิ่มแผนก</h3>
         </div>
         <div class="menu-card" onclick="showDoctorForm()">
             <div class="icon">👤</div>
-            <h3>แพทย์</h3>
+            <h3>เพิ่มแพทย์</h3>
         </div>
     </div>
 
@@ -1175,8 +1175,13 @@
             <small style="color: #666; font-size: 0.85em;">ตัวอย่าง: 7:00-8:15, ห้อง A, ตรวจผู้ป่วยนอก</small>
         </div>
 
+        <div id="doctorDutySaveMessage" style="
+            display: none; margin-bottom: 12px; padding: 10px 14px;
+            background: #d4edda; color: #155724; border: 1px solid #c3e6cb;
+            border-radius: 8px; font-size: 14px; font-weight: 600;">
+        </div>
         <div class="modal-actions">
-            <button onclick="closeDoctorDutyModal()" class="btn btn-secondary">ยกเลิก</button>
+            <button onclick="closeDoctorDutyModal()" class="btn btn-secondary">ออก</button>
             <button onclick="confirmAddDoctorDuty()" class="btn btn-primary">บันทึก</button>
         </div>
     </div>
@@ -3731,9 +3736,16 @@
     }
 
     function closeDoctorDutyModal() {
+        const savedDoctorId = currentDoctorId;
+        const savedDeptId = currentDoctorDepartmentId;
         document.getElementById('doctorDutyModal').classList.remove('show');
+        document.getElementById('doctorDutySaveMessage').style.display = 'none';
         currentDoctorId = null;
         currentDoctorDepartmentId = null;
+        // Refresh รายการ duties ของแพทย์
+        if (savedDoctorId && savedDeptId) {
+            loadDoctorDepartmentsAndDuties(savedDoctorId, savedDeptId);
+        }
     }
 
     async function confirmAddDoctorDuty() {
@@ -3778,19 +3790,32 @@
             }
         }
 
-        closeDoctorDutyModal();
-        await loadDoctorDepartmentsAndDuties(currentDoctorId, currentDoctorDepartmentId);
-
-        // แสดง summary
+        // แสดง summary — อยู่หน้าเดิม ไม่ปิด modal
         let msg = '';
         if (savedDays.length)   msg += `✅ บันทึก ${savedDays.length} วัน (${savedDays.join(', ')})`;
         if (skippedDays.length) msg += `${msg?' · ':''}⚠️ ข้าม ${skippedDays.length} วันที่มีแล้ว (${skippedDays.join(', ')})`;
         if (failedDays.length)  msg += `${msg?' · ':''}❌ ผิดพลาด (${failedDays.join(', ')})`;
 
-        const doctorListMessage = document.getElementById('doctorListMessage');
-        doctorListMessage.className = `message ${failedDays.length ? 'error' : 'success'} show`;
-        doctorListMessage.textContent = msg;
-        setTimeout(() => doctorListMessage.classList.remove('show'), 5000);
+        // แสดง success message ใน modal
+        const saveMsg = document.getElementById('doctorDutySaveMessage');
+        saveMsg.style.display = 'block';
+        saveMsg.style.background = failedDays.length ? '#f8d7da' : '#d4edda';
+        saveMsg.style.color = failedDays.length ? '#721c24' : '#155724';
+        saveMsg.style.borderColor = failedDays.length ? '#f5c6cb' : '#c3e6cb';
+        saveMsg.textContent = msg;
+
+        // Reset form เพื่อเลือก duty ใหม่ได้เลย
+        document.getElementById('doctorDutySelectedId').value = '';
+        document.getElementById('doctorDutySelectedLabel').innerHTML =
+            '<span style="color: #aaa; font-weight: 400;">-- กรุณาเลือก Duty --</span>';
+        document.querySelectorAll('input[name="dutyDays"]').forEach(cb => cb.checked = false);
+        document.getElementById('dutyDetailsInput').value = '';
+
+        // Deselect duty ใน list
+        document.querySelectorAll('#doctorDutyList .duty-radio-item').forEach(el => {
+            el.style.background = '';
+            el.style.fontWeight = '';
+        });
     }
 
 
@@ -3953,7 +3978,7 @@
 ```
 
 <div style="text-align:center; padding: 16px; color: #aaa; font-size: 12px;">
-    dep_doc GEN5 V3
+    dep_doc_GEN5_V2.html
 </div>
 
 </body>
