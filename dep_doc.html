@@ -2340,28 +2340,6 @@
         
         container.innerHTML = html;
     }
-
-    // GEN6 V0: Re-fetch duties จาก backend แล้ว re-render radio options ใน modal
-    async function renderDutyRadioOptionsForDept(deptId) {
-        try {
-            const response = await fetch(`${API_URL}/api/duties/department/${deptId}`);
-            const data = await response.json();
-            if (response.ok && data.success && data.data) {
-                // อัปเดต local cache ด้วย structure เดิม
-                const dutyNames = data.data.map(d => d.duty_name);
-                if (!departmentDefaultDuties[deptId]) {
-                    departmentDefaultDuties[deptId] = { duties: dutyNames, synced: true, lastSync: new Date().toISOString() };
-                } else {
-                    departmentDefaultDuties[deptId].duties = dutyNames;
-                }
-                // Re-render radio options
-                renderDutyRadioOptions();
-            }
-        } catch (e) {
-            console.error('renderDutyRadioOptionsForDept error:', e);
-        }
-    }
-
     function generateHourOptions(defaultHour = 12) {
         let html = '';
         for (let i = 0; i <= 23; i++) {
@@ -2710,13 +2688,10 @@
                 saveMsg.style.borderColor = '#c3e6cb';
                 saveMsg.textContent = `✅ บันทึก "${finalDutyName}" สำเร็จ`;
 
-                // Reset form เพื่อเพิ่ม duty ต่อได้เลย
-                document.querySelector('input[name="dutyType"]:checked') &&
-                    (document.querySelector('input[name="dutyType"]:checked').checked = false);
+                // Reset form เพื่อเพิ่ม duty ต่อได้เลย (ไม่ re-render radio list)
+                const checkedR = document.querySelector('input[name="dutyType"]:checked');
+                if (checkedR) checkedR.checked = false;
                 document.getElementById('newDutyName').value = '';
-
-                // Reload radio options ใน modal เพื่อให้เห็น duty ที่เพิ่งเพิ่ม
-                await renderDutyRadioOptionsForDept(savedDepartmentId);
 
             } else {
                 throw new Error(data.message || 'ไม่สามารถเพิ่ม Duty ได้');
@@ -4011,7 +3986,7 @@
 ```
 
 <div style="text-align:center; padding: 16px; color: #aaa; font-size: 12px;">
-    dep_doc GEN6 V0
+    dep_doc GEN6 V1
 </div>
 
 </body>
