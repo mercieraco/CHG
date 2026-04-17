@@ -874,6 +874,7 @@
     // Key format: "deptId_dutyId_date" → value: "delegate" หรือ "no-delegate"
     let dutyDelegationStates = {};
     let dutySplitStates = {}; // GEN6: { uniqueId: splitTime } เช่น '14:00'
+    let splitSelfOnDutyStates = {}; // GEN7: { uid_before/uid_after: true } = อยู่เวรเอง
     
     // ระบบเลือกวันแบบใหม่
     let selectionStep = 0; // 0 = ยังไม่เริ่ม, 1 = เลือกวันเริ่มต้นแล้ว, 2 = เลือกวันสิ้นสุดแล้ว
@@ -1636,17 +1637,22 @@
                 
                 leave.duty_assignments.forEach(assignment => {
                     const assignmentDate = formatDateThai(assignment.duty_date);
-                    const replacementName = assignment.replacement_doctor_name || 'ไม่ระบุ';
-                    const replacementFirstName = getFirstName(replacementName);
-                    const replacementLastInitial = getLastNameInitial(replacementName);
                     // GEN6: แสดง split_label ถ้ามี เช่น "ก่อน 14:00"
                     const splitNote = assignment.split_label ? ` [${assignment.split_label}]` : '';
+                    // GEN7: ถ้า is_self_duty แสดง "อยู่เอง" แทนชื่อแพทย์
+                    const isSelf = assignment.is_self_duty;
+                    const replacementFullName = isSelf ? 'อยู่เอง' : (assignment.replacement_doctor_name || 'ไม่ระบุ');
+                    const replacementFirstName = isSelf ? 'อยู่เอง' : getFirstName(replacementFullName);
+                    const replacementLastInitial = isSelf ? '' : getLastNameInitial(replacementFullName);
                     const dutyDisplay = assignment.duty_name + splitNote;
+                    // short: "ชื่อ" หรือ "ชื่อ (ต.)" | full: ชื่อเต็ม หรือ "อยู่เอง"
+                    const shortRepl = isSelf ? 'อยู่เอง' : `${replacementFirstName} (${replacementLastInitial})`;
+                    const fullRepl  = replacementFullName;
 
                     html += `
                         <div class="duty-detail-item">
-                            <span class="name-short">${assignmentDate} [${dutyDisplay}] >> ${replacementFirstName} (${replacementLastInitial})</span>
-                            <span class="name-full">${assignmentDate} [${dutyDisplay}] >> ${replacementName}</span>
+                            <span class="name-short">${assignmentDate} [${dutyDisplay}] >> ${shortRepl}</span>
+                            <span class="name-full">${assignmentDate} [${dutyDisplay}] >> ${fullRepl}</span>
                         </div>
                     `;
                 });
@@ -3008,17 +3014,20 @@
                     const splitLabel = select.dataset.splitLabel || null; // GEN6
                     const parentUid = select.dataset.parentUid || null;  // GEN6
 
+                    // GEN7: เช็คว่า split row นี้เลือก "อยู่เอง" หรือไม่
+                    const isSelfDuty = parentUid ? !!splitSelfOnDutyStates[uniqueId] : false;
+
                     // GEN6: ถ้าเป็น split row ให้ใช้ state ของ parent (delegate เสมอ)
                     let state;
                     if (parentUid) {
-                        state = 'delegate'; // split rows บังคับ delegate
+                        state = 'delegate'; // split rows บังคับ delegate (รวม self-duty)
                     } else if (splitLabel === null && dutySplitStates[uniqueId]) {
                         return; // parent ที่ split แล้ว — ข้าม (ใช้ child rows แทน)
                     } else {
                         state = dutyDelegationStates[uniqueId] || 'delegate';
                     }
 
-                    console.log(`  - uniqueId: ${uniqueId}, state: ${state}, splitLabel: ${splitLabel}`);
+                    console.log(`  - uniqueId: ${uniqueId}, state: ${state}, splitLabel: ${splitLabel}, isSelfDuty: ${isSelfDuty}`);
 
                     allDuties.push({
                         uniqueId,
@@ -3026,6 +3035,7 @@
                         dutyId,
                         state,
                         splitLabel,
+                        isSelfDuty,
                         select
                     });
                 });
@@ -3039,8 +3049,9 @@
                 }
                 
                 // Validation: เช็คว่าเลือกแพทย์ครบทุก duty ที่ "ฝาก" (รวม split rows)
+                // GEN7: ข้าม row ที่ isSelfDuty = true
                 for (const item of allDuties) {
-                    if (item.state === 'delegate') {
+                    if (item.state === 'delegate' && !item.isSelfDuty) {
                         const select = document.querySelector(`.custom-delegation-select[data-unique-id="${item.uniqueId}"]`);
                         const replacementDoctorId = select?.value;
                         if (!replacementDoctorId) {
@@ -3070,16 +3081,28 @@
                 
                 console.log(`=== Dept ${deptId}: ${delegateGroups.length} delegate groups, ${noDelegateGroups.length} no-delegate groups ===`);
                 
-                // บันทึกข้อมูล (ยังใช้แบบเดิมก่อน - จะแยกใน Step 5)
+                // บันทึกข้อมูล
                 const dutyAssignments = [];
                 for (const item of allDuties.filter(d => d.state === 'delegate')) {
-                    const select = document.querySelector(`.custom-delegation-select[data-unique-id="${item.uniqueId}"]`);
-                    dutyAssignments.push({
-                        dutyId: parseInt(item.dutyId),
-                        dutyDate: item.date,
-                        replacementDoctorId: parseInt(select.value),
-                        splitLabel: item.splitLabel || null  // GEN6: เช่น "ก่อน 14:00"
-                    });
+                    // GEN7: self-duty → replacementDoctorId = null, isSelfDuty = true
+                    if (item.isSelfDuty) {
+                        dutyAssignments.push({
+                            dutyId: parseInt(item.dutyId),
+                            dutyDate: item.date,
+                            replacementDoctorId: null,
+                            splitLabel: item.splitLabel || null,
+                            isSelfDuty: true
+                        });
+                    } else {
+                        const select = document.querySelector(`.custom-delegation-select[data-unique-id="${item.uniqueId}"]`);
+                        dutyAssignments.push({
+                            dutyId: parseInt(item.dutyId),
+                            dutyDate: item.date,
+                            replacementDoctorId: parseInt(select.value),
+                            splitLabel: item.splitLabel || null,  // GEN6
+                            isSelfDuty: false
+                        });
+                    }
                 }
                 
                 deptRequestBody.dutyAssignments = dutyAssignments;
@@ -3332,6 +3355,7 @@
                 endDate = null;
                 currentDutyData = [];
                 dutySplitStates = {}; // GEN6: reset split states หลัง submit
+                splitSelfOnDutyStates = {}; // GEN7: reset self-duty states หลัง submit
                 dutyDelegationStates = {};
                 document.getElementById('departmentDetailsContainer').innerHTML = '';
                 
@@ -3973,6 +3997,7 @@
     };
 
     // GEN6: ยืนยันเวลาที่แบ่ง → render 2 rows
+    // GEN7: เพิ่มปุ่ม [🔒 อยู่เอง] ใน split rows
     window.applySplitTime = function(uniqueId, dutyId, date, deptId) {
         const timeInput = document.getElementById(`splitTime_${uniqueId}`);
         const splitTime = timeInput ? timeInput.value : '13:00';
@@ -3984,45 +4009,96 @@
 
         content.innerHTML = `
             <!-- Split row 1: ก่อน -->
-            <div style="margin-bottom:10px; padding:10px; background:#fff8e1; border-radius:6px; border:1px solid #ffcc02;">
-                <p style="font-weight:600; color:#e65100; margin:0 0 8px;">ก่อน ${splitTime}</p>
-                <div style="display:flex; gap:10px; margin-bottom:8px;">
-                    <select id="customFilterDept_${uid1}"
-                        onchange="loadDoctorsForCustomDuty('${uid1}', ${deptId})"
-                        style="flex:1; padding:8px; border:1px solid #ddd; border-radius:4px; font-size:14px;">
-                        <option value="">-- เลือกแผนก --</option>
+            <div id="splitRow_${uid1}" style="margin-bottom:10px; padding:10px; background:#fff8e1; border-radius:6px; border:1px solid #ffcc02;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <p style="font-weight:600; color:#e65100; margin:0;">ก่อน ${splitTime}</p>
+                    <button type="button" id="btn-self-${uid1}"
+                        onclick="toggleSelfOnDuty('${uid1}', '${uid2}')"
+                        style="padding:4px 12px; font-size:13px; border:2px solid #43a047; background:white; color:#43a047; border-radius:8px; cursor:pointer; font-weight:bold; transition:all 0.3s;"
+                        title="อยู่เวรเอง">🔒 อยู่เอง</button>
+                </div>
+                <div id="delegateArea_${uid1}">
+                    <div style="display:flex; gap:10px; margin-bottom:8px;">
+                        <select id="customFilterDept_${uid1}"
+                            onchange="loadDoctorsForCustomDuty('${uid1}', ${deptId})"
+                            style="flex:1; padding:8px; border:1px solid #ddd; border-radius:4px; font-size:14px;">
+                            <option value="">-- เลือกแผนก --</option>
+                        </select>
+                    </div>
+                    <select class="custom-delegation-select"
+                        data-dept-id="${deptId}" data-duty-id="${dutyId}"
+                        data-date="${date}" data-unique-id="${uid1}"
+                        data-split-label="ก่อน ${splitTime}" data-parent-uid="${uniqueId}"
+                        style="width:100%; padding:10px; border:1px solid #ddd; border-radius:4px; font-size:14px;">
+                        <option value="">-- เลือกแพทย์ที่จะมาแทน --</option>
                     </select>
                 </div>
-                <select class="custom-delegation-select"
-                    data-dept-id="${deptId}" data-duty-id="${dutyId}"
-                    data-date="${date}" data-unique-id="${uid1}"
-                    data-split-label="ก่อน ${splitTime}" data-parent-uid="${uniqueId}"
-                    style="width:100%; padding:10px; border:1px solid #ddd; border-radius:4px; font-size:14px;">
-                    <option value="">-- เลือกแพทย์ที่จะมาแทน --</option>
-                </select>
             </div>
             <!-- Split row 2: หลัง -->
-            <div style="padding:10px; background:#e8f5e9; border-radius:6px; border:1px solid #66bb6a;">
-                <p style="font-weight:600; color:#2e7d32; margin:0 0 8px;">หลัง ${splitTime}</p>
-                <div style="display:flex; gap:10px; margin-bottom:8px;">
-                    <select id="customFilterDept_${uid2}"
-                        onchange="loadDoctorsForCustomDuty('${uid2}', ${deptId})"
-                        style="flex:1; padding:8px; border:1px solid #ddd; border-radius:4px; font-size:14px;">
-                        <option value="">-- เลือกแผนก --</option>
+            <div id="splitRow_${uid2}" style="padding:10px; background:#e8f5e9; border-radius:6px; border:1px solid #66bb6a;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <p style="font-weight:600; color:#2e7d32; margin:0;">หลัง ${splitTime}</p>
+                    <button type="button" id="btn-self-${uid2}"
+                        onclick="toggleSelfOnDuty('${uid2}', '${uid1}')"
+                        style="padding:4px 12px; font-size:13px; border:2px solid #43a047; background:white; color:#43a047; border-radius:8px; cursor:pointer; font-weight:bold; transition:all 0.3s;"
+                        title="อยู่เวรเอง">🔒 อยู่เอง</button>
+                </div>
+                <div id="delegateArea_${uid2}">
+                    <div style="display:flex; gap:10px; margin-bottom:8px;">
+                        <select id="customFilterDept_${uid2}"
+                            onchange="loadDoctorsForCustomDuty('${uid2}', ${deptId})"
+                            style="flex:1; padding:8px; border:1px solid #ddd; border-radius:4px; font-size:14px;">
+                            <option value="">-- เลือกแผนก --</option>
+                        </select>
+                    </div>
+                    <select class="custom-delegation-select"
+                        data-dept-id="${deptId}" data-duty-id="${dutyId}"
+                        data-date="${date}" data-unique-id="${uid2}"
+                        data-split-label="หลัง ${splitTime}" data-parent-uid="${uniqueId}"
+                        style="width:100%; padding:10px; border:1px solid #ddd; border-radius:4px; font-size:14px;">
+                        <option value="">-- เลือกแพทย์ที่จะมาแทน --</option>
                     </select>
                 </div>
-                <select class="custom-delegation-select"
-                    data-dept-id="${deptId}" data-duty-id="${dutyId}"
-                    data-date="${date}" data-unique-id="${uid2}"
-                    data-split-label="หลัง ${splitTime}" data-parent-uid="${uniqueId}"
-                    style="width:100%; padding:10px; border:1px solid #ddd; border-radius:4px; font-size:14px;">
-                    <option value="">-- เลือกแพทย์ที่จะมาแทน --</option>
-                </select>
             </div>`;
 
         // โหลดแพทย์ทั้ง 2 rows
         loadDoctorsForCustomDuty(uid1, deptId);
         loadDoctorsForCustomDuty(uid2, deptId);
+    };
+
+    // GEN7: Toggle อยู่เวรเอง สำหรับ split row
+    // thisUid = uid ที่กด, siblingUid = uid อีกฝั่ง
+    window.toggleSelfOnDuty = function(thisUid, siblingUid) {
+        const alreadyActive = splitSelfOnDutyStates[thisUid];
+
+        if (alreadyActive) {
+            // === ยกเลิก self-duty → คืน delegate area ===
+            delete splitSelfOnDutyStates[thisUid];
+            const btn = document.getElementById(`btn-self-${thisUid}`);
+            if (btn) {
+                btn.style.background = 'white';
+                btn.style.color = '#43a047';
+                btn.style.borderColor = '#43a047';
+            }
+            const area = document.getElementById(`delegateArea_${thisUid}`);
+            if (area) area.style.display = '';
+        } else {
+            // === ตรวจสอบ: sibling ถูกกดอยู่แล้วหรือไม่ ===
+            if (splitSelfOnDutyStates[siblingUid]) {
+                alert('⚠️ ไม่สามารถอยู่เวรเองได้ทั้ง 2 ช่วง\nกรุณายกเลิกช่วงที่เลือกไว้ก่อน');
+                return;
+            }
+            // === เปิด self-duty → ซ่อน delegate area ===
+            splitSelfOnDutyStates[thisUid] = true;
+            const btn = document.getElementById(`btn-self-${thisUid}`);
+            if (btn) {
+                btn.style.background = '#43a047';
+                btn.style.color = 'white';
+                btn.style.borderColor = '#43a047';
+            }
+            const area = document.getElementById(`delegateArea_${thisUid}`);
+            if (area) area.style.display = 'none';
+        }
     };
 
     // GEN6: render content ปกติ (ไม่ split)
@@ -4650,5 +4726,5 @@
 ```
 
 </body>
-<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">user GEN6 V2</div>
+<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">user GEN7 V0</div>
 </html>
