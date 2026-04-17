@@ -1947,7 +1947,7 @@
                         if (deptDuties && deptDuties.length > 0) {
                             // เช็ค Duty ของคนที่ลา (ไม่ใช่คนที่ login)
                             hasDutyOnThisDay = deptDuties.some(dd => 
-                                dd.doctor_id === leaveDoctorId && (dd.day_of_week ? dd.day_of_week === dayName : d(d.day_of_week ? d.day_of_week === dayName : d[dayName] === 1))
+                                dd.doctor_id === leaveDoctorId && (dd.day_of_week ? dd.day_of_week === dayName : dd[dayName] === 1)
                             );
                         } else {
                             hasDutyOnThisDay = true;  // safe default
@@ -2092,7 +2092,7 @@
                         // เช็คว่าแพทย์คนนี้มี duty ในวันนี้หรือไม่
                         if (window.departmentDuties && window.departmentDuties.length > 0) {
                             hasDutyOnThisDay = window.departmentDuties.some(dd => 
-                                dd.doctor_id === doctorId && (dd.day_of_week ? dd.day_of_week === dayName : d(d.day_of_week ? d.day_of_week === dayName : d[dayName] === 1))
+                                dd.doctor_id === doctorId && (dd.day_of_week ? dd.day_of_week === dayName : dd[dayName] === 1)
                             );
                         } else {
                             // ถ้าไม่มี duties data → ถือว่ามี duty (safe default)
@@ -2131,7 +2131,7 @@
                     
                     if (window.departmentDuties && window.departmentDuties.length > 0) {
                         hasDutyOnThisDay = window.departmentDuties.some(dd => 
-                            dd.doctor_id === doctorId && (dd.day_of_week ? dd.day_of_week === dayName : d(d.day_of_week ? d.day_of_week === dayName : d[dayName] === 1))
+                            dd.doctor_id === doctorId && (dd.day_of_week ? dd.day_of_week === dayName : dd[dayName] === 1)
                         );
                     } else {
                         hasDutyOnThisDay = true;  // safe default
@@ -2672,7 +2672,7 @@
                 
                 // หาแพทย์ที่มี Duty ตรงกับ dutyId และ วันนี้
                 const busyDoctorIds = dutiesData.data
-                    .filter(dd => dd.duty_id === dutyId && (dd.day_of_week ? dd.day_of_week === dayName : d(d.day_of_week ? d.day_of_week === dayName : d[dayName] === 1)))
+                    .filter(dd => dd.duty_id === dutyId && (dd.day_of_week ? dd.day_of_week === dayName : dd[dayName] === 1))
                     .map(dd => dd.doctor_id);
                 
                 console.log('=== Filtering Busy Doctors ===');
@@ -4653,7 +4653,7 @@
                             
                             if (deptDuties && deptDuties.length > 0) {
                                 hasDutyOnThisDay = deptDuties.some(dd => 
-                                    dd.doctor_id === leaveDoctorId && (dd.day_of_week ? dd.day_of_week === dayName : d(d.day_of_week ? d.day_of_week === dayName : d[dayName] === 1))
+                                    dd.doctor_id === leaveDoctorId && (dd.day_of_week ? dd.day_of_week === dayName : dd[dayName] === 1)
                                 );
                             } else {
                                 hasDutyOnThisDay = true;
@@ -4726,5 +4726,5 @@
 ```
 
 </body>
-<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">user GEN7 V0</div>
+<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">user GEN7 V1</div>
 </html>
