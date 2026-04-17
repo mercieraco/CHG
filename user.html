@@ -2841,40 +2841,36 @@
         // แยกตาม state
         const delegateItems = allDuties.filter(d => d.state === 'delegate');
         const noDelegateItems = allDuties.filter(d => d.state === 'no-delegate');
-        
-        console.log('After filter:');
-        console.log('- delegateItems:', delegateItems);
-        console.log('- noDelegateItems:', noDelegateItems);
-        
+
+        // GEN6: แยก split items ออก (มี splitLabel) → ไม่รวม group กับวันอื่น
+        const splitItems = delegateItems.filter(d => d.splitLabel !== null);
+        const normalItems = delegateItems.filter(d => d.splitLabel === null);
+
         // Sort ตามวันที่
-        delegateItems.sort((a, b) => new Date(a.date) - new Date(b.date));
+        normalItems.sort((a, b) => new Date(a.date) - new Date(b.date));
         noDelegateItems.sort((a, b) => new Date(a.date) - new Date(b.date));
-        
-        // ฟังก์ชันช่วย: Group วันติดกัน
+
+        // ฟังก์ชันช่วย: Group วันติดกัน (เฉพาะ normal items)
         const groupConsecutive = (items) => {
             const groups = [];
             let currentGroup = null;
             
             for (const item of items) {
                 if (!currentGroup) {
-                    // เริ่ม group ใหม่
                     currentGroup = {
                         startDate: item.date,
                         endDate: item.date,
                         duties: [item]
                     };
                 } else {
-                    // เช็คว่าวันนี้ติดกับวันก่อนหน้าไหม
                     const prevDate = new Date(currentGroup.endDate);
                     const currDate = new Date(item.date);
                     const diffDays = Math.floor((currDate - prevDate) / (1000 * 60 * 60 * 24));
                     
                     if (diffDays === 1) {
-                        // ติดกัน → เพิ่มเข้า group เดิม
                         currentGroup.endDate = item.date;
                         currentGroup.duties.push(item);
                     } else {
-                        // ไม่ติดกัน → บันทึก group เดิม และเริ่ม group ใหม่
                         groups.push(currentGroup);
                         currentGroup = {
                             startDate: item.date,
@@ -2884,17 +2880,23 @@
                     }
                 }
             }
-            
-            // บันทึก group สุดท้าย
-            if (currentGroup) {
-                groups.push(currentGroup);
-            }
-            
+            if (currentGroup) groups.push(currentGroup);
             return groups;
         };
-        
-        // GEN4 V3 Step 5 Fix: Group ทั้ง delegate และ no-delegate
-        const delegateGroups = groupConsecutive(delegateItems);
+
+        // GEN6: split items → แต่ละวันเป็น standalone group (ไม่ merge)
+        const splitGroups = [];
+        const splitByDate = {};
+        splitItems.forEach(item => {
+            if (!splitByDate[item.date]) splitByDate[item.date] = [];
+            splitByDate[item.date].push(item);
+        });
+        Object.entries(splitByDate).forEach(([date, items]) => {
+            splitGroups.push({ startDate: date, endDate: date, duties: items });
+        });
+
+        // รวม normal groups + split groups
+        const delegateGroups = [...groupConsecutive(normalItems), ...splitGroups];
         const noDelegateGroups = groupConsecutive(noDelegateItems);
         
         console.log('=== Grouping Result ===');
@@ -3189,7 +3191,8 @@
                                 groupDutyAssignments.push({
                                     dutyId: parseInt(duty.dutyId),
                                     dutyDate: duty.date,
-                                    replacementDoctorId: parseInt(replacementDoctorId)
+                                    replacementDoctorId: parseInt(replacementDoctorId),
+                                    splitLabel: duty.splitLabel || null  // GEN6
                                 });
                             }
                         }
@@ -4647,5 +4650,5 @@
 ```
 
 </body>
-<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">user GEN6 V1</div>
+<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">user GEN6 V2</div>
 </html>
