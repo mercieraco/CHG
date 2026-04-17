@@ -729,7 +729,21 @@
         
         // โหลดแผนก
         await loadDepartments();
-        
+
+        // GEN6: auto-select แผนกหลักถ้า role = doctor
+        const role2 = sessionStorage.getItem('role');
+        const deptId = sessionStorage.getItem('department_id');
+        if ((role2 === 'doctor' || role2 === 'user') && deptId) {
+            const select = document.getElementById('departmentSelect');
+            if (select) {
+                select.value = deptId;
+                // ถ้าเลือกได้ (option มีอยู่) ให้ load ข้อมูลทันที
+                if (select.value == deptId) {
+                    loadDepartmentData();
+                }
+            }
+        }
+
         // สร้าง dropdown เดือนและปี
         generateMonthYearDropdowns();
         
@@ -1883,5 +1897,5 @@
 ```
 
 </body>
-<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">summary GEN6 V0</div>
+<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">summary GEN6 V1</div>
 </html>
