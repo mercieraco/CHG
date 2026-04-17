@@ -1238,10 +1238,14 @@
                         const dateStr = currentDate.toISOString().split('T')[0];
                         const dayDisplay = formatDateThai(dateStr);
                         
-                        // หาว่าวันนี้มีใครมาแทนบ้าง (GEN6: รวม split_label)
+                        // หาว่าวันนี้มีใครมาแทนบ้าง (GEN6: รวม split_label, GEN7: รวม is_self_duty)
                         const dailyAssignments = leave.duty_assignments
                             .filter(a => a.duty_date === dateStr)
                             .map(a => {
+                                // GEN7: is_self_duty → แสดง "อยู่เอง"
+                                if (a.is_self_duty) {
+                                    return a.split_label ? `${a.split_label} อยู่เอง` : 'อยู่เอง';
+                                }
                                 const replacementDoc = allDoctors.find(d => d.id === a.replacement_doctor_id);
                                 const name = replacementDoc ? replacementDoc.name : 'ไม่ระบุ';
                                 // GEN6: แสดง split_label ถ้ามี เช่น "ก่อน 14:00 ฝาก B"
@@ -1640,8 +1644,14 @@
                                     a.duty_date === dateStr && a.duty_id === duty.id
                                 );
                                 if (assign) {
-                                    replacement = allDoctors.find(d => d.id === assign.replacement_doctor_id);
-                                    console.log(`    → Custom delegation, replacement: ${replacement?.name || 'NOT FOUND'}`);
+                                    if (assign.is_self_duty) {
+                                        // GEN7: อยู่เอง — ไม่ต้องหาคนแทน แสดงตัวหมอเองในปฏิทิน
+                                        replacement = null; // แสดงหมอเองตามปกติ ไม่มี replacement badge
+                                        console.log(`    → Custom delegation, self-duty (${assign.split_label || ''})`);
+                                    } else {
+                                        replacement = allDoctors.find(d => d.id === assign.replacement_doctor_id);
+                                        console.log(`    → Custom delegation, replacement: ${replacement?.name || 'NOT FOUND'}`);
+                                    }
                                 } else {
                                     console.log(`    → Custom delegation, but no assignment for this duty/date`);
                                 }
@@ -1755,8 +1765,11 @@
                     const assign = leave.duty_assignments.find(a => 
                         a.duty_date === dateStr && a.duty_id == dutyId
                     );
-                    if (assign) {
+                    if (assign && !assign.is_self_duty) {
                         replacement = allDoctors.find(d => d.id === assign.replacement_doctor_id);
+                    } else if (assign && assign.is_self_duty) {
+                        // GEN7: อยู่เองในช่วงนั้น — แสดงชื่อหมอเอง (ไม่ใช่ replacement)
+                        replacement = null;
                     }
                 }
 
@@ -1897,5 +1910,5 @@
 ```
 
 </body>
-<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">summary GEN6 V1</div>
+<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">summary GEN7 V0</div>
 </html>
