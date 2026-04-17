@@ -2105,7 +2105,7 @@
                                         <div style="display:flex; gap:6px; margin-left:auto; align-items:center;">
                                             <button onclick="toggleDeptDutySummary('${groupId}')" id="btn_summary_${groupId}" class="btn-summary-group">สรุป</button>
                                             <button onclick="toggleDeptDutyGroup('${groupId}')" id="btn_${groupId}" class="btn-toggle-group">แสดง</button>
-                                            <button onclick="showRenameDutyModal(${firstSubId})" class="btn-delete-duty" style="background:#5352ed;" title="เปลี่ยนชื่อ">🔧</button>
+                                            <button onclick="showRenameDutyModal(${firstSubId}, '${groupId}')" class="btn-delete-duty" style="background:#5352ed;" title="เปลี่ยนชื่อ">🔧</button>
                                             <button onclick="showDeleteGroupDutyModal('${groupId}')" class="btn-delete-duty">ลบ</button>
                                         </div>
                                     </div>
@@ -2813,12 +2813,41 @@
 
     // GEN6: Rename Duty Modal
     var renameDutyId = null;
+    var renameDutyGroupId = null; // เก็บ groupId ถ้าเป็น group rename
 
-    function showRenameDutyModal(dutyId) {
+    function showRenameDutyModal(dutyId, groupId) {
         renameDutyId = dutyId;
-        // หาชื่อปัจจุบันจาก DOM (span.duty-name ใกล้ปุ่ม)
-        const btn = document.querySelector(`button[onclick="showRenameDutyModal(${dutyId})"]`);
-        const currentName = btn ? (btn.closest('.duty-item')?.querySelector('.duty-name')?.textContent?.trim() || '') : '';
+        renameDutyGroupId = groupId || null;
+
+        // ถ้าเป็น group → ดึง baseName จาก group header
+        // ถ้าเป็น single → ดึงชื่อจาก span.duty-name
+        let currentName = '';
+        if (groupId) {
+            // group header: หา span.duty-name ใน duty-group-header ของ group นั้น
+            const subrows = document.getElementById('subrows_' + groupId);
+            if (subrows) {
+                // หาชื่อ duty แรกใน subrows แล้วดึง baseName
+                const firstDelete = subrows.querySelector('button.btn-delete-duty');
+                if (firstDelete) {
+                    const match = firstDelete.getAttribute('onclick')?.match(/showDeleteDutyModal\(\d+,\s*'([^']+)'/);
+                    if (match) {
+                        // ดึง baseName จากชื่อเต็ม เช่น "OPD i (08:00-09:00)" → "OPD i"
+                        currentName = match[1].replace(/\s*\(\d{2}:\d{2}-\d{2}:\d{2}\)$/, '').trim();
+                    }
+                }
+            }
+            // fallback: ดึงจาก group header span
+            if (!currentName) {
+                const btn = document.querySelector(`button[onclick="showRenameDutyModal(${dutyId}, '${groupId}')"]`);
+                const header = btn?.closest('.duty-item');
+                currentName = header?.querySelector('.duty-name')?.textContent?.trim() || '';
+            }
+        } else {
+            // single duty
+            const btn = document.querySelector(`button[onclick="showRenameDutyModal(${dutyId})"]`);
+            currentName = btn?.closest('.duty-item')?.querySelector('.duty-name')?.textContent?.trim() || '';
+        }
+
         document.getElementById('renameDutyInput').value = currentName;
         document.getElementById('renameDutyMessage').style.display = 'none';
         document.getElementById('renameDutyModal').classList.add('show');
@@ -2828,36 +2857,70 @@
     function closeRenameDutyModal() {
         document.getElementById('renameDutyModal').classList.remove('show');
         renameDutyId = null;
+        renameDutyGroupId = null;
     }
 
     async function confirmRenameDuty() {
         if (!renameDutyId) return;
-        const newName = document.getElementById('renameDutyInput').value.trim();
-        if (!newName) { alert('กรุณาระบุชื่อ Duty'); return; }
+        const newBaseName = document.getElementById('renameDutyInput').value.trim();
+        if (!newBaseName) { alert('กรุณาระบุชื่อ Duty'); return; }
+
+        const msgEl = document.getElementById('renameDutyMessage');
 
         try {
-            const res = await fetch(`${API_URL}/api/duties/${renameDutyId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ dutyName: newName })
-            });
-            const data = await res.json();
-            const msgEl = document.getElementById('renameDutyMessage');
-            if (res.ok && data.success) {
+            if (renameDutyGroupId) {
+                // === Group rename: อัปเดตทุก subrow โดยเปลี่ยนแค่ baseName เก็บ (HH:MM-HH:MM) ===
+                const subrows = document.getElementById('subrows_' + renameDutyGroupId);
+                const deleteButtons = subrows ? Array.from(subrows.querySelectorAll('button.btn-delete-duty')) : [];
+
+                let successCount = 0, failCount = 0;
+                for (const btn of deleteButtons) {
+                    const match = btn.getAttribute('onclick')?.match(/showDeleteDutyModal\((\d+),\s*'([^']+)'/);
+                    if (!match) continue;
+                    const id = match[1];
+                    const oldFullName = match[2].replace(/\'/g, "'");
+                    // เก็บส่วนเวลา (HH:MM-HH:MM) ไว้ เปลี่ยนแค่ baseName
+                    const timeMatch = oldFullName.match(/(\s*\(\d{2}:\d{2}-\d{2}:\d{2}\))$/);
+                    const timePart = timeMatch ? timeMatch[1] : '';
+                    const newFullName = newBaseName + timePart;
+
+                    const res = await fetch(`${API_URL}/api/duties/${id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ dutyName: newFullName })
+                    });
+                    const data = await res.json();
+                    if (res.ok && data.success) successCount++;
+                    else failCount++;
+                }
+
                 msgEl.style.display = 'block';
-                msgEl.style.background = '#d4edda';
-                msgEl.style.color = '#155724';
-                msgEl.textContent = '✅ เปลี่ยนชื่อสำเร็จ';
-                setTimeout(() => {
-                    closeRenameDutyModal();
-                    loadDepartments();
-                }, 800);
+                if (failCount === 0) {
+                    msgEl.style.background = '#d4edda'; msgEl.style.color = '#155724';
+                    msgEl.textContent = `✅ เปลี่ยนชื่อสำเร็จ ${successCount} รายการ`;
+                } else {
+                    msgEl.style.background = '#f8d7da'; msgEl.style.color = '#721c24';
+                    msgEl.textContent = `⚠️ สำเร็จ ${successCount} ผิดพลาด ${failCount}`;
+                }
             } else {
+                // === Single rename ===
+                const res = await fetch(`${API_URL}/api/duties/${renameDutyId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ dutyName: newBaseName })
+                });
+                const data = await res.json();
                 msgEl.style.display = 'block';
-                msgEl.style.background = '#f8d7da';
-                msgEl.style.color = '#721c24';
-                msgEl.textContent = '❌ ' + (data.message || 'เกิดข้อผิดพลาด');
+                if (res.ok && data.success) {
+                    msgEl.style.background = '#d4edda'; msgEl.style.color = '#155724';
+                    msgEl.textContent = '✅ เปลี่ยนชื่อสำเร็จ';
+                } else {
+                    msgEl.style.background = '#f8d7da'; msgEl.style.color = '#721c24';
+                    msgEl.textContent = '❌ ' + (data.message || 'เกิดข้อผิดพลาด');
+                    return;
+                }
             }
+            setTimeout(() => { closeRenameDutyModal(); loadDepartments(); }, 800);
         } catch (e) {
             alert('❌ ' + e.message);
         }
@@ -4078,7 +4141,7 @@
 ```
 
 <div style="text-align:center; padding: 16px; color: #aaa; font-size: 12px;">
-    dep_doc GEN6 V6
+    dep_doc GEN6 V7
 </div>
 
 </body>
