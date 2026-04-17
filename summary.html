@@ -1224,17 +1224,18 @@
                         const dateStr = currentDate.toISOString().split('T')[0];
                         const dayDisplay = formatDateThai(dateStr);
                         
-                        // หาว่าวันนี้มีใครมาแทนบ้าง
+                        // หาว่าวันนี้มีใครมาแทนบ้าง (GEN6: รวม split_label)
                         const dailyAssignments = leave.duty_assignments
                             .filter(a => a.duty_date === dateStr)
                             .map(a => {
                                 const replacementDoc = allDoctors.find(d => d.id === a.replacement_doctor_id);
-                                return replacementDoc ? replacementDoc.name : 'ไม่ระบุ';
+                                const name = replacementDoc ? replacementDoc.name : 'ไม่ระบุ';
+                                // GEN6: แสดง split_label ถ้ามี เช่น "ก่อน 14:00 ฝาก B"
+                                return a.split_label ? `${a.split_label} ฝาก ${name}` : name;
                             });
                         
                         if (dailyAssignments.length > 0) {
-                            const uniqueReplacements = [...new Set(dailyAssignments)];
-                            html += `<div style="margin-bottom: 3px;">${dayDisplay}: ${uniqueReplacements.join(', ')}</div>`;
+                            html += `<div style="margin-bottom: 3px;">${dayDisplay}: ${dailyAssignments.join(' | ')}</div>`;
                         } else {
                             // GEN4 V0: วันที่ไม่มี duty_assignment = วันนั้นไม่มี duty
                             html += `<div style="margin-bottom: 3px; color: #999;">${dayDisplay}: no duty</div>`;
@@ -1882,4 +1883,5 @@
 ```
 
 </body>
+<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">summary GEN6 V0</div>
 </html>
