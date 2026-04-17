@@ -2087,7 +2087,7 @@
                                     <div class="duty-item">
                                         <span class="duty-name">${dutyName}</span>
                                         ${renderSchedule(duty, false)}
-                                        <button onclick="showRenameDutyModal(${dutyId}, '${dutyName.replace(/'/g, &quot;\'&quot;)}')" class="btn-delete-duty" style="background:#5352ed;" title="เปลี่ยนชื่อ">🔧</button>
+                                        <button onclick="showRenameDutyModal(${dutyId})" class="btn-delete-duty" style="background:#5352ed;" title="เปลี่ยนชื่อ">🔧</button>
                                         <button onclick="showDeleteDutyModal(${dutyId}, '${dutyName.replace(/'/g, "\\'")}')" class="btn-delete-duty">ลบ</button>
                                     </div>
                                 `;
@@ -2129,7 +2129,7 @@
                                         <div class="duty-item duty-group-subrow">
                                             <span class="duty-name" style="color: #555; padding-left: 16px;">${timeLabel}</span>
                                             ${renderSchedule(duty, false)}
-                                            <button onclick="showRenameDutyModal(${dutyId}, '${dutyName.replace(/'/g, &quot;\'&quot;)}')" class="btn-delete-duty" style="background:#5352ed;" title="เปลี่ยนชื่อ">🔧</button>
+                                            <button onclick="showRenameDutyModal(${dutyId})" class="btn-delete-duty" style="background:#5352ed;" title="เปลี่ยนชื่อ">🔧</button>
                                             <button onclick="showDeleteDutyModal(${dutyId}, '${dutyName.replace(/'/g, "\\'")}')" class="btn-delete-duty">ลบ</button>
                                         </div>
                                     `;
@@ -2792,9 +2792,12 @@
     // GEN6: Rename Duty Modal
     var renameDutyId = null;
 
-    function showRenameDutyModal(dutyId, dutyName) {
+    function showRenameDutyModal(dutyId) {
         renameDutyId = dutyId;
-        document.getElementById('renameDutyInput').value = dutyName;
+        // หาชื่อปัจจุบันจาก DOM (span.duty-name ใกล้ปุ่ม)
+        const btn = document.querySelector(`button[onclick="showRenameDutyModal(${dutyId})"]`);
+        const currentName = btn ? (btn.closest('.duty-item')?.querySelector('.duty-name')?.textContent?.trim() || '') : '';
+        document.getElementById('renameDutyInput').value = currentName;
         document.getElementById('renameDutyMessage').style.display = 'none';
         document.getElementById('renameDutyModal').classList.add('show');
         setTimeout(() => document.getElementById('renameDutyInput').focus(), 100);
@@ -4053,7 +4056,7 @@
 ```
 
 <div style="text-align:center; padding: 16px; color: #aaa; font-size: 12px;">
-    dep_doc GEN6 V4
+    dep_doc GEN6 V5
 </div>
 
 </body>
