@@ -2096,13 +2096,17 @@
                                 const groupId = 'group_' + dept.id + '_' + item.baseName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
                                 const { summary, duties: subDuties } = item;
 
-                                // Group header row (ชื่อ baseName + ปุ่มสรุป + ปุ่ม toggle)
+                                // Group header row (ชื่อ baseName + ปุ่มสรุป + ปุ่ม toggle + 🔧 + ลบกลุ่ม)
+                                const firstSubId = subDuties[0] ? (subDuties[0].duty_id || subDuties[0].id) : 0;
+                                const firstSubName = subDuties[0] ? subDuties[0].duty_name : '';
                                 html += `
                                     <div class="duty-item duty-group-header">
                                         <span class="duty-name" style="font-weight: 700;">${item.baseName}</span>
                                         <div style="display:flex; gap:6px; margin-left:auto; align-items:center;">
                                             <button onclick="toggleDeptDutySummary('${groupId}')" id="btn_summary_${groupId}" class="btn-summary-group">สรุป</button>
                                             <button onclick="toggleDeptDutyGroup('${groupId}')" id="btn_${groupId}" class="btn-toggle-group">แสดง</button>
+                                            <button onclick="showRenameDutyModal(${firstSubId})" class="btn-delete-duty" style="background:#5352ed;" title="เปลี่ยนชื่อ">🔧</button>
+                                            <button onclick="showDeleteGroupDutyModal('${groupId}')" class="btn-delete-duty">ลบ</button>
                                         </div>
                                     </div>
                                     <div id="summary_hourly_${groupId}" style="display:none; background:#f8f9fa; border-left:3px solid #48dbfb; margin-bottom:4px; padding:8px 12px;"></div>
@@ -2129,7 +2133,6 @@
                                         <div class="duty-item duty-group-subrow">
                                             <span class="duty-name" style="color: #555; padding-left: 16px;">${timeLabel}</span>
                                             ${renderSchedule(duty, false)}
-                                            <button onclick="showRenameDutyModal(${dutyId})" class="btn-delete-duty" style="background:#5352ed;" title="เปลี่ยนชื่อ">🔧</button>
                                             <button onclick="showDeleteDutyModal(${dutyId}, '${dutyName.replace(/'/g, "\\'")}')" class="btn-delete-duty">ลบ</button>
                                         </div>
                                     `;
@@ -2789,6 +2792,25 @@
     }
 
     // Modal ลบ Duty ของแผนก
+    // GEN6: ลบ duty ทั้งกลุ่ม (subrows ทั้งหมดที่มี baseName เดียวกัน)
+    async function showDeleteGroupDutyModal(groupId) {
+        const subrows = document.querySelectorAll(`#subrows_${groupId} .btn-delete-duty`);
+        const count = subrows.length;
+        if (!confirm(`⚠️ จะลบ duty ทั้งกลุ่ม (${count} ช่วงเวลา) ใช่หรือไม่?`)) return;
+        // ลบทีละ subrow โดยดึง dutyId จาก onclick attribute
+        const deleteButtons = Array.from(document.querySelectorAll(`#subrows_${groupId} button.btn-delete-duty`));
+        for (const btn of deleteButtons) {
+            const match = btn.getAttribute('onclick')?.match(/showDeleteDutyModal\((\d+)/);
+            if (match) {
+                const dutyId = match[1];
+                try {
+                    await fetch(`${API_URL}/api/duties/${dutyId}`, { method: 'DELETE' });
+                } catch(e) { console.error('delete error', e); }
+            }
+        }
+        loadDepartments();
+    }
+
     // GEN6: Rename Duty Modal
     var renameDutyId = null;
 
@@ -4056,7 +4078,7 @@
 ```
 
 <div style="text-align:center; padding: 16px; color: #aaa; font-size: 12px;">
-    dep_doc GEN6 V5
+    dep_doc GEN6 V6
 </div>
 
 </body>
