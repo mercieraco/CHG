@@ -881,6 +881,7 @@
     
     // GEN4 V2 Step 1: เก็บ state การเลือก ฝาก/ไม่ฝาก แต่ละ duty
     let dutyDelegationStates = {}; // key: uniqueId, value: 'delegate' | 'no-delegate'
+    let dutySplitStates = {}; // GEN6: { uniqueId: splitTime }
     
     // ระบบเลือกวันแบบใหม่
     let selectionStep = 0; // 0 = ยังไม่เริ่ม, 1 = เลือกวันเริ่มต้นแล้ว, 2 = เลือกวันสิ้นสุดแล้ว
@@ -2587,14 +2588,25 @@
                 
                 allSelects.forEach(select => {
                     const uniqueId = select.dataset.uniqueId;
-                    const state = dutyDelegationStates[uniqueId] || 'delegate';
-                    
+                    const splitLabel = select.dataset.splitLabel || null;
+                    const parentUid = select.dataset.parentUid || null;
+
+                    let state;
+                    if (parentUid) {
+                        state = 'delegate';
+                    } else if (splitLabel === null && dutySplitStates[uniqueId]) {
+                        return; // parent ที่ split แล้ว — ข้าม
+                    } else {
+                        state = dutyDelegationStates[uniqueId] || 'delegate';
+                    }
+
                     allDuties.push({
-                        uniqueId: uniqueId,
+                        uniqueId,
                         date: select.dataset.date,
                         dutyId: select.dataset.dutyId,
-                        state: state,
-                        select: select
+                        state,
+                        splitLabel,
+                        select
                     });
                 });
                 
@@ -2629,7 +2641,8 @@
                     dutyAssignments.push({
                         dutyId: parseInt(item.dutyId),
                         dutyDate: item.date,
-                        replacementDoctorId: parseInt(item.select.value)
+                        replacementDoctorId: parseInt(item.select.value),
+                        splitLabel: item.splitLabel || null  // GEN6
                     });
                 }
                 
@@ -2739,7 +2752,8 @@
                                 groupDutyAssignments.push({
                                     dutyId: parseInt(duty.dutyId),
                                     dutyDate: duty.date,
-                                    replacementDoctorId: parseInt(replacementDoctorId)
+                                    replacementDoctorId: parseInt(replacementDoctorId),
+                                    splitLabel: duty.splitLabel || null  // GEN6
                                 });
                             }
                         }
@@ -2861,6 +2875,8 @@
                 startDate = null;
                 endDate = null;
                 currentDutyData = [];
+                dutySplitStates = {}; // GEN6
+                dutyDelegationStates = {};
                 document.getElementById('departmentDetailsContainer').innerHTML = '';
                 
                 // แสดงแถบรายการลางานกลับมา
@@ -3356,6 +3372,125 @@
     }
 
     // GEN4 V2 Step 2: ฟังก์ชัน Toggle ระหว่าง ฝาก/ไม่ฝาก
+    // GEN6: Toggle Split Mode
+    window.toggleDutySplit = function(uniqueId, dutyId, date, deptId) {
+        const splitBtn = document.getElementById(`btn-split-${uniqueId}`);
+        const delegateBtn = document.querySelector(`.btn-delegate[data-unique-id="${uniqueId}"]`);
+        const noDelegateBtn = document.querySelector(`.btn-no-delegate[data-unique-id="${uniqueId}"]`);
+        const content = document.getElementById(`delegationContent_${uniqueId}`);
+
+        if (dutySplitStates[uniqueId]) {
+            // ยกเลิก split
+            delete dutySplitStates[uniqueId];
+            splitBtn.style.background = 'white';
+            splitBtn.style.color = '#ff9800';
+            if (delegateBtn) delegateBtn.style.display = '';
+            if (noDelegateBtn) noDelegateBtn.style.display = '';
+            dutyDelegationStates[uniqueId] = 'delegate';
+            content.innerHTML = renderNormalDelegationContent(uniqueId, deptId);
+            loadDoctorsForCustomDuty(uniqueId, deptId);
+        } else {
+            // เข้า split mode
+            splitBtn.style.background = '#ff9800';
+            splitBtn.style.color = 'white';
+            if (delegateBtn) delegateBtn.style.display = 'none';
+            if (noDelegateBtn) noDelegateBtn.style.display = 'none';
+            content.innerHTML = `
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px; padding:10px; background:#fff3e0; border-radius:8px; border:1px solid #ff9800;">
+                    <span style="font-weight:600; color:#e65100;">✂️ แบ่งเวรที่เวลา:</span>
+                    <input type="time" id="splitTime_${uniqueId}" value="13:00"
+                        style="padding:6px; border:1px solid #ff9800; border-radius:6px; font-size:14px;">
+                    <button type="button" onclick="applySplitTime('${uniqueId}', ${dutyId}, '${date}', ${deptId})"
+                        style="padding:6px 14px; background:#ff9800; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:600;">
+                        ยืนยัน
+                    </button>
+                </div>`;
+        }
+    };
+
+    // GEN6: ยืนยันเวลา → render 2 rows
+    window.applySplitTime = function(uniqueId, dutyId, date, deptId) {
+        const timeInput = document.getElementById(`splitTime_${uniqueId}`);
+        const splitTime = timeInput ? timeInput.value : '13:00';
+        dutySplitStates[uniqueId] = splitTime;
+
+        const content = document.getElementById(`delegationContent_${uniqueId}`);
+        const uid1 = uniqueId + '_before';
+        const uid2 = uniqueId + '_after';
+
+        content.innerHTML = `
+            <div style="margin-bottom:10px; padding:10px; background:#fff8e1; border-radius:6px; border:1px solid #ffcc02;">
+                <p style="font-weight:600; color:#e65100; margin:0 0 8px;">ก่อน ${splitTime}</p>
+                <div style="display:flex; gap:10px; margin-bottom:8px;">
+                    <select id="customFilterDept_${uid1}" onchange="loadDoctorsForCustomDuty('${uid1}', ${deptId})"
+                        style="flex:1; padding:8px; border:1px solid #ddd; border-radius:4px; font-size:14px;">
+                        <option value="">-- เลือกแผนก --</option>
+                    </select>
+                    <select id="customFilterWorkType_${uid1}" onchange="loadDoctorsForCustomDuty('${uid1}', ${deptId})"
+                        style="flex:1; padding:8px; border:1px solid #ddd; border-radius:4px; font-size:14px;">
+                        <option value="full" selected>Full time</option>
+                        <option value="part">Part time</option>
+                    </select>
+                </div>
+                <select class="custom-delegation-select"
+                    data-dept-id="${deptId}" data-duty-id="${dutyId}"
+                    data-date="${date}" data-unique-id="${uid1}"
+                    data-split-label="ก่อน ${splitTime}" data-parent-uid="${uniqueId}"
+                    style="width:100%; padding:10px; border:1px solid #ddd; border-radius:4px; font-size:14px;">
+                    <option value="">-- เลือกแพทย์ที่จะมาแทน --</option>
+                </select>
+            </div>
+            <div style="padding:10px; background:#e8f5e9; border-radius:6px; border:1px solid #66bb6a;">
+                <p style="font-weight:600; color:#2e7d32; margin:0 0 8px;">หลัง ${splitTime}</p>
+                <div style="display:flex; gap:10px; margin-bottom:8px;">
+                    <select id="customFilterDept_${uid2}" onchange="loadDoctorsForCustomDuty('${uid2}', ${deptId})"
+                        style="flex:1; padding:8px; border:1px solid #ddd; border-radius:4px; font-size:14px;">
+                        <option value="">-- เลือกแผนก --</option>
+                    </select>
+                    <select id="customFilterWorkType_${uid2}" onchange="loadDoctorsForCustomDuty('${uid2}', ${deptId})"
+                        style="flex:1; padding:8px; border:1px solid #ddd; border-radius:4px; font-size:14px;">
+                        <option value="full" selected>Full time</option>
+                        <option value="part">Part time</option>
+                    </select>
+                </div>
+                <select class="custom-delegation-select"
+                    data-dept-id="${deptId}" data-duty-id="${dutyId}"
+                    data-date="${date}" data-unique-id="${uid2}"
+                    data-split-label="หลัง ${splitTime}" data-parent-uid="${uniqueId}"
+                    style="width:100%; padding:10px; border:1px solid #ddd; border-radius:4px; font-size:14px;">
+                    <option value="">-- เลือกแพทย์ที่จะมาแทน --</option>
+                </select>
+            </div>`;
+
+        loadDoctorsForCustomDuty(uid1, deptId);
+        loadDoctorsForCustomDuty(uid2, deptId);
+    };
+
+    // GEN6: render content ปกติ
+    function renderNormalDelegationContent(uniqueId, deptId) {
+        const parts = uniqueId.split('_');
+        const dutyId = parts[1];
+        const date = parts[2];
+        return `
+            <div style="display:flex; gap:10px; margin-bottom:10px;">
+                <select id="customFilterDept_${uniqueId}" onchange="loadDoctorsForCustomDuty('${uniqueId}', ${deptId})"
+                    style="flex:1; padding:8px; border:1px solid #ddd; border-radius:4px; font-size:14px;">
+                    <option value="">-- เลือกแผนก --</option>
+                </select>
+                <select id="customFilterWorkType_${uniqueId}" onchange="loadDoctorsForCustomDuty('${uniqueId}', ${deptId})"
+                    style="flex:1; padding:8px; border:1px solid #ddd; border-radius:4px; font-size:14px;">
+                    <option value="full" selected>Full time</option>
+                    <option value="part">Part time</option>
+                </select>
+            </div>
+            <select class="custom-delegation-select"
+                data-dept-id="${deptId}" data-duty-id="${dutyId}"
+                data-date="${date}" data-unique-id="${uniqueId}"
+                style="width:100%; padding:10px; border:1px solid #ddd; border-radius:4px; font-size:14px;">
+                <option value="">-- เลือกแพทย์ที่จะมาแทน --</option>
+            </select>`;
+    }
+
     window.toggleDutyDelegation = function(uniqueId, type) {
         console.log(`toggleDutyDelegation called: ${uniqueId}, ${type}`);
         
@@ -3465,42 +3600,42 @@
         
         const delegateItems = allDuties.filter(d => d.state === 'delegate');
         const noDelegateItems = allDuties.filter(d => d.state === 'no-delegate');
-        
+
+        // GEN6: แยก split items → standalone group
+        const splitItems = delegateItems.filter(d => d.splitLabel !== null);
+        const normalItems = delegateItems.filter(d => d.splitLabel === null);
+
         const groupConsecutive = (items) => {
             if (items.length === 0) return [];
-            
             items.sort((a, b) => new Date(a.date) - new Date(b.date));
-            
             const groups = [];
-            let currentGroup = {
-                startDate: items[0].date,
-                endDate: items[0].date,
-                duties: [items[0]]
-            };
-            
+            let currentGroup = { startDate: items[0].date, endDate: items[0].date, duties: [items[0]] };
             for (let i = 1; i < items.length; i++) {
-                const prevDate = new Date(currentGroup.endDate);
-                const currDate = new Date(items[i].date);
-                const diffDays = Math.floor((currDate - prevDate) / (1000 * 60 * 60 * 24));
-                
+                const diffDays = Math.floor((new Date(items[i].date) - new Date(currentGroup.endDate)) / 86400000);
                 if (diffDays === 1) {
                     currentGroup.endDate = items[i].date;
                     currentGroup.duties.push(items[i]);
                 } else {
                     groups.push(currentGroup);
-                    currentGroup = {
-                        startDate: items[i].date,
-                        endDate: items[i].date,
-                        duties: [items[i]]
-                    };
+                    currentGroup = { startDate: items[i].date, endDate: items[i].date, duties: [items[i]] };
                 }
             }
             groups.push(currentGroup);
-            
             return groups;
         };
-        
-        const delegateGroups = groupConsecutive(delegateItems);
+
+        // split items → แต่ละวันเป็น standalone group
+        const splitGroups = [];
+        const splitByDate = {};
+        splitItems.forEach(item => {
+            if (!splitByDate[item.date]) splitByDate[item.date] = [];
+            splitByDate[item.date].push(item);
+        });
+        Object.entries(splitByDate).forEach(([date, items]) => {
+            splitGroups.push({ startDate: date, endDate: date, duties: items });
+        });
+
+        const delegateGroups = [...groupConsecutive(normalItems), ...splitGroups];
         const noDelegateGroups = groupConsecutive(noDelegateItems);
         
         console.log('Result:', { delegateGroups, noDelegateGroups });
@@ -3527,7 +3662,13 @@
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                             <p style="font-weight: 600; margin: 0;">วันที่ ${dateStr}: ${duty.duty_name}</p>
                             
-                            <div class="delegation-toggle-buttons" style="display: flex; gap: 8px;">
+                            <div class="delegation-toggle-buttons" style="display: flex; gap: 8px; align-items: center;">
+                                <button
+                                    type="button"
+                                    id="btn-split-${uniqueId}"
+                                    onclick="toggleDutySplit('${uniqueId}', ${duty.duty_id}, '${item.date}', ${deptId})"
+                                    style="padding: 6px 10px; border: 2px solid #ff9800; background: white; color: #ff9800; border-radius: 4px; cursor: pointer; font-size: 14px; transition: all 0.2s;"
+                                    title="แบ่งเวร">✂️</button>
                                 <button 
                                     class="btn-delegate active" 
                                     data-unique-id="${uniqueId}"
@@ -4151,5 +4292,5 @@
 </div>
 
 </body>
-<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">dep_rest GEN6 V0</div>
+<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">dep_rest GEN6 V1</div>
 </html>
