@@ -776,12 +776,7 @@
                 <option value="">-- เลือกแผนก --</option>
             </select>
         </div>
-        <div class="form-group">
-            <select id="workTypeSelect" onchange="loadDoctors()">
-                <option value="full" selected>Full time</option>
-                <option value="part">Part time</option>
-            </select>
-        </div>
+
     </div>
     
     <div class="form-group" style="display: none;">
@@ -971,7 +966,6 @@
                 
                 // 4. Auto-select
                 document.getElementById('departmentSelect').value = doctor.department_id;
-                document.getElementById('workTypeSelect').value = doctor.work_type || 'full';
                 
                 // 5. โหลดแพทย์ในแผนก
                 await loadDoctors();
@@ -1073,7 +1067,7 @@
     // โหลดแพทย์ตามแผนก
     async function loadDoctors() {
         const departmentId = document.getElementById('departmentSelect').value;
-        const workType = document.getElementById('workTypeSelect').value;
+        const workType = 'full'; // GEN6: user.html เฉพาะ full time
         const doctorSelect = document.getElementById('doctorSelect');
         doctorSelect.innerHTML = '<option value="">-- เลือกแพทย์ที่จะลา --</option>';
 
@@ -1273,7 +1267,7 @@
     async function loadReplacementDoctors() {
         const selectedDoctorId = sessionStorage.getItem('doctor_id');
         const mainDeptId = sessionStorage.getItem('department_id');
-        const filterType = document.getElementById('filterWorkType').value;
+        const filterType = 'full'; // GEN6: user.html เฉพาะ full time
         const replacementSelect = document.getElementById('replacementDoctorSelect');
         replacementSelect.innerHTML = '<option value="">กำลังโหลด...</option>';
 
@@ -3788,12 +3782,7 @@
                             <option value="">-- เลือกแผนก --</option>
                         </select>
                     </div>
-                    <div class="form-group">
-                        <select id="filterWorkType_${deptId}" onchange="loadReplacementDoctorsForDept(${deptId})">
-                            <option value="full" selected>Full time</option>
-                            <option value="part">Part time</option>
-                        </select>
-                    </div>
+
                 </div>
                 <div class="form-group">
                     <select id="replacementDoctorSelect_${deptId}">
@@ -3893,13 +3882,7 @@
                                     style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
                                     <option value="">-- เลือกแผนก --</option>
                                 </select>
-                                <select 
-                                    id="customFilterWorkType_${uniqueId}" 
-                                    onchange="loadDoctorsForCustomDuty('${uniqueId}', ${deptId})"
-                                    style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
-                                    <option value="full" selected>Full time</option>
-                                    <option value="part">Part time</option>
-                                </select>
+
                             </div>
                             
                             <select 
@@ -3964,13 +3947,7 @@
                         style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
                         <option value="">-- เลือกแผนก --</option>
                     </select>
-                    <select 
-                        id="customFilterWorkType_${uniqueId}" 
-                        onchange="loadDoctorsForCustomDuty('${uniqueId}', ${uniqueId.split('_')[0]})"
-                        style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
-                        <option value="full" selected>Full time</option>
-                        <option value="part">Part time</option>
-                    </select>
+
                 </div>
                 
                 <select 
@@ -4030,14 +4007,13 @@
     // โหลดแพทย์สำหรับแต่ละ Duty (Custom Delegation)
     window.loadDoctorsForCustomDuty = async function(uniqueId, defaultDeptId) {
         const filterDeptSelect = document.getElementById(`customFilterDept_${uniqueId}`);
-        const filterWorkTypeSelect = document.getElementById(`customFilterWorkType_${uniqueId}`);
         const doctorSelect = document.querySelector(`.custom-delegation-select[data-unique-id="${uniqueId}"]`);
         
         if (!filterDeptSelect || !doctorSelect) return;
 
         // ประกาศตัวแปรหลักก่อน
         const currentDoctorId = sessionStorage.getItem('doctor_id');
-        const workType = filterWorkTypeSelect ? filterWorkTypeSelect.value : 'full';
+        const workType = 'full'; // GEN6: user.html เฉพาะ full time
         const dutyDate = doctorSelect.getAttribute('data-date');
         const dutyId = doctorSelect.getAttribute('data-duty-id');
 
@@ -4145,14 +4121,13 @@
 
     async function loadReplacementDoctorsForDept(deptId) {
         const filterDeptSelect = document.getElementById(`filterDepartment_${deptId}`);
-        const filterWorkTypeSelect = document.getElementById(`filterWorkType_${deptId}`);
         const replacementSelect = document.getElementById(`replacementDoctorSelect_${deptId}`);
         
         if (!filterDeptSelect || !replacementSelect) return;
 
         // ประกาศตัวแปรหลักก่อน
         const currentDoctorId = sessionStorage.getItem('doctor_id');
-        const workType = filterWorkTypeSelect ? filterWorkTypeSelect.value : 'full';
+        const workType = 'full'; // GEN6: user.html เฉพาะ full time
 
         // โหลด Departments ที่มีแพทย์รับฝากได้เท่านั้น
         if (filterDeptSelect.options.length === 1) {
@@ -4533,4 +4508,5 @@
 ```
 
 </body>
+<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">user GEN6 V0</div>
 </html>
