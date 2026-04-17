@@ -1490,11 +1490,14 @@
                     const replacementName = assignment.replacement_doctor_name || 'ไม่ระบุ';
                     const replacementFirstName = getFirstName(replacementName);
                     const replacementLastInitial = getLastNameInitial(replacementName);
-                    
+                    // GEN6: แสดง split_label ถ้ามี
+                    const splitNote = assignment.split_label ? ` [${assignment.split_label}]` : '';
+                    const dutyDisplay = assignment.duty_name + splitNote;
+
                     html += `
                         <div class="duty-detail-item">
-                            <span class="name-short">${assignmentDate} [${assignment.duty_name}] >> ${replacementFirstName} (${replacementLastInitial})</span>
-                            <span class="name-full">${assignmentDate} [${assignment.duty_name}] >> ${replacementName}</span>
+                            <span class="name-short">${assignmentDate} [${dutyDisplay}] >> ${replacementFirstName} (${replacementLastInitial})</span>
+                            <span class="name-full">${assignmentDate} [${dutyDisplay}] >> ${replacementName}</span>
                         </div>
                     `;
                 });
@@ -4148,4 +4151,5 @@
 </div>
 
 </body>
+<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">dep_rest GEN6 V0</div>
 </html>
