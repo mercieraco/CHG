@@ -1052,6 +1052,24 @@
     </div>
 </div>
 
+<!-- Modal เปลี่ยนชื่อ Duty ของแผนก -->
+<div id="renameDutyModal" class="modal">
+    <div class="modal-content">
+        <h3>🔧 เปลี่ยนชื่อ Duty</h3>
+        <p style="color:#666; font-size:13px;">เปลี่ยนเฉพาะชื่อ — เวลาและงานที่มอบหมายแพทย์ไม่เปลี่ยน</p>
+        <div class="form-group" style="text-align:left; margin-top:12px;">
+            <label style="font-weight:600;">ชื่อใหม่:</label>
+            <input type="text" id="renameDutyInput" placeholder="ชื่อ Duty ใหม่"
+                   style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px; font-size:14px; margin-top:6px;">
+        </div>
+        <div id="renameDutyMessage" style="display:none; margin-top:10px; padding:8px 12px; border-radius:6px; font-size:13px; font-weight:600;"></div>
+        <div class="modal-actions" style="margin-top:16px;">
+            <button onclick="closeRenameDutyModal()" class="btn btn-secondary">ยกเลิก</button>
+            <button onclick="confirmRenameDuty()" class="btn btn-primary">บันทึก</button>
+        </div>
+    </div>
+</div>
+
 <!-- Modal ลบ Duty ของแผนก -->
 <div id="deleteDutyModal" class="modal">
     <div class="modal-content">
@@ -2069,6 +2087,7 @@
                                     <div class="duty-item">
                                         <span class="duty-name">${dutyName}</span>
                                         ${renderSchedule(duty, false)}
+                                        <button onclick="showRenameDutyModal(${dutyId}, '${dutyName.replace(/'/g, &quot;\'&quot;)}')" class="btn-delete-duty" style="background:#5352ed;" title="เปลี่ยนชื่อ">🔧</button>
                                         <button onclick="showDeleteDutyModal(${dutyId}, '${dutyName.replace(/'/g, "\\'")}')" class="btn-delete-duty">ลบ</button>
                                     </div>
                                 `;
@@ -2110,6 +2129,7 @@
                                         <div class="duty-item duty-group-subrow">
                                             <span class="duty-name" style="color: #555; padding-left: 16px;">${timeLabel}</span>
                                             ${renderSchedule(duty, false)}
+                                            <button onclick="showRenameDutyModal(${dutyId}, '${dutyName.replace(/'/g, &quot;\'&quot;)}')" class="btn-delete-duty" style="background:#5352ed;" title="เปลี่ยนชื่อ">🔧</button>
                                             <button onclick="showDeleteDutyModal(${dutyId}, '${dutyName.replace(/'/g, "\\'")}')" class="btn-delete-duty">ลบ</button>
                                         </div>
                                     `;
@@ -2769,6 +2789,55 @@
     }
 
     // Modal ลบ Duty ของแผนก
+    // GEN6: Rename Duty Modal
+    var renameDutyId = null;
+
+    function showRenameDutyModal(dutyId, dutyName) {
+        renameDutyId = dutyId;
+        document.getElementById('renameDutyInput').value = dutyName;
+        document.getElementById('renameDutyMessage').style.display = 'none';
+        document.getElementById('renameDutyModal').classList.add('show');
+        setTimeout(() => document.getElementById('renameDutyInput').focus(), 100);
+    }
+
+    function closeRenameDutyModal() {
+        document.getElementById('renameDutyModal').classList.remove('show');
+        renameDutyId = null;
+    }
+
+    async function confirmRenameDuty() {
+        if (!renameDutyId) return;
+        const newName = document.getElementById('renameDutyInput').value.trim();
+        if (!newName) { alert('กรุณาระบุชื่อ Duty'); return; }
+
+        try {
+            const res = await fetch(`${API_URL}/api/duties/${renameDutyId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ dutyName: newName })
+            });
+            const data = await res.json();
+            const msgEl = document.getElementById('renameDutyMessage');
+            if (res.ok && data.success) {
+                msgEl.style.display = 'block';
+                msgEl.style.background = '#d4edda';
+                msgEl.style.color = '#155724';
+                msgEl.textContent = '✅ เปลี่ยนชื่อสำเร็จ';
+                setTimeout(() => {
+                    closeRenameDutyModal();
+                    loadDepartments();
+                }, 800);
+            } else {
+                msgEl.style.display = 'block';
+                msgEl.style.background = '#f8d7da';
+                msgEl.style.color = '#721c24';
+                msgEl.textContent = '❌ ' + (data.message || 'เกิดข้อผิดพลาด');
+            }
+        } catch (e) {
+            alert('❌ ' + e.message);
+        }
+    }
+
     function showDeleteDutyModal(dutyId, dutyName) {
         deleteDutyId = dutyId;
         document.getElementById('deleteDutyName').textContent = dutyName;
@@ -3984,7 +4053,7 @@
 ```
 
 <div style="text-align:center; padding: 16px; color: #aaa; font-size: 12px;">
-    dep_doc GEN6 V3
+    dep_doc GEN6 V4
 </div>
 
 </body>
