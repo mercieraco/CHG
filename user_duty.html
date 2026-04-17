@@ -534,9 +534,11 @@
             const dateLabel = `${formatDateShort(day.date)} (${day.day_label})`;
             const dutiesHtml = day.duties.length === 0
                 ? `<span class="no-duty">ไม่มี duty</span>`
-                : day.duties.map(du =>
-                    `<span class="duty-chip ${chipClass[status] || ''}">${du.duty_name}</span>`
-                  ).join('');
+                : day.duties.map(du => {
+                    // GEN6: แสดง split_label ถ้ามี
+                    const splitNote = du.split_label ? ` [${du.split_label}]` : '';
+                    return `<span class="duty-chip ${chipClass[status] || ''}">${du.duty_name}${splitNote}</span>`;
+                  }).join('');
             return `
                 <div class="rep-day-row">
                     <div class="rep-day-label">${dateLabel}</div>
@@ -562,4 +564,5 @@
     }
 </script>
 </body>
+<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">user_duty GEN6 V0</div>
 </html>
