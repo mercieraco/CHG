@@ -1656,6 +1656,30 @@
                         </div>
                     `;
                 });
+
+                // GEN7 V10: แสดงวันที่ไม่ฝาก (อยู่ใน range แต่ไม่มีใน duty_assignments)
+                if (leave.no_delegation_reason && leave.no_delegation_reason.trim()) {
+                    // หาวันที่ไม่มีใน duty_assignments
+                    const assignedDates = new Set((leave.duty_assignments || []).map(a => a.duty_date));
+                    const current = new Date(leave.start_date);
+                    const end = new Date(leave.end_date);
+                    const noDelegDates = [];
+                    while (current <= end) {
+                        const ds = current.toISOString().split('T')[0];
+                        if (!assignedDates.has(ds)) noDelegDates.push(ds);
+                        current.setDate(current.getDate() + 1);
+                    }
+                    if (noDelegDates.length > 0) {
+                        noDelegDates.forEach(ds => {
+                            const dDisplay = formatDateThai(ds);
+                            html += `
+                                <div class="duty-detail-item">
+                                    <span class="name-short">${dDisplay} ไม่ฝาก — ${leave.no_delegation_reason}</span>
+                                    <span class="name-full">${dDisplay} ไม่ฝากงาน — ${leave.no_delegation_reason}</span>
+                                </div>`;
+                        });
+                    }
+                }
                 
                 // เช็คว่าเป็นการลาของตัวเองหรือไม่
                 const currentDoctorId = parseInt(sessionStorage.getItem('doctor_id'));
@@ -1929,11 +1953,9 @@
                     let hasDutyOnThisDay = false;
                     
                     if (leave.delegation_type === 'custom') {
-                        if (leave.duty_assignments && leave.duty_assignments.length > 0) {
-                            hasDutyOnThisDay = leave.duty_assignments.some(
-                                assignment => assignment.duty_date === dateStr
-                            );
-                        }
+                        // GEN7 V10: custom leave ครอบช่วงวันนั้น = มี duty เสมอ
+                        // (ทั้งวันที่ฝากและไม่ฝากล้วนอยู่ใน range)
+                        hasDutyOnThisDay = true;
                     } else if (leave.delegation_type === 'single') {
                         const checkDate = new Date(dateStr);
                         const dayOfWeek = checkDate.getDay();
@@ -4706,5 +4728,5 @@
 ```
 
 </body>
-<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">user GEN7 V9</div>
+<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">user GEN7 V10</div>
 </html>
