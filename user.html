@@ -1574,161 +1574,203 @@
         });
         console.log('  ✅ Sorted by created_at (oldest first - ยื่นก่อนอยู่บน)');
 
+        // GEN7 V6: Group ตาม group_id ก่อน render
+        // records ที่ group_id เดียวกัน = แถบเดียว (แม้ delegation_type ต่างกัน)
+        const grouped = [];
+        const seenGroupIds = new Set();
+
         leavesToDisplay.forEach(leave => {
-            const startDate = formatDateThai(leave.start_date);
-            const endDate = formatDateThai(leave.end_date);
-            
-            // ดึงชื่อ (ไม่เอานามสกุล) + ตัวอักษรแรกของนามสกุล
-            const doctorFullName = leave.doctor_name || '';
-            const doctorFirstName = getFirstName(doctorFullName);
+            const gid = leave.group_id;
+            if (gid && seenGroupIds.has(gid)) return; // ข้าม ถ้า group นี้ใส่แล้ว
+            if (gid) seenGroupIds.add(gid);
+
+            const groupLeaves = gid
+                ? leavesToDisplay.filter(l => l.group_id === gid)
+                : [leave];
+
+            grouped.push(groupLeaves);
+        });
+
+        grouped.forEach(groupLeaves => {
+            // หา date range รวม
+            const allStarts = groupLeaves.map(l => l.start_date).sort();
+            const allEnds   = groupLeaves.map(l => l.end_date).sort();
+            const startDateStr = allStarts[0];
+            const endDateStr   = allEnds[allEnds.length - 1];
+            const startDate    = formatDateThai(startDateStr);
+            const endDate      = formatDateThai(endDateStr);
+
+            const days = Math.ceil((new Date(endDateStr) - new Date(startDateStr)) / (1000 * 60 * 60 * 24)) + 1;
+
+            // ใช้ record แรกสำหรับข้อมูลหมอ
+            const leave = groupLeaves[0];
+            const doctorFullName   = leave.doctor_name || '';
+            const doctorFirstName  = getFirstName(doctorFullName);
             const doctorLastInitial = getLastNameInitial(doctorFullName);
-            
-            const days = Math.ceil((new Date(leave.end_date) - new Date(leave.start_date)) / (1000 * 60 * 60 * 24)) + 1;
+
+            const currentDoctorId = parseInt(sessionStorage.getItem('doctor_id'));
+            const isOwnLeave = leave.doctor_id === currentDoctorId;
+
+            // มี none อยู่ใน group หรือไม่
+            const hasNone   = groupLeaves.some(l => l.delegation_type === 'none');
+            const hasCustom = groupLeaves.some(l => l.delegation_type === 'custom');
+            const hasSingle = groupLeaves.some(l => l.delegation_type === 'single');
 
             const recordDiv = document.createElement('div');
             recordDiv.className = 'leave-record';
-            
-            // เช็ค delegation type
-            if (leave.delegation_type === 'single') {
-                // Single Delegation - สีเทา
-                recordDiv.classList.add('single-delegation');
-                
+
+            // ---- กรณี mixed group (custom + none) หรือ none เดียว ----
+            if (hasNone) {
+                // สีเหลือง (none)
+                recordDiv.classList.add('no-delegation');
+
+                // เช็คสถานะ approval จาก none records
+                const noneLeaves = groupLeaves.filter(l => l.delegation_type === 'none');
+                const anyApproved = noneLeaves.some(l => l.approval_status === 'approved');
+                const anyRejected = noneLeaves.some(l => l.approval_status === 'rejected');
+
                 let shortText = `${startDate} - ${endDate} (${days} วัน) | ${doctorFirstName} (${doctorLastInitial})`;
-                let fullText = `${startDate} - ${endDate} (${days} วัน) | ${doctorFullName}`;
-                
-                if (leave.has_replacement && leave.replacement_doctor_name) {
-                    const replacementFullName = leave.replacement_doctor_name;
-                    const replacementFirstName = getFirstName(replacementFullName);
-                    const replacementLastInitial = getLastNameInitial(replacementFullName);
-                    shortText += ` >> ${replacementFirstName} (${replacementLastInitial})`;
-                    fullText += ` >> ${replacementFullName}`;
+                let fullText  = `${startDate} - ${endDate} (${days} วัน) | ${doctorFullName}`;
+
+                // รวม duty detail (custom records)
+                let dutyDetailHtml = '';
+                groupLeaves.forEach(gl => {
+                    if (gl.delegation_type === 'custom' && gl.duty_assignments) {
+                        gl.duty_assignments.forEach(assignment => {
+                            const assignmentDate = formatDateThai(assignment.duty_date);
+                            const splitNote = assignment.split_label ? ` [${assignment.split_label}]` : '';
+                            const isSelf = assignment.is_self_duty;
+                            const replacementFullName = isSelf ? 'อยู่เอง' : (assignment.replacement_doctor_name || 'ไม่ระบุ');
+                            const shortRepl = isSelf ? 'อยู่เอง' : `${getFirstName(replacementFullName)} (${getLastNameInitial(replacementFullName)})`;
+                            const dutyDisplay = assignment.duty_name + splitNote;
+                            dutyDetailHtml += `
+                                <div class="duty-detail-item">
+                                    <span class="name-short">${assignmentDate} [${dutyDisplay}] >> ${shortRepl}</span>
+                                    <span class="name-full">${assignmentDate} [${dutyDisplay}] >> ${replacementFullName}</span>
+                                </div>`;
+                        });
+                    }
+                    if (gl.delegation_type === 'none' && gl.no_delegation_reason && gl.no_delegation_reason.trim()) {
+                        const noneStart = formatDateThai(gl.start_date);
+                        const noneEnd   = formatDateThai(gl.end_date);
+                        dutyDetailHtml += `
+                            <div class="duty-detail-item">
+                                <span class="name-short">${noneStart} - ${noneEnd}: ไม่ฝาก — ${gl.no_delegation_reason}</span>
+                                <span class="name-full">${noneStart} - ${noneEnd}: ไม่ฝากงาน — ${gl.no_delegation_reason}</span>
+                            </div>`;
+                    }
+                });
+
+                if (anyApproved) {
+                    recordDiv.classList.add('approved');
+                    shortText += ` | ไม่ฝากงาน อนุมัติ <span style="color:#4caf50;">✓</span>`;
+                    fullText  += ` | ไม่ฝากงาน อนุมัติ <span style="color:#4caf50;">✓</span>`;
+                } else if (anyRejected) {
+                    recordDiv.classList.add('rejected');
+                    shortText = `<span style="text-decoration:line-through;">${startDate} - ${endDate} (${days} วัน) | ${doctorFirstName} (${doctorLastInitial}) | ไม่ฝากงาน</span> <span style="text-decoration:none;">ไม่อนุมัติ <span style="color:#f44336;">✗</span></span>`;
+                    fullText  = `<span style="text-decoration:line-through;">${startDate} - ${endDate} (${days} วัน) | ${doctorFullName} | ไม่ฝากงาน</span> <span style="text-decoration:none;">ไม่อนุมัติ <span style="color:#f44336;">✗</span></span>`;
+                } else {
+                    const ORTHO_DEPT_ID = 11;
+                    if (leave.department_id === ORTHO_DEPT_ID) {
+                        shortText += ` | ไม่ฝากงาน`;
+                        fullText  += ` | ไม่ฝากงาน`;
+                    } else {
+                        shortText += ` | ไม่ฝากงาน ⏳ รออนุมัติ`;
+                        fullText  += ` | ไม่ฝากงาน (รออนุมัติ)`;
+                    }
                 }
-                
-                // ⭐ เพิ่มเหตุผลการลา (ถ้ามี)
+
+                const detailSection = dutyDetailHtml
+                    ? `<div class="duty-details">${dutyDetailHtml}</div>`
+                    : '';
+
+                recordDiv.innerHTML = `
+                    <div class="leave-record-info" onclick="highlightLeaveDates('${startDateStr}', '${endDateStr}', '${containerId}'); event.stopPropagation();">
+                        <div class="leave-header">
+                            <span class="name-short">${shortText}</span>
+                            <span class="name-full">${fullText}</span>
+                        </div>
+                        ${detailSection}
+                    </div>
+                    ${isOwnLeave ? `<button class="btn-delete" onclick="deleteLeave(${leave.id}); event.stopPropagation();">ลบ</button>` : ''}
+                `;
+
+            // ---- กรณี single delegation ----
+            } else if (hasSingle) {
+                recordDiv.classList.add('single-delegation');
+
+                let shortText = `${startDate} - ${endDate} (${days} วัน) | ${doctorFirstName} (${doctorLastInitial})`;
+                let fullText  = `${startDate} - ${endDate} (${days} วัน) | ${doctorFullName}`;
+
+                if (leave.has_replacement && leave.replacement_doctor_name) {
+                    const rFull    = leave.replacement_doctor_name;
+                    const rFirst   = getFirstName(rFull);
+                    const rInitial = getLastNameInitial(rFull);
+                    shortText += ` >> ${rFirst} (${rInitial})`;
+                    fullText  += ` >> ${rFull}`;
+                }
                 if (leave.no_delegation_reason && leave.no_delegation_reason.trim()) {
                     shortText += ` : ${leave.no_delegation_reason}`;
-                    fullText += ` : ${leave.no_delegation_reason}`;
+                    fullText  += ` : ${leave.no_delegation_reason}`;
                 }
-                
-                // เช็คว่าเป็นการลาของตัวเองหรือไม่
-                const currentDoctorId = parseInt(sessionStorage.getItem('doctor_id'));
-                const isOwnLeave = leave.doctor_id === currentDoctorId;
-                
+
                 recordDiv.innerHTML = `
-                    <div class="leave-record-info" onclick="highlightLeaveDates('${leave.start_date}', '${leave.end_date}', '${containerId}'); event.stopPropagation();">
+                    <div class="leave-record-info" onclick="highlightLeaveDates('${startDateStr}', '${endDateStr}', '${containerId}'); event.stopPropagation();">
                         <span class="name-short">${shortText}</span>
                         <span class="name-full">${fullText}</span>
                     </div>
                     ${isOwnLeave ? `<button class="btn-delete" onclick="deleteLeave(${leave.id}); event.stopPropagation();">ลบ</button>` : ''}
                 `;
-                
-            } else if (leave.delegation_type === 'custom' && leave.duty_assignments) {
-                // Custom Delegation - สีเทา
+
+            // ---- กรณี custom delegation เท่านั้น ----
+            } else if (hasCustom) {
                 recordDiv.classList.add('custom-delegation');
-                
+
                 let html = `
                     <div class="leave-record-info">
                         <div class="leave-header">
-                            <span class="name-short">${startDate} - ${endDate} (${days} วัน) | ${doctorFirstName} (${doctorLastInitial})${leave.no_delegation_reason && leave.no_delegation_reason.trim() ? ` : ${leave.no_delegation_reason}` : ''}</span>
-                            <span class="name-full">${startDate} - ${endDate} (${days} วัน) | ${doctorFullName}${leave.no_delegation_reason && leave.no_delegation_reason.trim() ? ` : ${leave.no_delegation_reason}` : ''}</span>
+                            <span class="name-short">${startDate} - ${endDate} (${days} วัน) | ${doctorFirstName} (${doctorLastInitial})</span>
+                            <span class="name-full">${startDate} - ${endDate} (${days} วัน) | ${doctorFullName}</span>
                         </div>
                         <div class="duty-details">
                 `;
-                
-                leave.duty_assignments.forEach(assignment => {
-                    const assignmentDate = formatDateThai(assignment.duty_date);
-                    // GEN6: แสดง split_label ถ้ามี เช่น "ก่อน 14:00"
-                    const splitNote = assignment.split_label ? ` [${assignment.split_label}]` : '';
-                    // GEN7: ถ้า is_self_duty แสดง "อยู่เอง" แทนชื่อแพทย์
-                    const isSelf = assignment.is_self_duty;
-                    const replacementFullName = isSelf ? 'อยู่เอง' : (assignment.replacement_doctor_name || 'ไม่ระบุ');
-                    const replacementFirstName = isSelf ? 'อยู่เอง' : getFirstName(replacementFullName);
-                    const replacementLastInitial = isSelf ? '' : getLastNameInitial(replacementFullName);
-                    const dutyDisplay = assignment.duty_name + splitNote;
-                    // short: "ชื่อ" หรือ "ชื่อ (ต.)" | full: ชื่อเต็ม หรือ "อยู่เอง"
-                    const shortRepl = isSelf ? 'อยู่เอง' : `${replacementFirstName} (${replacementLastInitial})`;
-                    const fullRepl  = replacementFullName;
 
-                    html += `
-                        <div class="duty-detail-item">
-                            <span class="name-short">${assignmentDate} [${dutyDisplay}] >> ${shortRepl}</span>
-                            <span class="name-full">${assignmentDate} [${dutyDisplay}] >> ${fullRepl}</span>
-                        </div>
-                    `;
+                groupLeaves.forEach(gl => {
+                    if (gl.delegation_type === 'custom' && gl.duty_assignments) {
+                        gl.duty_assignments.forEach(assignment => {
+                            const assignmentDate = formatDateThai(assignment.duty_date);
+                            const splitNote = assignment.split_label ? ` [${assignment.split_label}]` : '';
+                            const isSelf = assignment.is_self_duty;
+                            const replacementFullName = isSelf ? 'อยู่เอง' : (assignment.replacement_doctor_name || 'ไม่ระบุ');
+                            const shortRepl = isSelf ? 'อยู่เอง' : `${getFirstName(replacementFullName)} (${getLastNameInitial(replacementFullName)})`;
+                            const dutyDisplay = assignment.duty_name + splitNote;
+                            html += `
+                                <div class="duty-detail-item">
+                                    <span class="name-short">${assignmentDate} [${dutyDisplay}] >> ${shortRepl}</span>
+                                    <span class="name-full">${assignmentDate} [${dutyDisplay}] >> ${replacementFullName}</span>
+                                </div>`;
+                        });
+                    }
                 });
-                
-                // เช็คว่าเป็นการลาของตัวเองหรือไม่
-                const currentDoctorId = parseInt(sessionStorage.getItem('doctor_id'));
-                const isOwnLeave = leave.doctor_id === currentDoctorId;
-                
+
                 html += `
                         </div>
                     </div>
                     ${isOwnLeave ? `<button class="btn-delete" onclick="deleteLeave(${leave.id}); event.stopPropagation();">ลบ</button>` : ''}
                 `;
-                
+
                 recordDiv.innerHTML = html;
-                
-                // เพิ่ม onclick ที่ leave-record-info
+
                 const infoDiv = recordDiv.querySelector('.leave-record-info');
                 if (infoDiv) {
                     infoDiv.onclick = function(e) {
-                        highlightLeaveDates(leave.start_date, leave.end_date, containerId);
+                        highlightLeaveDates(startDateStr, endDateStr, containerId);
                         e.stopPropagation();
                     };
                     infoDiv.style.cursor = 'pointer';
                 }
-                
-            } else if (leave.delegation_type === 'none') {
-                // No Delegation - สีเหลือง/ดำ/ขาว ตามสถานะ
-                recordDiv.classList.add('no-delegation');
-                
-                let shortText = `${startDate} - ${endDate} (${days} วัน) | ${doctorFirstName} (${doctorLastInitial})`;
-                let fullText = `${startDate} - ${endDate} (${days} วัน) | ${doctorFullName}`;
-                
-                // เช็คสถานะอนุมัติ
-                if (leave.approval_status === 'approved') {
-                    recordDiv.classList.add('approved');
-                    shortText += ` | ไม่ฝากงาน อนุมัติ <span style="color: #4caf50;">✓</span>`;
-                    fullText += ` | ไม่ฝากงาน อนุมัติ <span style="color: #4caf50;">✓</span>`;
-                } else if (leave.approval_status === 'rejected') {
-                    recordDiv.classList.add('rejected');
-                    // Strikethrough เฉพาะวันที่และชื่อ, ไม่ strike "ไม่อนุมัติ ✗"
-                    shortText = `<span style="text-decoration: line-through;">${startDate} - ${endDate} (${days} วัน) | ${doctorFirstName} (${doctorLastInitial}) | ไม่ฝากงาน</span> <span style="text-decoration: none;">ไม่อนุมัติ <span style="color: #f44336;">✗</span></span>`;
-                    fullText = `<span style="text-decoration: line-through;">${startDate} - ${endDate} (${days} วัน) | ${doctorFullName} | ไม่ฝากงาน</span> <span style="text-decoration: none;">ไม่อนุมัติ <span style="color: #f44336;">✗</span></span>`;
-                } else {
-                    // pending
-                    const ORTHO_DEPT_ID = 11;
-                    if (leave.department_id === ORTHO_DEPT_ID) {
-                        // GEN3 V1: Ortho ไม่แสดง "รออนุมัติ"
-                        shortText += ` | ไม่ฝากงาน`;
-                        fullText += ` | ไม่ฝากงาน`;
-                    } else {
-                        // แผนกอื่น: แสดง "รออนุมัติ" ปกติ
-                        shortText += ` | ไม่ฝากงาน ⏳ รออนุมัติ`;
-                        fullText += ` | ไม่ฝากงาน (รออนุมัติ)`;
-                    }
-                }
-                
-                // ⭐ เพิ่มเหตุผลการลา (ถ้ามี)
-                if (leave.no_delegation_reason && leave.no_delegation_reason.trim()) {
-                    shortText += ` : ${leave.no_delegation_reason}`;
-                    fullText += ` : ${leave.no_delegation_reason}`;
-                }
-                
-                // เช็คว่าเป็นการลาของตัวเองหรือไม่
-                const currentDoctorId = parseInt(sessionStorage.getItem('doctor_id'));
-                const isOwnLeave = leave.doctor_id === currentDoctorId;
-                
-                recordDiv.innerHTML = `
-                    <div class="leave-record-info" onclick="highlightLeaveDates('${leave.start_date}', '${leave.end_date}', '${containerId}'); event.stopPropagation();">
-                        <span class="name-short">${shortText}</span>
-                        <span class="name-full">${fullText}</span>
-                    </div>
-                    ${isOwnLeave ? `<button class="btn-delete" onclick="deleteLeave(${leave.id}); event.stopPropagation();">ลบ</button>` : ''}
-                `;
             }
-            
+
             container.appendChild(recordDiv);
         });
 
@@ -1772,34 +1814,40 @@
         return lastName.charAt(0); // fallback
     }
 
-    // ลบข้อมูลการลา
+    // ลบข้อมูลการลา — GEN7 V6: ลบทุก record ใน group_id เดียวกัน
     async function deleteLeave(leaveId) {
         const leave = doctorLeaves.find(l => l.id === leaveId);
         if (!leave) return;
 
-        const startDate = formatDateThai(leave.start_date);
-        const endDate = formatDateThai(leave.end_date);
-        
+        // หา records ทั้งหมดใน group เดียวกัน
+        const groupId = leave.group_id;
+        const groupLeaves = groupId
+            ? doctorLeaves.filter(l => l.group_id === groupId)
+            : [leave];
+
+        const startDates = groupLeaves.map(l => l.start_date).sort();
+        const endDates = groupLeaves.map(l => l.end_date).sort();
+        const startDate = formatDateThai(startDates[0]);
+        const endDate = formatDateThai(endDates[endDates.length - 1]);
+
         const confirmMsg = `❌ ยืนยันการลบ\n\nต้องการลบข้อมูลการลานี้หรือไม่?\n\n` +
             `วันที่: ${startDate} - ${endDate}\n\nการกระทำนี้ไม่สามารถย้อนกลับได้`;
 
-        if (!confirm(confirmMsg)) {
-            return;
-        }
+        if (!confirm(confirmMsg)) return;
 
         try {
-            const response = await fetch(`${LEAVE_API_URL}/api/leaves/${leaveId}`, {
-                method: 'DELETE'
-            });
-
-            const data = await response.json();
-
-            if (response.ok && data.success) {
-                showMessage('✅ ลบข้อมูลการลาสำเร็จ', 'success');
-                await loadDoctorLeaves();
-            } else {
-                throw new Error(data.message || 'ไม่สามารถลบได้');
+            // ลบทุก record ใน group
+            for (const l of groupLeaves) {
+                const response = await fetch(`${LEAVE_API_URL}/api/leaves/${l.id}`, {
+                    method: 'DELETE'
+                });
+                const data = await response.json();
+                if (!response.ok || !data.success) {
+                    throw new Error(data.message || 'ไม่สามารถลบได้');
+                }
             }
+            showMessage('✅ ลบข้อมูลการลาสำเร็จ', 'success');
+            await loadDoctorLeaves();
         } catch (error) {
             showMessage('❌ ' + error.message, 'error');
         }
@@ -4714,5 +4762,5 @@
 ```
 
 </body>
-<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">user GEN7 V5</div>
+<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">user GEN7 V6</div>
 </html>
