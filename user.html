@@ -2873,10 +2873,15 @@
                     const currDate = new Date(item.date);
                     const diffDays = Math.floor((currDate - prevDate) / (1000 * 60 * 60 * 24));
                     
-                    if (diffDays === 1) {
+                    if (diffDays === 0) {
+                        // วันเดียวกัน หลาย duty → รวม duties ไม่ต้องเปลี่ยน endDate
+                        currentGroup.duties.push(item);
+                    } else if (diffDays === 1) {
+                        // วันถัดไป → ขยาย group
                         currentGroup.endDate = item.date;
                         currentGroup.duties.push(item);
                     } else {
+                        // ไม่ติดกัน → เริ่ม group ใหม่
                         groups.push(currentGroup);
                         currentGroup = {
                             startDate: item.date,
@@ -4709,5 +4714,5 @@
 ```
 
 </body>
-<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">user GEN7 V4</div>
+<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">user GEN7 V5</div>
 </html>
