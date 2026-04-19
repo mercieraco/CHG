@@ -3198,13 +3198,13 @@
                     const delegateGroups = requestBody.delegateGroups || [];
                     const noDelegateGroups = requestBody.noDelegateGroups || [];
                     
-                    console.log(`=== แผนก ${dept.department_name}: delegate=${delegateGroups.length} groups, no-delegate=${noDelegateGroups.length} groups ===`);
-
-                    // GEN7 V3: POST 1 record สำหรับ delegate ทั้งหมด
-                    // ใช้ requestBody.dutyAssignments (build ไว้แล้ว ถูกต้อง)
-                    // ใช้ requestBody.startDate/endDate (ช่วงลาเต็ม)
+                    console.log(`=== แผนก ${dept.department_name}: ${delegateGroups.length} กลุ่มฝาก + ${noDelegateGroups.length} กลุ่มไม่ฝาก ===`);
+                    
+                    // GEN7 V4: delegate → POST 1 record เดียวเสมอ
+                    // ใช้ startDate/endDate ของช่วงลาทั้งหมด
+                    // ใช้ dutyAssignments ที่ build ไว้แล้ว (มี isSelfDuty ถูกต้อง)
                     if (requestBody.dutyAssignments && requestBody.dutyAssignments.length > 0) {
-                        const mergedBody = {
+                        const delegateBody = {
                             doctorId: requestBody.doctorId,
                             startDate: requestBody.startDate,
                             endDate: requestBody.endDate,
@@ -3213,19 +3213,19 @@
                             dutyAssignments: requestBody.dutyAssignments,
                             groupId: groupId
                         };
-
-                        console.log(`  → บันทึก custom delegate: ${requestBody.startDate} - ${requestBody.endDate}, ${requestBody.dutyAssignments.length} duties`);
-                        console.log('    Body:', mergedBody);
-
+                        
+                        console.log(`  → บันทึก delegate: ${requestBody.startDate} - ${requestBody.endDate} (${requestBody.dutyAssignments.length} duties)`);
+                        console.log('    Body:', delegateBody);
+                        
                         const response = await fetch(`${LEAVE_API_URL}/api/leaves`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(mergedBody)
+                            body: JSON.stringify(delegateBody)
                         });
-
+                        
                         const data = await response.json();
                         console.log('    Response:', response.status, data);
-
+                        
                         if (response.ok && data.success) {
                             successCount++;
                             totalRecords++;
@@ -3235,7 +3235,7 @@
                         }
                     }
                     
-                    // บันทึก no-delegate groups (แยก record ต่อ group เหมือนเดิม เพราะ reason ต่างกัน)
+                    // no-delegate → POST แยกตาม group (วันติดกันรวมเป็น range เดียว)
                     for (const noDelGroup of noDelegateGroups) {
                         const reasons = [];
                         for (const duty of noDelGroup.duties) {
@@ -3260,6 +3260,7 @@
                         };
                         
                         console.log(`  → บันทึก no-delegate: ${noDelGroup.startDate} - ${noDelGroup.endDate}`);
+                        console.log('    Body:', noDelBody);
                         
                         const response = await fetch(`${LEAVE_API_URL}/api/leaves`, {
                             method: 'POST',
@@ -3268,6 +3269,7 @@
                         });
                         
                         const data = await response.json();
+                        console.log('    Response:', response.status, data);
                         
                         if (response.ok && data.success) {
                             successCount++;
@@ -4707,5 +4709,5 @@
 ```
 
 </body>
-<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">user GEN7 V3</div>
+<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">user GEN7 V4</div>
 </html>
