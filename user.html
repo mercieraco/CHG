@@ -847,11 +847,6 @@
 
     <!-- GEN3: แสดงข้อมูลการลาของแผนกเสริม (แสดงเมื่อ checkbox แผนกเสริมถูกติ๊ก) -->
     <div id="leaveRecordsSecondary"></div>
-    
-    <!-- Version Info -->
-    <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 61 (Fix: Correct Thai month abbreviations)</span>
-    </div>
 </div>
 
 <script>
@@ -1625,6 +1620,7 @@
             } else if (leave.delegation_type === 'custom' && leave.duty_assignments) {
                 // Custom Delegation - สีเทา
                 recordDiv.classList.add('custom-delegation');
+                console.log(`📋 custom leave id=${leave.id}, duty_assignments:`, leave.duty_assignments);
                 
                 let html = `
                     <div class="leave-record-info">
@@ -4698,5 +4694,5 @@
 ```
 
 </body>
-<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">user GEN7 V11</div>
+<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">user GEN7 V12</div>
 </html>
