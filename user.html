@@ -1878,7 +1878,6 @@
                             const assignmentsOnDay = leave.duty_assignments.filter(a => a.duty_date === dateStr);
                             if (assignmentsOnDay.length > 0) {
                                 // มี duty วันนั้น — เช็คว่ามีคนแทนหรือไม่
-                                const hasReplacement = assignmentsOnDay.some(a => a.replacement_doctor_id && !a.is_self_duty);
                                 const allNoDelegate = assignmentsOnDay.every(a => !a.replacement_doctor_id && !a.is_self_duty);
                                 if (allNoDelegate) {
                                     doctorsYellow.add(doctorId); // ไม่ฝากทุก duty → เหลือง
@@ -1886,7 +1885,9 @@
                                     doctorsGreen.add(doctorId);  // มีคนแทนอย่างน้อย 1 → เขียว
                                 }
                             } else {
-                                // ไม่มี duty วันนั้น (เช่น วันหยุด) → ไม่นับ
+                                // GEN7 V13: ไม่มี duty วันนั้น แต่อยู่ใน leave range
+                                // → นับเป็น green (ไม่มี duty) → hasDutyOnThisDay=false → เขียวอ่อน
+                                doctorsGreen.add(doctorId);
                             }
                         } else {
                             doctorsGreen.add(doctorId);
@@ -4694,5 +4695,5 @@
 ```
 
 </body>
-<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">user GEN7 V12</div>
+<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">user GEN7 V13</div>
 </html>
