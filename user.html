@@ -3105,9 +3105,21 @@
                     }
                 }
                 
+                // GEN7 V9: รวบรวม reason จาก no-delegate duties ใส่ใน record เดียวกับ delegate
+                const noDelReasons = [];
+                for (const item of allDuties.filter(d => d.state === 'no-delegate')) {
+                    const textarea = document.getElementById(`noDelegationReason_${item.uniqueId}`);
+                    const reason = textarea?.value.trim() || '';
+                    if (reason && !noDelReasons.includes(reason)) {
+                        noDelReasons.push(reason);
+                    }
+                }
+                const combinedNoDelReason = noDelReasons.join('; ');
+
                 deptRequestBody.dutyAssignments = dutyAssignments;
-                
-                // GEN4 V3 Step 5: เก็บ grouping info
+                deptRequestBody.noDelegationReason = combinedNoDelReason || null;
+
+                // GEN4 V3 Step 5: เก็บ grouping info (ใช้สำหรับ confirm message เท่านั้น)
                 deptRequestBody.delegateGroups = delegateGroups;
                 deptRequestBody.noDelegateGroups = noDelegateGroups;
                 
@@ -3200,9 +3212,8 @@
                     
                     console.log(`=== แผนก ${dept.department_name}: ${delegateGroups.length} กลุ่มฝาก + ${noDelegateGroups.length} กลุ่มไม่ฝาก ===`);
                     
-                    // GEN7 V4: delegate → POST 1 record เดียวเสมอ
-                    // ใช้ startDate/endDate ของช่วงลาทั้งหมด
-                    // ใช้ dutyAssignments ที่ build ไว้แล้ว (มี isSelfDuty ถูกต้อง)
+                    // GEN7 V9: POST 1 record เดียวสำหรับทั้ง delegate + no-delegate
+                    // reason ของ no-delegate duties รวมอยู่ใน no_delegation_reason
                     if (requestBody.dutyAssignments && requestBody.dutyAssignments.length > 0) {
                         const delegateBody = {
                             doctorId: requestBody.doctorId,
@@ -3211,21 +3222,22 @@
                             delegationType: 'custom',
                             departmentId: requestBody.departmentId,
                             dutyAssignments: requestBody.dutyAssignments,
+                            noDelegationReason: requestBody.noDelegationReason || null,
                             groupId: groupId
                         };
-                        
-                        console.log(`  → บันทึก delegate: ${requestBody.startDate} - ${requestBody.endDate} (${requestBody.dutyAssignments.length} duties)`);
+
+                        console.log(`  → บันทึก custom (delegate+no-delegate): ${requestBody.startDate} - ${requestBody.endDate}`);
                         console.log('    Body:', delegateBody);
-                        
+
                         const response = await fetch(`${LEAVE_API_URL}/api/leaves`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify(delegateBody)
                         });
-                        
+
                         const data = await response.json();
                         console.log('    Response:', response.status, data);
-                        
+
                         if (response.ok && data.success) {
                             successCount++;
                             totalRecords++;
@@ -3233,24 +3245,8 @@
                         } else {
                             throw new Error(`แผนก ${dept.department_name} (ฝาก): ${data.message || 'ไม่สามารถบันทึกได้'}`);
                         }
-                    }
-                    
-                    // no-delegate → POST แยกตาม group (วันติดกันรวมเป็น range เดียว)
-                    // GEN7 V8: no-delegate → POST 1 record เดียว
-                    // รวม reason ทั้งหมด, ใช้ startDate/endDate ของช่วงลาทั้งหมด
-                    if (noDelegateGroups.length > 0) {
-                        const reasons = [];
-                        for (const noDelGroup of noDelegateGroups) {
-                            for (const duty of noDelGroup.duties) {
-                                const textarea = document.getElementById(`noDelegationReason_${duty.uniqueId}`);
-                                const reason = textarea?.value.trim() || '';
-                                if (reason && !reasons.includes(reason)) {
-                                    reasons.push(reason);
-                                }
-                            }
-                        }
-                        const combinedReason = reasons.join('; ');
-
+                    } else if (noDelegateGroups.length > 0) {
+                        // กรณีเลือกไม่ฝากทุก duty (ไม่มี delegate เลย)
                         const noDelBody = {
                             doctorId: requestBody.doctorId,
                             startDate: requestBody.startDate,
@@ -3258,11 +3254,11 @@
                             delegationType: 'none',
                             departmentId: requestBody.departmentId,
                             hasReplacement: false,
-                            noDelegationReason: combinedReason,
+                            noDelegationReason: requestBody.noDelegationReason || null,
                             groupId: groupId
                         };
 
-                        console.log(`  → บันทึก no-delegate: ${requestBody.startDate} - ${requestBody.endDate}`);
+                        console.log(`  → บันทึก no-delegate ทั้งหมด: ${requestBody.startDate} - ${requestBody.endDate}`);
 
                         const response = await fetch(`${LEAVE_API_URL}/api/leaves`, {
                             method: 'POST',
@@ -4710,5 +4706,5 @@
 ```
 
 </body>
-<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">user GEN7 V8</div>
+<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">user GEN7 V9</div>
 </html>
