@@ -2753,46 +2753,31 @@
                 if (requestBody.delegationType === 'custom' && 
                     (requestBody.delegateGroups || requestBody.noDelegateGroups)) {
                     
-                    // GEN4 V2 Step 5: แยกบันทึกเป็นหลาย records
                     const delegateGroups = requestBody.delegateGroups || [];
                     const noDelegateGroups = requestBody.noDelegateGroups || [];
                     
                     console.log(`=== แผนก ${dept.department_name}: ${delegateGroups.length} กลุ่มฝาก + ${noDelegateGroups.length} กลุ่มไม่ฝาก ===`);
                     
-                    // 1. บันทึกแต่ละ delegate group
-                    for (const group of delegateGroups) {
-                        const groupDutyAssignments = [];
-                        
-                        for (const duty of group.duties) {
-                            const select = document.querySelector(`.custom-delegation-select[data-unique-id="${duty.uniqueId}"]`);
-                            const replacementDoctorId = select?.value;
-                            
-                            if (replacementDoctorId) {
-                                groupDutyAssignments.push({
-                                    dutyId: parseInt(duty.dutyId),
-                                    dutyDate: duty.date,
-                                    replacementDoctorId: parseInt(replacementDoctorId),
-                                    splitLabel: duty.splitLabel || null  // GEN6
-                                });
-                            }
-                        }
-                        
-                        const groupBody = {
+                    // GEN7 V2: delegate → POST 1 record เดียวเสมอ
+                    // ใช้ startDate/endDate ของช่วงลาทั้งหมด
+                    // ใช้ dutyAssignments ที่ build ไว้แล้ว (มี isSelfDuty ถูกต้อง)
+                    if (requestBody.dutyAssignments && requestBody.dutyAssignments.length > 0) {
+                        const delegateBody = {
                             doctorId: requestBody.doctorId,
-                            startDate: group.startDate,
-                            endDate: group.endDate,
+                            startDate: requestBody.startDate,
+                            endDate: requestBody.endDate,
                             delegationType: 'custom',
                             departmentId: requestBody.departmentId,
-                            dutyAssignments: groupDutyAssignments,
+                            dutyAssignments: requestBody.dutyAssignments,
                             groupId: groupId
                         };
                         
-                        console.log(`  → บันทึก delegate group: ${group.startDate} - ${group.endDate}`);
+                        console.log(`  → บันทึก delegate: ${requestBody.startDate} - ${requestBody.endDate} (${requestBody.dutyAssignments.length} duties)`);
                         
                         const response = await fetch(`${LEAVE_API_URL}/api/leaves`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(groupBody)
+                            body: JSON.stringify(delegateBody)
                         });
                         
                         const data = await response.json();
@@ -2806,7 +2791,7 @@
                         }
                     }
                     
-                    // 2. บันทึกแต่ละ no-delegate group
+                    // no-delegate → POST แยกต่อ group (วันติดกันรวมเป็น range เดียว)
                     for (const noDelGroup of noDelegateGroups) {
                         const reasons = [];
                         for (const duty of noDelGroup.duties) {
@@ -2830,7 +2815,7 @@
                             groupId: groupId
                         };
                         
-                        console.log(`  → บันทึก no-delegate group: ${noDelGroup.startDate} - ${noDelGroup.endDate}`);
+                        console.log(`  → บันทึก no-delegate: ${noDelGroup.startDate} - ${noDelGroup.endDate}`);
                         
                         const response = await fetch(`${LEAVE_API_URL}/api/leaves`, {
                             method: 'POST',
@@ -4364,5 +4349,5 @@
 </div>
 
 </body>
-<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">dep_rest GEN7 V0</div>
+<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">dep_rest GEN7 V2</div>
 </html>
