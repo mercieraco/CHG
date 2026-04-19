@@ -3201,47 +3201,65 @@
                     
                     console.log(`=== แผนก ${dept.department_name}: ${delegateGroups.length} กลุ่มฝาก + ${noDelegateGroups.length} กลุ่มไม่ฝาก ===`);
                     
-                    // 1. บันทึกแต่ละ delegate group
-                    for (const group of delegateGroups) {
-                        // สร้าง dutyAssignments สำหรับ group นี้
-                        const groupDutyAssignments = [];
-                        
-                        for (const duty of group.duties) {
-                            const select = document.querySelector(`.custom-delegation-select[data-unique-id="${duty.uniqueId}"]`);
-                            const replacementDoctorId = select?.value;
-                            
-                            if (replacementDoctorId) {
-                                groupDutyAssignments.push({
-                                    dutyId: parseInt(duty.dutyId),
-                                    dutyDate: duty.date,
-                                    replacementDoctorId: parseInt(replacementDoctorId),
-                                    splitLabel: duty.splitLabel || null  // GEN6
-                                });
+                    // GEN7 V2: รวม delegateGroups ทั้งหมดเป็น 1 record เดียว
+                    // (startDate = group แรก, endDate = group สุดท้าย, dutyAssignments = รวมทั้งหมด)
+                    if (delegateGroups.length > 0) {
+                        const allDutyAssignments = [];
+
+                        for (const group of delegateGroups) {
+                            for (const duty of group.duties) {
+                                // GEN7: self-duty → replacementDoctorId = null
+                                if (duty.isSelfDuty) {
+                                    allDutyAssignments.push({
+                                        dutyId: parseInt(duty.dutyId),
+                                        dutyDate: duty.date,
+                                        replacementDoctorId: null,
+                                        splitLabel: duty.splitLabel || null,
+                                        isSelfDuty: true
+                                    });
+                                } else {
+                                    const select = document.querySelector(`.custom-delegation-select[data-unique-id="${duty.uniqueId}"]`);
+                                    const replacementDoctorId = select?.value;
+                                    if (replacementDoctorId) {
+                                        allDutyAssignments.push({
+                                            dutyId: parseInt(duty.dutyId),
+                                            dutyDate: duty.date,
+                                            replacementDoctorId: parseInt(replacementDoctorId),
+                                            splitLabel: duty.splitLabel || null,
+                                            isSelfDuty: false
+                                        });
+                                    }
+                                }
                             }
                         }
-                        
-                        const groupBody = {
+
+                        // หา startDate/endDate จากทุก group
+                        const allDates = delegateGroups.map(g => [g.startDate, g.endDate]).flat().sort();
+                        const mergedStart = allDates[0];
+                        const mergedEnd = allDates[allDates.length - 1];
+
+                        const mergedBody = {
                             doctorId: requestBody.doctorId,
-                            startDate: group.startDate,
-                            endDate: group.endDate,
+                            startDate: mergedStart,
+                            endDate: mergedEnd,
                             delegationType: 'custom',
                             departmentId: requestBody.departmentId,
-                            dutyAssignments: groupDutyAssignments,
+                            dutyAssignments: allDutyAssignments,
                             groupId: groupId
                         };
-                        
-                        console.log(`  → บันทึก delegate group: ${group.startDate} - ${group.endDate}`);
-                        console.log('    Body:', groupBody);
-                        
+
+                        console.log(`  → บันทึก delegate (รวม ${delegateGroups.length} groups): ${mergedStart} - ${mergedEnd}`);
+                        console.log('    Body:', mergedBody);
+
                         const response = await fetch(`${LEAVE_API_URL}/api/leaves`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(groupBody)
+                            body: JSON.stringify(mergedBody)
                         });
-                        
+
                         const data = await response.json();
                         console.log('    Response:', response.status, data);
-                        
+
                         if (response.ok && data.success) {
                             successCount++;
                             totalRecords++;
@@ -4726,5 +4744,5 @@
 ```
 
 </body>
-<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">user GEN7 V1</div>
+<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">user GEN7 V2</div>
 </html>
