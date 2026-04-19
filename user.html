@@ -3180,15 +3180,7 @@
             // ========================================
             // GEN4 V3 Step 5: Multi-Department + Multi-Records
             // ========================================
-            // GEN7 V7: สร้าง groupId เสมอเมื่อมีหลายแผนก
-            // หรือเมื่อ custom delegation มีทั้ง delegate + no-delegate (ต้องรวมแถบ)
-            const hasCustomMixed = departmentData.some(d =>
-                d.requestBody.delegationType === 'custom' &&
-                d.requestBody.delegateGroups && d.requestBody.delegateGroups.length > 0 &&
-                d.requestBody.noDelegateGroups && d.requestBody.noDelegateGroups.length > 0
-            );
-
-            const groupId = (selectedDepartments.length > 1 || hasCustomMixed)
+            const groupId = selectedDepartments.length > 1 
                 ? `grp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
                 : null;
                 
@@ -3244,41 +3236,42 @@
                     }
                     
                     // no-delegate → POST แยกตาม group (วันติดกันรวมเป็น range เดียว)
-                    for (const noDelGroup of noDelegateGroups) {
+                    // GEN7 V8: no-delegate → POST 1 record เดียว
+                    // รวม reason ทั้งหมด, ใช้ startDate/endDate ของช่วงลาทั้งหมด
+                    if (noDelegateGroups.length > 0) {
                         const reasons = [];
-                        for (const duty of noDelGroup.duties) {
-                            const textarea = document.getElementById(`noDelegationReason_${duty.uniqueId}`);
-                            const reason = textarea?.value.trim() || '';
-                            if (reason && !reasons.includes(reason)) {
-                                reasons.push(reason);
+                        for (const noDelGroup of noDelegateGroups) {
+                            for (const duty of noDelGroup.duties) {
+                                const textarea = document.getElementById(`noDelegationReason_${duty.uniqueId}`);
+                                const reason = textarea?.value.trim() || '';
+                                if (reason && !reasons.includes(reason)) {
+                                    reasons.push(reason);
+                                }
                             }
                         }
-                        
                         const combinedReason = reasons.join('; ');
-                        
+
                         const noDelBody = {
                             doctorId: requestBody.doctorId,
-                            startDate: noDelGroup.startDate,
-                            endDate: noDelGroup.endDate,
+                            startDate: requestBody.startDate,
+                            endDate: requestBody.endDate,
                             delegationType: 'none',
                             departmentId: requestBody.departmentId,
                             hasReplacement: false,
                             noDelegationReason: combinedReason,
                             groupId: groupId
                         };
-                        
-                        console.log(`  → บันทึก no-delegate: ${noDelGroup.startDate} - ${noDelGroup.endDate}`);
-                        console.log('    Body:', noDelBody);
-                        
+
+                        console.log(`  → บันทึก no-delegate: ${requestBody.startDate} - ${requestBody.endDate}`);
+
                         const response = await fetch(`${LEAVE_API_URL}/api/leaves`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify(noDelBody)
                         });
-                        
+
                         const data = await response.json();
-                        console.log('    Response:', response.status, data);
-                        
+
                         if (response.ok && data.success) {
                             successCount++;
                             totalRecords++;
@@ -4717,5 +4710,5 @@
 ```
 
 </body>
-<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">user GEN7 V7</div>
+<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">user GEN7 V8</div>
 </html>
