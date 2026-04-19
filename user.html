@@ -3195,60 +3195,26 @@
                 if (requestBody.delegationType === 'custom' && 
                     (requestBody.delegateGroups || requestBody.noDelegateGroups)) {
                     
-                    // GEN4 V3 Step 5: แยกบันทึกเป็นหลาย records
                     const delegateGroups = requestBody.delegateGroups || [];
                     const noDelegateGroups = requestBody.noDelegateGroups || [];
                     
-                    console.log(`=== แผนก ${dept.department_name}: ${delegateGroups.length} กลุ่มฝาก + ${noDelegateGroups.length} กลุ่มไม่ฝาก ===`);
-                    
-                    // GEN7 V2: รวม delegateGroups ทั้งหมดเป็น 1 record เดียว
-                    // (startDate = group แรก, endDate = group สุดท้าย, dutyAssignments = รวมทั้งหมด)
-                    if (delegateGroups.length > 0) {
-                        const allDutyAssignments = [];
+                    console.log(`=== แผนก ${dept.department_name}: delegate=${delegateGroups.length} groups, no-delegate=${noDelegateGroups.length} groups ===`);
 
-                        for (const group of delegateGroups) {
-                            for (const duty of group.duties) {
-                                // GEN7: self-duty → replacementDoctorId = null
-                                if (duty.isSelfDuty) {
-                                    allDutyAssignments.push({
-                                        dutyId: parseInt(duty.dutyId),
-                                        dutyDate: duty.date,
-                                        replacementDoctorId: null,
-                                        splitLabel: duty.splitLabel || null,
-                                        isSelfDuty: true
-                                    });
-                                } else {
-                                    const select = document.querySelector(`.custom-delegation-select[data-unique-id="${duty.uniqueId}"]`);
-                                    const replacementDoctorId = select?.value;
-                                    if (replacementDoctorId) {
-                                        allDutyAssignments.push({
-                                            dutyId: parseInt(duty.dutyId),
-                                            dutyDate: duty.date,
-                                            replacementDoctorId: parseInt(replacementDoctorId),
-                                            splitLabel: duty.splitLabel || null,
-                                            isSelfDuty: false
-                                        });
-                                    }
-                                }
-                            }
-                        }
-
-                        // หา startDate/endDate จากทุก group
-                        const allDates = delegateGroups.map(g => [g.startDate, g.endDate]).flat().sort();
-                        const mergedStart = allDates[0];
-                        const mergedEnd = allDates[allDates.length - 1];
-
+                    // GEN7 V3: POST 1 record สำหรับ delegate ทั้งหมด
+                    // ใช้ requestBody.dutyAssignments (build ไว้แล้ว ถูกต้อง)
+                    // ใช้ requestBody.startDate/endDate (ช่วงลาเต็ม)
+                    if (requestBody.dutyAssignments && requestBody.dutyAssignments.length > 0) {
                         const mergedBody = {
                             doctorId: requestBody.doctorId,
-                            startDate: mergedStart,
-                            endDate: mergedEnd,
+                            startDate: requestBody.startDate,
+                            endDate: requestBody.endDate,
                             delegationType: 'custom',
                             departmentId: requestBody.departmentId,
-                            dutyAssignments: allDutyAssignments,
+                            dutyAssignments: requestBody.dutyAssignments,
                             groupId: groupId
                         };
 
-                        console.log(`  → บันทึก delegate (รวม ${delegateGroups.length} groups): ${mergedStart} - ${mergedEnd}`);
+                        console.log(`  → บันทึก custom delegate: ${requestBody.startDate} - ${requestBody.endDate}, ${requestBody.dutyAssignments.length} duties`);
                         console.log('    Body:', mergedBody);
 
                         const response = await fetch(`${LEAVE_API_URL}/api/leaves`, {
@@ -3269,9 +3235,8 @@
                         }
                     }
                     
-                    // 2. GEN4 V3 Step 5 Fix: บันทึกแต่ละ no-delegate group (รวมวันติดกัน)
+                    // บันทึก no-delegate groups (แยก record ต่อ group เหมือนเดิม เพราะ reason ต่างกัน)
                     for (const noDelGroup of noDelegateGroups) {
-                        // รวบรวมเหตุผลจากทุกวันใน group
                         const reasons = [];
                         for (const duty of noDelGroup.duties) {
                             const textarea = document.getElementById(`noDelegationReason_${duty.uniqueId}`);
@@ -3294,8 +3259,7 @@
                             groupId: groupId
                         };
                         
-                        console.log(`  → บันทึก no-delegate group: ${noDelGroup.startDate} - ${noDelGroup.endDate}`);
-                        console.log('    Body:', noDelBody);
+                        console.log(`  → บันทึก no-delegate: ${noDelGroup.startDate} - ${noDelGroup.endDate}`);
                         
                         const response = await fetch(`${LEAVE_API_URL}/api/leaves`, {
                             method: 'POST',
@@ -3304,7 +3268,6 @@
                         });
                         
                         const data = await response.json();
-                        console.log('    Response:', response.status, data);
                         
                         if (response.ok && data.success) {
                             successCount++;
@@ -4744,5 +4707,5 @@
 ```
 
 </body>
-<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">user GEN7 V2</div>
+<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">user GEN7 V3</div>
 </html>
