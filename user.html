@@ -1637,49 +1637,31 @@
                 
                 leave.duty_assignments.forEach(assignment => {
                     const assignmentDate = formatDateThai(assignment.duty_date);
-                    // GEN6: แสดง split_label ถ้ามี เช่น "ก่อน 14:00"
                     const splitNote = assignment.split_label ? ` [${assignment.split_label}]` : '';
-                    // GEN7: ถ้า is_self_duty แสดง "อยู่เอง" แทนชื่อแพทย์
                     const isSelf = assignment.is_self_duty;
-                    const replacementFullName = isSelf ? 'อยู่เอง' : (assignment.replacement_doctor_name || 'ไม่ระบุ');
-                    const replacementFirstName = isSelf ? 'อยู่เอง' : getFirstName(replacementFullName);
-                    const replacementLastInitial = isSelf ? '' : getLastNameInitial(replacementFullName);
+                    // GEN7 V11: null replacement + not self = ไม่ฝาก
+                    const isNoDelegate = !isSelf && !assignment.replacement_doctor_id && !assignment.replacement_doctor_name;
+
                     const dutyDisplay = assignment.duty_name + splitNote;
-                    // short: "ชื่อ" หรือ "ชื่อ (ต.)" | full: ชื่อเต็ม หรือ "อยู่เอง"
-                    const shortRepl = isSelf ? 'อยู่เอง' : `${replacementFirstName} (${replacementLastInitial})`;
-                    const fullRepl  = replacementFullName;
 
-                    html += `
-                        <div class="duty-detail-item">
-                            <span class="name-short">${assignmentDate} [${dutyDisplay}] >> ${shortRepl}</span>
-                            <span class="name-full">${assignmentDate} [${dutyDisplay}] >> ${fullRepl}</span>
-                        </div>
-                    `;
+                    if (isNoDelegate) {
+                        html += `
+                            <div class="duty-detail-item">
+                                <span class="name-short">${assignmentDate} [${dutyDisplay}] ไม่ฝาก</span>
+                                <span class="name-full">${assignmentDate} [${dutyDisplay}] ไม่ฝากงาน</span>
+                            </div>
+                        `;
+                    } else {
+                        const replacementFullName = isSelf ? 'อยู่เอง' : (assignment.replacement_doctor_name || 'ไม่ระบุ');
+                        const shortRepl = isSelf ? 'อยู่เอง' : `${getFirstName(replacementFullName)} (${getLastNameInitial(replacementFullName)})`;
+                        html += `
+                            <div class="duty-detail-item">
+                                <span class="name-short">${assignmentDate} [${dutyDisplay}] >> ${shortRepl}</span>
+                                <span class="name-full">${assignmentDate} [${dutyDisplay}] >> ${replacementFullName}</span>
+                            </div>
+                        `;
+                    }
                 });
-
-                // GEN7 V10: แสดงวันที่ไม่ฝาก (อยู่ใน range แต่ไม่มีใน duty_assignments)
-                if (leave.no_delegation_reason && leave.no_delegation_reason.trim()) {
-                    // หาวันที่ไม่มีใน duty_assignments
-                    const assignedDates = new Set((leave.duty_assignments || []).map(a => a.duty_date));
-                    const current = new Date(leave.start_date);
-                    const end = new Date(leave.end_date);
-                    const noDelegDates = [];
-                    while (current <= end) {
-                        const ds = current.toISOString().split('T')[0];
-                        if (!assignedDates.has(ds)) noDelegDates.push(ds);
-                        current.setDate(current.getDate() + 1);
-                    }
-                    if (noDelegDates.length > 0) {
-                        noDelegDates.forEach(ds => {
-                            const dDisplay = formatDateThai(ds);
-                            html += `
-                                <div class="duty-detail-item">
-                                    <span class="name-short">${dDisplay} ไม่ฝาก — ${leave.no_delegation_reason}</span>
-                                    <span class="name-full">${dDisplay} ไม่ฝากงาน — ${leave.no_delegation_reason}</span>
-                                </div>`;
-                        });
-                    }
-                }
                 
                 // เช็คว่าเป็นการลาของตัวเองหรือไม่
                 const currentDoctorId = parseInt(sessionStorage.getItem('doctor_id'));
@@ -1895,8 +1877,24 @@
                             doctorsYellow.add(doctorId);
                         }
                     } else if (leave.delegation_type === 'single' || leave.delegation_type === 'custom') {
-                        // ไม่ต้องอนุมัติ
-                        doctorsGreen.add(doctorId);
+                        // GEN7 V11: custom — เช็คว่าวันนั้นมีคนแทนหรือไม่
+                        if (leave.delegation_type === 'custom' && leave.duty_assignments) {
+                            const assignmentsOnDay = leave.duty_assignments.filter(a => a.duty_date === dateStr);
+                            if (assignmentsOnDay.length > 0) {
+                                // มี duty วันนั้น — เช็คว่ามีคนแทนหรือไม่
+                                const hasReplacement = assignmentsOnDay.some(a => a.replacement_doctor_id && !a.is_self_duty);
+                                const allNoDelegate = assignmentsOnDay.every(a => !a.replacement_doctor_id && !a.is_self_duty);
+                                if (allNoDelegate) {
+                                    doctorsYellow.add(doctorId); // ไม่ฝากทุก duty → เหลือง
+                                } else {
+                                    doctorsGreen.add(doctorId);  // มีคนแทนอย่างน้อย 1 → เขียว
+                                }
+                            } else {
+                                // ไม่มี duty วันนั้น (เช่น วันหยุด) → ไม่นับ
+                            }
+                        } else {
+                            doctorsGreen.add(doctorId);
+                        }
                     }
                 }
             });
@@ -1953,9 +1951,11 @@
                     let hasDutyOnThisDay = false;
                     
                     if (leave.delegation_type === 'custom') {
-                        // GEN7 V10: custom leave ครอบช่วงวันนั้น = มี duty เสมอ
-                        // (ทั้งวันที่ฝากและไม่ฝากล้วนอยู่ใน range)
-                        hasDutyOnThisDay = true;
+                        if (leave.duty_assignments && leave.duty_assignments.length > 0) {
+                            hasDutyOnThisDay = leave.duty_assignments.some(
+                                assignment => assignment.duty_date === dateStr
+                            );
+                        }
                     } else if (leave.delegation_type === 'single') {
                         const checkDate = new Date(dateStr);
                         const dayOfWeek = checkDate.getDay();
@@ -3103,7 +3103,7 @@
                 
                 console.log(`=== Dept ${deptId}: ${delegateGroups.length} delegate groups, ${noDelegateGroups.length} no-delegate groups ===`);
                 
-                // บันทึกข้อมูล
+                // บันทึกข้อมูล — รวมทั้ง delegate และ no-delegate เข้า dutyAssignments เดียวกัน
                 const dutyAssignments = [];
                 for (const item of allDuties.filter(d => d.state === 'delegate')) {
                     // GEN7: self-duty → replacementDoctorId = null, isSelfDuty = true
@@ -3121,27 +3121,30 @@
                             dutyId: parseInt(item.dutyId),
                             dutyDate: item.date,
                             replacementDoctorId: parseInt(select.value),
-                            splitLabel: item.splitLabel || null,  // GEN6
+                            splitLabel: item.splitLabel || null,
                             isSelfDuty: false
                         });
                     }
                 }
-                
-                // GEN7 V9: รวบรวม reason จาก no-delegate duties ใส่ใน record เดียวกับ delegate
-                const noDelReasons = [];
+
+                // GEN7 V11: เพิ่ม no-delegate duties เข้า dutyAssignments ด้วย
+                // replacement_doctor_id = null, is_self_duty = 0 → frontend รู้ว่าวันนี้ไม่ฝาก
                 for (const item of allDuties.filter(d => d.state === 'no-delegate')) {
                     const textarea = document.getElementById(`noDelegationReason_${item.uniqueId}`);
                     const reason = textarea?.value.trim() || '';
-                    if (reason && !noDelReasons.includes(reason)) {
-                        noDelReasons.push(reason);
-                    }
+                    dutyAssignments.push({
+                        dutyId: parseInt(item.dutyId),
+                        dutyDate: item.date,
+                        replacementDoctorId: null,
+                        splitLabel: item.splitLabel || null,
+                        isSelfDuty: false,
+                        noDelegateReason: reason  // เก็บ reason ต่อ duty
+                    });
                 }
-                const combinedNoDelReason = noDelReasons.join('; ');
-
+                
                 deptRequestBody.dutyAssignments = dutyAssignments;
-                deptRequestBody.noDelegationReason = combinedNoDelReason || null;
-
-                // GEN4 V3 Step 5: เก็บ grouping info (ใช้สำหรับ confirm message เท่านั้น)
+                
+                // GEN4 V3 Step 5: เก็บ grouping info
                 deptRequestBody.delegateGroups = delegateGroups;
                 deptRequestBody.noDelegateGroups = noDelegateGroups;
                 
@@ -3234,8 +3237,7 @@
                     
                     console.log(`=== แผนก ${dept.department_name}: ${delegateGroups.length} กลุ่มฝาก + ${noDelegateGroups.length} กลุ่มไม่ฝาก ===`);
                     
-                    // GEN7 V9: POST 1 record เดียวสำหรับทั้ง delegate + no-delegate
-                    // reason ของ no-delegate duties รวมอยู่ใน no_delegation_reason
+                    // GEN7 V11: POST 1 record เดียว (delegate + no-delegate รวมใน dutyAssignments)
                     if (requestBody.dutyAssignments && requestBody.dutyAssignments.length > 0) {
                         const delegateBody = {
                             doctorId: requestBody.doctorId,
@@ -3244,12 +3246,10 @@
                             delegationType: 'custom',
                             departmentId: requestBody.departmentId,
                             dutyAssignments: requestBody.dutyAssignments,
-                            noDelegationReason: requestBody.noDelegationReason || null,
                             groupId: groupId
                         };
 
-                        console.log(`  → บันทึก custom (delegate+no-delegate): ${requestBody.startDate} - ${requestBody.endDate}`);
-                        console.log('    Body:', delegateBody);
+                        console.log(`  → บันทึก custom: ${requestBody.startDate} - ${requestBody.endDate} (${requestBody.dutyAssignments.length} duties)`);
 
                         const response = await fetch(`${LEAVE_API_URL}/api/leaves`, {
                             method: 'POST',
@@ -3265,37 +3265,7 @@
                             totalRecords++;
                             console.log(`    ✅ สำเร็จ (Record ${totalRecords})`);
                         } else {
-                            throw new Error(`แผนก ${dept.department_name} (ฝาก): ${data.message || 'ไม่สามารถบันทึกได้'}`);
-                        }
-                    } else if (noDelegateGroups.length > 0) {
-                        // กรณีเลือกไม่ฝากทุก duty (ไม่มี delegate เลย)
-                        const noDelBody = {
-                            doctorId: requestBody.doctorId,
-                            startDate: requestBody.startDate,
-                            endDate: requestBody.endDate,
-                            delegationType: 'none',
-                            departmentId: requestBody.departmentId,
-                            hasReplacement: false,
-                            noDelegationReason: requestBody.noDelegationReason || null,
-                            groupId: groupId
-                        };
-
-                        console.log(`  → บันทึก no-delegate ทั้งหมด: ${requestBody.startDate} - ${requestBody.endDate}`);
-
-                        const response = await fetch(`${LEAVE_API_URL}/api/leaves`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(noDelBody)
-                        });
-
-                        const data = await response.json();
-
-                        if (response.ok && data.success) {
-                            successCount++;
-                            totalRecords++;
-                            console.log(`    ✅ สำเร็จ (Record ${totalRecords})`);
-                        } else {
-                            throw new Error(`แผนก ${dept.department_name} (ไม่ฝาก): ${data.message || 'ไม่สามารถบันทึกได้'}`);
+                            throw new Error(`แผนก ${dept.department_name}: ${data.message || 'ไม่สามารถบันทึกได้'}`);
                         }
                     }
                     
@@ -4728,5 +4698,5 @@
 ```
 
 </body>
-<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">user GEN7 V10</div>
+<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">user GEN7 V11</div>
 </html>
