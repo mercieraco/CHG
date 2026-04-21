@@ -3320,17 +3320,17 @@
     function renderDoctorDutiesHTML(duties, doctorId, groupPrefix) {
         if (duties.length === 0) return '';
 
-        // จัดกลุ่มตาม baseName ก่อน (รักษาลำดับ จ→อา จาก worker)
-        const groups = [];
-        let currentGroup = null;
+        // GEN8 V1: Map-based grouping — merge ทุก baseName เดียวกัน ไม่ว่าจะอยู่ลำดับไหน
+        // รักษาลำดับการปรากฏครั้งแรกของ baseName (จ→อา ตาม API)
+        const groupMap = new Map();  // baseName → { baseName, rows[] }
         duties.forEach(duty => {
             const p = parseDutyName(duty.duty_name);
-            if (p.baseName !== (currentGroup && currentGroup.baseName)) {
-                currentGroup = { baseName: p.baseName, rows: [] };
-                groups.push(currentGroup);
+            if (!groupMap.has(p.baseName)) {
+                groupMap.set(p.baseName, { baseName: p.baseName, rows: [] });
             }
-            currentGroup.rows.push({ duty, parsed: p });
+            groupMap.get(p.baseName).rows.push({ duty, parsed: p });
         });
+        const groups = Array.from(groupMap.values());
 
         let html = '<div class="doctor-duties-list">';
 
@@ -4171,7 +4171,7 @@
 ```
 
 <div style="text-align:center; padding: 16px; color: #aaa; font-size: 12px;">
-    dep_doc GEN8 V0
+    dep_doc GEN8 V1
 </div>
 
 </body>
