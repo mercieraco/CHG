@@ -1317,6 +1317,8 @@
     let allDepartmentsCache = [];  // cache departments list ไม่ต้องเรียก /:id แยก
     let pendingUserId = null;
     let pendingLicenseNumber = null;
+    var doctorSortMode = {};      // GEN8: 'duty' (default) หรือ 'day' per doctorId
+    var doctorDutiesCache = {};   // GEN8: cache duties raw data per doctorId
 
     // GEN4 V2 Phase 1: Default Duties per Department (Dual Storage)
     let departmentDefaultDuties = {};
@@ -3095,6 +3097,7 @@
                                 <button onclick="showDeleteDoctorModal(${doctor.id}, '${safeName}')" class="btn-delete-doctor">ลบ</button>
                                 <button onclick="showEditDoctorModal(${doctor.id}, '${safeName}', ${doctor.department_id}, '${doctor.work_type || 'full'}')" class="btn-edit-doctor">แก้ไข</button>
                                 <button id="toggle-duty-btn-${doctor.id}" onclick="toggleDutySection(${doctor.id})" class="btn-duty-doctor">แสดง</button>
+                                <button id="sort-btn-${doctor.id}" onclick="toggleSortMode(${doctor.id})" class="btn-duty-doctor" style="display:none; background:#11998e;">duty</button>
                             </div>
                             
                             <!-- Duties (default ซ่อน) -->
@@ -3121,14 +3124,17 @@
     function toggleDutySection(doctorId) {
         const dutiesContainer = document.getElementById(`duties-${doctorId}`);
         const btn = document.getElementById(`toggle-duty-btn-${doctorId}`);
+        const sortBtn = document.getElementById(`sort-btn-${doctorId}`);
         if (!dutiesContainer || !btn) return;
 
         if (dutiesContainer.style.display === 'none') {
             dutiesContainer.style.display = 'block';
             btn.textContent = 'ซ่อน';
+            if (sortBtn) sortBtn.style.display = '';
         } else {
             dutiesContainer.style.display = 'none';
             btn.textContent = 'แสดง';
+            if (sortBtn) sortBtn.style.display = 'none';
         }
     }
 
@@ -3223,6 +3229,9 @@
             const dutiesResponse = await fetch(`${API_URL}/api/doctor-duties/doctor/${doctorId}`);
             const dutiesData = await dutiesResponse.json();
             const allDuties = dutiesData.success ? dutiesData.data : [];
+
+            // GEN8: cache ไว้ใช้ตอน toggle sort
+            doctorDutiesCache[doctorId] = { allDuties, departments };
             
             // 6. แสดงแยกตามแผนก
             let html = '';
@@ -3246,7 +3255,10 @@
                 `;
                 
                 if (deptDuties.length > 0) {
-                    html += renderDoctorDutiesHTML(deptDuties, doctorId, `docx${doctorId}_dept${dept.department_id}`);
+                    const mode = doctorSortMode[doctorId] || 'duty';
+                    html += mode === 'day'
+                        ? renderDoctorDutiesHTML_byDay(deptDuties, doctorId, `docx${doctorId}_dept${dept.department_id}`)
+                        : renderDoctorDutiesHTML(deptDuties, doctorId, `docx${doctorId}_dept${dept.department_id}`);
                 } else {
                     html += '<div style="color: #999; font-size: 13px; padding: 10px 0;">ไม่มี Duty ในแผนกนี้</div>';
                 }
@@ -3395,6 +3407,97 @@
         sub.style.display = open ? 'none'  : 'block';
         sum.style.display = open ? ''      : 'none';
         btn.textContent   = open ? 'แสดง'  : 'ซ่อน';
+    }
+
+    // ============================================
+    // GEN8 V0: Toggle Sort Mode (duty / day)
+    // ============================================
+    const DAY_ORDER = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
+
+    function toggleSortMode(doctorId) {
+        const current = doctorSortMode[doctorId] || 'duty';
+        doctorSortMode[doctorId] = current === 'duty' ? 'day' : 'duty';
+
+        const sortBtn = document.getElementById(`sort-btn-${doctorId}`);
+        if (sortBtn) sortBtn.textContent = doctorSortMode[doctorId] === 'duty' ? 'duty' : 'วัน';
+
+        // Re-render จาก cache
+        const cache = doctorDutiesCache[doctorId];
+        if (!cache) return;
+
+        const dutiesContainer = document.getElementById(`duties-${doctorId}`);
+        if (!dutiesContainer) return;
+
+        const { allDuties, departments } = cache;
+        const mode = doctorSortMode[doctorId];
+
+        let html = '';
+        departments.forEach(dept => {
+            const isPrimary = dept.is_primary;
+            const deptDuties = allDuties.filter(d => d.department_id === dept.department_id);
+
+            html += `
+                <div style="margin-bottom: 20px; padding: 15px; background: ${isPrimary ? '#f0f7ff' : '#fff9f0'}; border-radius: 8px; border: 1px solid ${isPrimary ? '#d0e7ff' : '#ffe0b0'};">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <h4 style="margin: 0; color: #333;">
+                            ${isPrimary ? '🏥' : '➕'} ${dept.department_name}
+                            ${isPrimary ? '' : '<span style="background: #ffa726; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-left: 8px;">แผนกเสริม</span>'}
+                        </h4>
+                        <div style="display: flex; gap: 5px;">
+                            <button onclick="event.stopPropagation(); showDoctorDutyModal(${doctorId}, ${dept.department_id}, '${dept.department_name}')" class="btn-duty-doctor" style="font-size: 12px; padding: 4px 10px;">Duty</button>
+                            ${!isPrimary ? `<button onclick="event.stopPropagation(); removeDepartment(${doctorId}, ${dept.department_id})" class="btn-delete-doctor" style="font-size: 12px; padding: 4px 10px;">ลบแผนก</button>` : ''}
+                        </div>
+                    </div>
+            `;
+
+            if (deptDuties.length > 0) {
+                html += mode === 'day'
+                    ? renderDoctorDutiesHTML_byDay(deptDuties, doctorId, `docx${doctorId}_dept${dept.department_id}`)
+                    : renderDoctorDutiesHTML(deptDuties, doctorId, `docx${doctorId}_dept${dept.department_id}`);
+            } else {
+                html += '<div style="color: #999; font-size: 13px; padding: 10px 0;">ไม่มี Duty ในแผนกนี้</div>';
+            }
+            html += '</div>';
+        });
+
+        dutiesContainer.innerHTML = html;
+    }
+
+    // GEN8 V0: render เรียงตามวัน (priority: วัน > duty)
+    function renderDoctorDutiesHTML_byDay(duties, doctorId, groupPrefix) {
+        if (duties.length === 0) return '';
+
+        // จัดกลุ่มตามวัน โดยรักษาลำดับ จ→อา
+        const dayMap = {};
+        DAY_ORDER.forEach(d => { dayMap[d] = []; });
+        duties.forEach(duty => {
+            const day = duty.day_of_week;
+            if (dayMap[day]) dayMap[day].push(duty);
+        });
+
+        let html = '<div class="doctor-duties-list">';
+
+        DAY_ORDER.forEach(day => {
+            const dayDuties = dayMap[day];
+            if (dayDuties.length === 0) return;
+
+            const dayLabel = DAY_LABEL[day] || day;
+
+            dayDuties.forEach((duty, idx) => {
+                const p = parseDutyName(duty.duty_name);
+                const timeLabel = p.startTime ? `(${p.startTime}-${p.endTime})` : '';
+                const safeName = duty.duty_name.replace(/'/g, "\'");
+                html += `
+                    <div class="doctor-duty-item">
+                        <span class="doctor-duty-day-col">${idx === 0 ? dayLabel : ''}</span>
+                        <span class="doctor-duty-time-col">${p.baseName}${timeLabel ? ' ' + timeLabel : ''}</span>
+                        <button onclick="event.stopPropagation(); showDeleteDoctorDutyModal(${duty.id},'${safeName}',${doctorId},${duty.department_id||'null'})" class="btn-delete-doctor-duty">ลบ</button>
+                    </div>`;
+            });
+        });
+
+        html += '</div>';
+        return html;
     }
 
 
@@ -4068,7 +4171,7 @@
 ```
 
 <div style="text-align:center; padding: 16px; color: #aaa; font-size: 12px;">
-    dep_doc GEN6 V8
+    dep_doc GEN8 V0
 </div>
 
 </body>
