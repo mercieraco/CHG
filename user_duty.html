@@ -157,18 +157,6 @@
         font-style: italic;
         padding: 8px 0;
     }
-
-    /* GEN8: col styles สำหรับ by-day render */
-    .doctor-duty-day-col {
-        font-weight: 700;
-        color: #667eea;
-        min-width: 28px;
-        font-size: 13px;
-    }
-    .doctor-duty-time-col {
-        color: #555;
-        font-size: 13px;
-    }
     .doctor-duty-group-label { padding: 4px 0 2px 0; }
     .doctor-duty-base-name { font-weight: 700; color: #333; font-size: 14px; }
     .doctor-duty-group-rows { padding-left: 8px; border-left: 3px solid #667eea; margin-bottom: 6px; }
@@ -312,7 +300,7 @@
 </div>
 
 <div class="section-card">
-    <div class="section-header">
+    <div class="section-header" style="display:flex; align-items:center; gap:8px;">
         📅 ตารางเวรประจำ
         <button id="sort-toggle-btn" onclick="toggleSortMode()" class="btn-toggle-group" style="margin-left:auto; background:rgba(255,255,255,0.25);">duty</button>
     </div>
@@ -332,9 +320,9 @@
 </div>
 <script>
     const API_URL = 'https://dep-doc-worker.9vk92zm5z2.workers.dev';
-    var sortMode    = 'duty';   // GEN8: 'duty' | 'day'
-    var cachedDuties = [];      // GEN8: raw duties จาก API
-    var cachedDepts  = [];      // GEN8: [primaryDept, ...secondaryDepts]
+    var sortMode     = 'duty';
+    var cachedDuties = [];
+    var cachedDepts  = [];
 
 ```
 window.onload = async function() {
@@ -380,7 +368,6 @@ async function loadSchedule(doctorId) {
         const dutiesData = await dutiesRes.json();
         const allDuties  = dutiesData.success ? dutiesData.data : [];
 
-        // GEN8: cache ไว้ใช้ตอน toggle sort
         cachedDuties = allDuties;
         cachedDepts  = [primaryDept, ...secondaryDepts];
 
@@ -419,11 +406,11 @@ const DAY_LABEL_UD = {
     thursday:'พฤ', friday:'ศ', saturday:'ส', sunday:'อา'
 };
 
-// GEN8 V0: renderDoctorDutiesHTML — Map-based grouping (merge same baseName)
+// GEN8 V1: renderDoctorDutiesHTML — Map-based grouping (merge same baseName)
 function renderDoctorDutiesHTML(duties, prefix) {
     if (duties.length === 0) return '';
 
-    // Expand: record เดิม (day_of_week=null) → แตกตาม boolean
+    // worker expand + sort ให้แล้ว แต่ fallback สำหรับ backward compat
     const dayKeys = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
     const expanded = [];
     duties.forEach(d => {
@@ -436,14 +423,13 @@ function renderDoctorDutiesHTML(duties, prefix) {
         }
     });
 
-    // เรียง จ→อา → start_time
     expanded.sort((a,b) => {
         const dd = dayKeys.indexOf(a.day_of_week) - dayKeys.indexOf(b.day_of_week);
         if (dd !== 0) return dd;
         return (a.start_time||'00:00').localeCompare(b.start_time||'00:00');
     });
 
-    // Map-based grouping — merge ทุก baseName เดียวกัน ไม่ว่าจะอยู่ลำดับไหน
+    // Map-based grouping — merge ทุก baseName เดียวกัน
     const groupMap = new Map();
     expanded.forEach(d => {
         const p = parseDutyName(d.duty_name);
@@ -464,7 +450,6 @@ function renderDoctorDutiesHTML(duties, prefix) {
             const timeRange = starts.length
                 ? `(${starts.reduce((a,b)=>a<b?a:b)}-${ends.reduce((a,b)=>a>b?a:b)})`
                 : '';
-
             html += `
                 <div class="doctor-duty-group-header doctor-duty-item">
                     <span class="doctor-duty-name" style="font-weight:700;">${group.baseName}</span>
@@ -476,11 +461,11 @@ function renderDoctorDutiesHTML(duties, prefix) {
                 </div>
                 <div id="dg_sub_${gid}" style="display:none;">`;
             group.rows.forEach(({ duty, parsed }) => {
-                const dayLabel  = DAY_LABEL_UD[duty.day_of_week] || '';
-                const timeLabel = parsed.startTime ? `(${parsed.startTime}-${parsed.endTime})` : '';
+                const dl = DAY_LABEL_UD[duty.day_of_week] || '';
+                const tl = parsed.startTime ? `(${parsed.startTime}-${parsed.endTime})` : '';
                 html += `
                     <div class="doctor-duty-item doctor-duty-group-subrow">
-                        <span class="doctor-duty-name" style="color:#555;padding-left:16px;">${dayLabel} ${timeLabel}</span>
+                        <span class="doctor-duty-name" style="color:#555;padding-left:16px;">${dl} ${tl}</span>
                     </div>`;
             });
             html += `</div>`;
@@ -491,12 +476,12 @@ function renderDoctorDutiesHTML(duties, prefix) {
                 </div>
                 <div class="doctor-duty-group-rows">`;
             group.rows.forEach(({ duty, parsed }) => {
-                const dayLabel  = DAY_LABEL_UD[duty.day_of_week] || '';
-                const timeLabel = parsed.startTime ? `(${parsed.startTime}-${parsed.endTime})` : '';
+                const dl = DAY_LABEL_UD[duty.day_of_week] || '';
+                const tl = parsed.startTime ? `(${parsed.startTime}-${parsed.endTime})` : '';
                 html += `
                     <div class="doctor-duty-item">
-                        <span class="doctor-duty-day-col">${dayLabel}</span>
-                        <span class="doctor-duty-time-col">${timeLabel}</span>
+                        <span class="doctor-duty-day-col">${dl}</span>
+                        <span class="doctor-duty-time-col">${tl}</span>
                     </div>`;
             });
             html += `</div>`;
@@ -516,41 +501,38 @@ function toggleDutyGroup(gid) {
     btn.textContent   = open ? 'แสดง'  : 'ซ่อน';
 }
 
-// GEN8 V0: เรียงตามวัน (priority: วัน > duty)
-const DAY_ORDER_UD = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
-
+// GEN8 V1: เรียงตามวัน (priority: วัน > duty)
 function renderDoctorDutiesHTML_byDay(duties, prefix) {
     if (duties.length === 0) return '';
+    const dayKeys = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
 
-    // Expand backward-compat
     const expanded = [];
     duties.forEach(d => {
         if (d.day_of_week) {
             expanded.push(d);
         } else {
-            DAY_ORDER_UD.forEach(k => {
+            dayKeys.forEach(k => {
                 if (d[k] === 1 || d[k] === true) expanded.push({ ...d, day_of_week: k });
             });
         }
     });
 
-    // จัดกลุ่มตามวัน
     const dayMap = {};
-    DAY_ORDER_UD.forEach(d => { dayMap[d] = []; });
+    dayKeys.forEach(d => { dayMap[d] = []; });
     expanded.forEach(d => { if (dayMap[d.day_of_week]) dayMap[d.day_of_week].push(d); });
 
     let html = '<div class="doctor-duties-list">';
-    DAY_ORDER_UD.forEach(day => {
+    dayKeys.forEach(day => {
         const dayDuties = dayMap[day];
         if (dayDuties.length === 0) return;
-        const dayLabel = DAY_LABEL_UD[day];
+        const dl = DAY_LABEL_UD[day];
         dayDuties.forEach((d, idx) => {
             const p = parseDutyName(d.duty_name);
-            const timeLabel = p.startTime ? ` (${p.startTime}-${p.endTime})` : '';
+            const tl = p.startTime ? ` (${p.startTime}-${p.endTime})` : '';
             html += `
-                <div class="doctor-duty-item">
-                    <span class="doctor-duty-day-col" style="font-weight:700;color:#667eea;min-width:28px;">${idx === 0 ? dayLabel : ''}</span>
-                    <span class="doctor-duty-time-col">${p.baseName}${timeLabel}</span>
+                <div class="doctor-duty-item" style="grid-template-columns:28px 1fr;">
+                    <span style="font-weight:700;color:#667eea;font-size:13px;">${idx === 0 ? dl : ''}</span>
+                    <span style="color:#555;font-size:13px;">${p.baseName}${tl}</span>
                 </div>`;
         });
     });
@@ -558,20 +540,16 @@ function renderDoctorDutiesHTML_byDay(duties, prefix) {
     return html;
 }
 
-// GEN8 V0: toggle sort mode
+// GEN8 V1: toggle sort mode
 function toggleSortMode() {
     sortMode = sortMode === 'duty' ? 'day' : 'duty';
     const btn = document.getElementById('sort-toggle-btn');
     if (btn) btn.textContent = sortMode === 'duty' ? 'duty' : 'วัน';
-
-    // Re-render จาก cache
-    const body = document.getElementById('scheduleBody');
     if (!cachedDepts.length) return;
-    const [primaryDept, ...secondaryDepts] = cachedDepts;
-    let html = renderDeptBlock(primaryDept, cachedDuties, true);
-    for (const dept of secondaryDepts) {
-        html += renderDeptBlock(dept, cachedDuties, false);
-    }
+    const body = document.getElementById('scheduleBody');
+    const [primary, ...secondary] = cachedDepts;
+    let html = renderDeptBlock(primary, cachedDuties, true);
+    secondary.forEach(dept => { html += renderDeptBlock(dept, cachedDuties, false); });
     body.innerHTML = html || '<div class="empty-state">ไม่มีข้อมูลตารางเวร</div>';
 }
 
@@ -652,5 +630,5 @@ function renderRepCard(leave) {
 
 </script>
 </body>
-<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">user_duty GEN8 V0</div>
+<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">user_duty GEN8 V1</div>
 </html>
