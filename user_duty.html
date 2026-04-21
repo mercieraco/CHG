@@ -329,8 +329,11 @@ window.onload = async function() {
     const loggedIn = sessionStorage.getItem('loggedIn');
     const role     = sessionStorage.getItem('role');
     const doctorId = sessionStorage.getItem('doctor_id');
+    // TEST: bypass session check — ใส่ doctor_id จริงที่นี่
+    const testDoctorId = doctorId || '1';
     if (!loggedIn || role !== 'doctor' || !doctorId) {
-        window.location.href = 'index.html';
+        // แทน redirect → โหลดด้วย testDoctorId
+        await Promise.all([loadSchedule(testDoctorId), loadReplacements(testDoctorId)]);
         return;
     }
     await Promise.all([loadSchedule(doctorId), loadReplacements(doctorId)]);
