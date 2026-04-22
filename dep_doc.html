@@ -2458,15 +2458,22 @@
             };
         } else {
             // Time mode
-            const startHour = document.getElementById(`${dutyId}_startHour`).value;
+            const startHour   = document.getElementById(`${dutyId}_startHour`).value;
             const startMinute = document.getElementById(`${dutyId}_startMinute`).value;
-            const endHour = document.getElementById(`${dutyId}_endHour`).value;
-            const endMinute = document.getElementById(`${dutyId}_endMinute`).value;
-            
+            const endHour     = document.getElementById(`${dutyId}_endHour`).value;
+            const endMinute   = document.getElementById(`${dutyId}_endMinute`).value;
+
+            // GEN8 V2: endHour ข้ามคืนเก็บ + ไว้ท้าย เช่น "08+:00" → "08:00+"
+            const isOvernight = endHour.includes('+');
+            const cleanEndHour = endHour.replace('+', '');
+            const endTime = isOvernight
+                ? `${cleanEndHour}:${endMinute}+`
+                : `${endHour}:${endMinute}`;
+
             return {
                 isAllDay: false,
                 startTime: `${startHour}:${startMinute}`,
-                endTime: `${endHour}:${endMinute}`
+                endTime
             };
         }
     }
@@ -4189,7 +4196,7 @@
 ```
 
 <div style="text-align:center; padding: 16px; color: #aaa; font-size: 12px;">
-    dep_doc GEN8 V2
+    dep_doc GEN8 V3
 </div>
 
 </body>
