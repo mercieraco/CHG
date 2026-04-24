@@ -2635,8 +2635,18 @@
         }
         
         try {
-            console.log(`📝 กำลังบันทึก: "${finalDutyName}" ในแผนก ${savedDepartmentId} (${savedDepartmentName})`);
-            
+            // GEN8 V4: ตรวจ duplicate ก่อน save
+            const isDuplicate = await verifyDutyExists(savedDepartmentId, finalDutyName);
+            if (isDuplicate) {
+                const saveMsg = document.getElementById('deptDutySaveMessage');
+                saveMsg.style.display = 'block';
+                saveMsg.style.background = '#fff3cd';
+                saveMsg.style.color = '#856404';
+                saveMsg.style.borderColor = '#ffc107';
+                saveMsg.textContent = `⚠️ "${finalDutyName}" มีอยู่แล้ว ข้ามการบันทึก`;
+                return;
+            }
+
             // บันทึก Backend — GEN4 V3: ส่ง time fields ด้วย
             const response = await fetch(`${API_URL}/api/duties`, {
                 method: 'POST',
@@ -4196,7 +4206,7 @@
 ```
 
 <div style="text-align:center; padding: 16px; color: #aaa; font-size: 12px;">
-    dep_doc GEN8 V3
+    dep_doc GEN8 V4
 </div>
 
 </body>
