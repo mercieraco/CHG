@@ -1161,6 +1161,32 @@
             </div>
         </div>
 
+        <!-- GEN9: เลือกสัปดาห์ที่ทำ Duty -->
+        <div class="form-group" style="text-align: left;">
+            <label>สัปดาห์ที่ทำ Duty:</label>
+            <div style="display:flex; gap:8px; margin-bottom:8px;">
+                <button type="button" id="wkModeAllWeek"
+                        onclick="selectWeekMode('allweek')"
+                        style="padding:5px 14px; border-radius:12px; border:none; font-size:13px;
+                               font-weight:600; cursor:pointer; background:#667eea; color:white;">
+                    ทุกสัปดาห์
+                </button>
+                <button type="button" id="wkModeSelect"
+                        onclick="selectWeekMode('select')"
+                        style="padding:5px 14px; border-radius:12px; border:none; font-size:13px;
+                               font-weight:600; cursor:pointer; background:#e0e0e0; color:#666;">
+                    เลือกสัปดาห์
+                </button>
+            </div>
+            <div id="wkCheckboxGroup" style="display:none;" class="checkbox-group">
+                <label><input type="checkbox" name="dutyWeeks" value="1"> Wk1</label>
+                <label><input type="checkbox" name="dutyWeeks" value="2"> Wk2</label>
+                <label><input type="checkbox" name="dutyWeeks" value="3"> Wk3</label>
+                <label><input type="checkbox" name="dutyWeeks" value="4"> Wk4</label>
+                <label><input type="checkbox" name="dutyWeeks" value="5"> Wk5</label>
+            </div>
+        </div>
+
         <div class="form-group" style="text-align: left;">
             <label>เลือกวันที่ทำ Duty:</label>
             <div class="checkbox-group">
@@ -3399,10 +3425,13 @@
                     const dayLabel  = DAY_LABEL[duty.day_of_week] || '';
                     const timeLabel = parsed.startTime ? `(${parsed.startTime}-${parsed.endTime})` : '';
                     const safeName  = duty.duty_name.replace(/'/g, "\'");
+                    // GEN9: wk label
+                    const wkLabel = duty.week_numbers ? (() => { try { return '[Wk'+JSON.parse(duty.week_numbers).join(',')+']'; } catch(e){ return ''; } })() : '';
                     html += `
                         <div class="doctor-duty-item doctor-duty-group-rows">
                             <span class="doctor-duty-day-col">${dayLabel}</span>
                             <span class="doctor-duty-time-col">${timeLabel}</span>
+                            ${wkLabel ? `<span style="font-size:11px;color:#667eea;font-weight:600;">${wkLabel}</span>` : '<span></span>'}
                             <button onclick="event.stopPropagation(); showDeleteDoctorDutyModal(${duty.id},'${safeName}',${doctorId},${duty.department_id||'null'})" class="btn-delete-doctor-duty">ลบ</button>
                         </div>`;
                 });
@@ -3419,10 +3448,13 @@
                     const dayLabel  = DAY_LABEL[duty.day_of_week] || '';
                     const timeLabel = parsed.startTime ? `(${parsed.startTime}-${parsed.endTime})` : '';
                     const safeName  = duty.duty_name.replace(/'/g, "\'");
+                    // GEN9: wk label
+                    const wkLabel = duty.week_numbers ? (() => { try { return '[Wk'+JSON.parse(duty.week_numbers).join(',')+']'; } catch(e){ return ''; } })() : '';
                     html += `
                         <div class="doctor-duty-item">
                             <span class="doctor-duty-day-col">${dayLabel}</span>
                             <span class="doctor-duty-time-col">${timeLabel}</span>
+                            ${wkLabel ? `<span style="font-size:11px;color:#667eea;font-weight:600;">${wkLabel}</span>` : '<span></span>'}
                             <button onclick="event.stopPropagation(); showDeleteDoctorDutyModal(${duty.id},'${safeName}',${doctorId},${duty.department_id||'null'})" class="btn-delete-doctor-duty">ลบ</button>
                         </div>`;
                 });
@@ -3968,11 +4000,35 @@
         const savedDeptId = currentDoctorDepartmentId;
         document.getElementById('doctorDutyModal').classList.remove('show');
         document.getElementById('doctorDutySaveMessage').style.display = 'none';
+        // GEN9: reset week mode กลับ all week เมื่อปิด modal
+        selectWeekMode('allweek');
         currentDoctorId = null;
         currentDoctorDepartmentId = null;
         // Refresh รายการ duties ของแพทย์
         if (savedDoctorId && savedDeptId) {
             loadDoctorDepartmentsAndDuties(savedDoctorId, savedDeptId);
+        }
+    }
+
+    // GEN9: toggle โหมดเลือกสัปดาห์ใน modal เพิ่ม duty
+    function selectWeekMode(mode) {
+        const allweekBtn = document.getElementById('wkModeAllWeek');
+        const selectBtn  = document.getElementById('wkModeSelect');
+        const wkGroup    = document.getElementById('wkCheckboxGroup');
+        if (mode === 'allweek') {
+            allweekBtn.style.background = '#667eea';
+            allweekBtn.style.color = 'white';
+            selectBtn.style.background = '#e0e0e0';
+            selectBtn.style.color = '#666';
+            wkGroup.style.display = 'none';
+            // uncheck ทั้งหมด
+            document.querySelectorAll('input[name="dutyWeeks"]').forEach(cb => cb.checked = false);
+        } else {
+            allweekBtn.style.background = '#e0e0e0';
+            allweekBtn.style.color = '#666';
+            selectBtn.style.background = '#667eea';
+            selectBtn.style.color = 'white';
+            wkGroup.style.display = '';
         }
     }
 
@@ -3986,6 +4042,17 @@
                                   .map(cb => cb.value);
 
         if (checkedDays.length === 0) { alert('กรุณาเลือกวันที่ทำ Duty อย่างน้อย 1 วัน'); return; }
+
+        // GEN9: รวบรวม weekNumbers
+        const allweekBtn = document.getElementById('wkModeAllWeek');
+        const isAllWeek  = allweekBtn.style.background !== 'rgb(224, 224, 224)';
+        let weekNumbers  = null; // null = ทุกสัปดาห์
+        if (!isAllWeek) {
+            const checked = Array.from(document.querySelectorAll('input[name="dutyWeeks"]:checked'))
+                                 .map(cb => parseInt(cb.value));
+            if (checked.length === 0) { alert('กรุณาเลือกสัปดาห์อย่างน้อย 1 สัปดาห์'); return; }
+            weekNumbers = checked;
+        }
 
         const dutyDetails = document.getElementById('dutyDetailsInput').value.trim();
 
@@ -4002,7 +4069,8 @@
                         dutyId:       parseInt(dutyId),
                         day:          day,
                         departmentId: currentDoctorDepartmentId,
-                        dutyDetails:  dutyDetails || null
+                        dutyDetails:  dutyDetails || null,
+                        weekNumbers:  weekNumbers
                     })
                 });
                 const data = await res.json();
@@ -4037,7 +4105,10 @@
         document.getElementById('doctorDutySelectedLabel').innerHTML =
             '<span style="color: #aaa; font-weight: 400;">-- กรุณาเลือก Duty --</span>';
         document.querySelectorAll('input[name="dutyDays"]').forEach(cb => cb.checked = false);
+        document.querySelectorAll('input[name="dutyWeeks"]').forEach(cb => cb.checked = false);
         document.getElementById('dutyDetailsInput').value = '';
+        // Reset week mode กลับ all week
+        selectWeekMode('allweek');
 
         // Deselect duty ใน list
         document.querySelectorAll('#doctorDutyList .duty-radio-item').forEach(el => {
@@ -4206,7 +4277,7 @@
 ```
 
 <div style="text-align:center; padding: 16px; color: #aaa; font-size: 12px;">
-    dep_doc GEN8 V4
+    dep_doc GEN9 V0
 </div>
 
 </body>
