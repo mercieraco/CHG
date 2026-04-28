@@ -2300,108 +2300,37 @@
         }
         
         try {
-            // 1. ดึงรายชื่อแพทย์ทั้งหมด
-            const doctorsResponse = await fetch(`${API_URL}/api/doctors`);
-            const doctorsData = await doctorsResponse.json();
-            
-            // 2. ดึง doctor_duties ของแผนกนี้
-            const dutiesResponse = await fetch(`${LEAVE_API_URL}/api/duties/department/${filterDept}`);
-            const dutiesData = await dutiesResponse.json();
-            
-            if (doctorsData.success && dutiesData.success) {
-                // กรองตามแผนก
-                let doctors = doctorsData.data.filter(d => d.department_id == filterDept);
-                
+            // GEN9: ลบ 3-step frontend filtering ออก
+            // พึ่ง /api/available-replacements worker อย่างเดียว
+            // worker กรอง duty conflict + week_numbers + time overlap + assigned ถูกต้องแล้ว
+            const _dayNames = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+            const dayName = _dayNames[new Date(dutyDate).getDay()];
+            const leaveDeptId = document.getElementById('departmentSelect').value || filterDept;
+
+            const availRes = await fetch(
+                `${API_URL}/api/available-replacements?dutyId=${dutyId}&departmentId=${filterDept}&leaveDepartmentId=${leaveDeptId}&dayOfWeek=${dayName}&dutyDate=${dutyDate}&doctorId=${selectedDoctorId}`
+            );
+            const availData = await availRes.json();
+
+            if (availData.success) {
+                let doctors = availData.available || [];
+
                 // กรองตาม work_type
                 if (filterType === 'full') {
                     doctors = doctors.filter(d => d.work_type === 'full');
                 } else if (filterType === 'part') {
                     doctors = doctors.filter(d => d.work_type === 'part');
                 }
-                
-                // กรองแพทย์ที่ลาออก (ไม่ให้เลือกตัวเอง)
-                doctors = doctors.filter(d => d.id != parseInt(selectedDoctorId));
-                
-                // *** ขั้นตอนที่ 1: กรองแพทย์ที่มี Duty ซ้ำกันออก ***
-                const dayOfWeek = new Date(dutyDate).getDay(); // 0=อาทิตย์, 1=จันทร์, ...
-                const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-                const dayName = dayNames[dayOfWeek];
-                
-                // หาแพทย์ที่มี Duty ตรงกับ dutyId และ วันนี้
-                const busyDoctorIds = dutiesData.data
-                    .filter(dd => dd.duty_id === dutyId && (dd.day_of_week ? dd.day_of_week === dayName : dd[dayName] === 1))
-                    .map(dd => dd.doctor_id);
-                
-                console.log('=== Filtering Busy Doctors ===');
-                console.log('Date:', dutyDate, 'Day:', dayName);
-                console.log('Duty ID:', dutyId);
-                console.log('Busy Doctor IDs:', busyDoctorIds);
-                
-                // กรองแพทย์ที่ไม่ว่างออก
-                doctors = doctors.filter(d => !busyDoctorIds.includes(d.id));
-                
-                // *** ขั้นตอนที่ 2: กรองแพทย์ที่ลาในวันนี้ออก ***
-                const checkDateObj = new Date(dutyDate);
-                const onLeaveDoctorIds = doctorLeaves
-                    .filter(leave => {
-                        const leaveStart = new Date(leave.start_date);
-                        const leaveEnd = new Date(leave.end_date);
-                        return checkDateObj >= leaveStart && checkDateObj <= leaveEnd;
-                    })
-                    .map(leave => leave.doctor_id);
-                
-                console.log('On Leave Doctor IDs on', dutyDate, ':', onLeaveDoctorIds);
-                
-                // กรองแพทย์ที่ลาออก
-                doctors = doctors.filter(d => !onLeaveDoctorIds.includes(d.id));
-                
-                // *** ขั้นตอนที่ 3: กรองแพทย์ที่ได้รับมอบหมายในวันนี้ออก ***
-                console.log('=== Checking Assignments (Multiple) ===');
-                console.log('Total leaves:', doctorLeaves.length);
-                console.log('Checking date:', dutyDate, 'Duty ID:', dutyId);
-                
-                const assignedDoctorIds = [];
-                
-                doctorLeaves.forEach(leave => {
-                    // Case 1: Single Delegation
-                    if (leave.delegation_type === 'single' && leave.replacement_doctor_id) {
-                        const leaveStart = new Date(leave.start_date);
-                        const leaveEnd = new Date(leave.end_date);
-                        const checkDateObj = new Date(dutyDate);
-                        
-                        // ถ้าวันนี้อยู่ในช่วงลา → แพทย์มาแทนไม่ว่าง
-                        if (checkDateObj >= leaveStart && checkDateObj <= leaveEnd) {
-                            console.log(`Found Single: Doctor ${leave.replacement_doctor_id} replacing ${leave.doctor_id} (${leave.start_date} - ${leave.end_date})`);
-                            assignedDoctorIds.push(leave.replacement_doctor_id);
-                        }
-                    }
-                    
-                    // Case 2: Multiple Delegation
-                    if (leave.delegation_type === 'multiple' && leave.duty_assignments) {
-                        leave.duty_assignments.forEach(assignment => {
-                            if (assignment.duty_date === dutyDate && assignment.duty_id === dutyId) {
-                                console.log(`Found Multiple: Doctor ${assignment.replacement_doctor_id} for duty ${dutyId} on ${dutyDate}`);
-                                assignedDoctorIds.push(assignment.replacement_doctor_id);
-                            }
-                        });
-                    }
-                });
-                
-                console.log('Assigned Doctor IDs on', dutyDate, 'for duty', dutyId, ':', assignedDoctorIds);
-                
-                // กรองแพทย์ที่ได้รับมอบหมายออก
-                doctors = doctors.filter(d => !assignedDoctorIds.includes(d.id));
-                
-                // ใส่ใน dropdown
+
                 let options = '<option value="">-- เลือกแพทย์ที่จะมาแทน --</option>';
                 doctors.forEach(doc => {
                     options += `<option value="${doc.id}">${doc.name}</option>`;
                 });
-                
+
                 if (doctors.length === 0) {
                     options = '<option value="">-- ไม่มีแพทย์ว่างในวันนี้ --</option>';
                 }
-                
+
                 doctorSelect.innerHTML = options;
             }
         } catch (error) {
@@ -4341,5 +4270,5 @@
 </div>
 
 </body>
-<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">dep_rest GEN7 V3</div>
+<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">dep_rest GEN9 V0</div>
 </html>
