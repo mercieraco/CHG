@@ -2669,6 +2669,35 @@
             const dayName = _dayNames[new Date(dutyDate).getDay()];
             const leaveDeptId = document.getElementById('departmentSelect').value || filterDept;
 
+            // GEN9 V1: กรณีวันไม่มี duty (dutyId = NaN) → ดึงแพทย์โดยตรง กรองเฉพาะคนลา
+            if (!dutyId || isNaN(dutyId)) {
+                const res  = await fetch(`${API_URL}/api/doctors`);
+                const data = await res.json();
+                if (!data.success) throw new Error('โหลดแพทย์ไม่ได้');
+
+                let doctors = data.data.filter(d => d.department_id == filterDept);
+                doctors = doctors.filter(d => d.id != parseInt(selectedDoctorId));
+
+                if (filterType === 'full')      doctors = doctors.filter(d => d.work_type === 'full');
+                else if (filterType === 'part') doctors = doctors.filter(d => d.work_type === 'part');
+
+                if (dutyDate) {
+                    const checkDate = new Date(dutyDate);
+                    const onLeave = new Set(
+                        doctorLeaves
+                            .filter(l => new Date(l.start_date) <= checkDate && checkDate <= new Date(l.end_date))
+                            .map(l => l.doctor_id)
+                    );
+                    doctors = doctors.filter(d => !onLeave.has(d.id));
+                }
+
+                let options = '<option value="">-- เลือกแพทย์ที่จะมาแทน --</option>';
+                doctors.forEach(doc => { options += `<option value="${doc.id}">${doc.name}</option>`; });
+                if (doctors.length === 0) options = '<option value="">-- ไม่มีแพทย์ว่างในวันนี้ --</option>';
+                doctorSelect.innerHTML = options;
+                return;
+            }
+
             const availRes = await fetch(
                 `${API_URL}/api/available-replacements?dutyId=${dutyId}&departmentId=${filterDept}&leaveDepartmentId=${leaveDeptId}&dayOfWeek=${dayName}&dutyDate=${dutyDate}&doctorId=${selectedDoctorId}`
             );
@@ -4315,6 +4344,19 @@
             for (const date of selectedDates) {
                 const dayName = dayNames[new Date(date).getDay()];
                 const dutiesOnThisDay = leaveDoctorDuties.filter(d => (d.day_of_week ? d.day_of_week === dayName : d[dayName] === 1));
+
+                // GEN9 V1: วันไม่มี duty → ดึงแพทย์ทุกคนในแผนก ไม่มี conflict
+                if (dutiesOnThisDay.length === 0) {
+                    const res = await fetch(`${API_URL}/api/doctors`);
+                    const data = await res.json();
+                    if (data.success) {
+                        data.data
+                            .filter(d => d.department_id == selectedDeptId && d.id != parseInt(currentDoctorId))
+                            .forEach(d => availableDoctorMap.set(d.id, d));
+                    }
+                    continue;
+                }
+
                 for (const duty of dutiesOnThisDay) {
                     const res = await fetch(
                         `${API_URL}/api/available-replacements?dutyId=${duty.duty_id}&departmentId=${selectedDeptId}&leaveDepartmentId=${deptId}&dayOfWeek=${dayName}&dutyDate=${date}&doctorId=${currentDoctorId}`
@@ -4624,5 +4666,5 @@
 ```
 
 </body>
-<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">user GEN9 V0</div>
+<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">user GEN9 V1</div>
 </html>
