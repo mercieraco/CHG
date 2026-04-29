@@ -859,7 +859,7 @@
     
     <!-- Version Info -->
     <div style="text-align: center; margin-top: 15px; padding: 10px; color: #999; font-size: 13px;">
-        <span id="versionInfo">Version 35 (Same as user.html V58: containerId + data-date + scroll)</span>
+        <span id="versionInfo"></span>
     </div>
 </div>
 
@@ -3939,6 +3939,19 @@
                 const dayName = dayNames[new Date(date).getDay()];
                 const dutiesOnThisDay = leaveDoctorDuties.filter(d => (d.day_of_week ? d.day_of_week === dayName : d[dayName] === 1));
 
+                // GEN9 V2: วันไม่มี duty → ดึงแพทย์ทุกคนในแผนก ไม่มี conflict
+                if (dutiesOnThisDay.length === 0) {
+                    const res = await fetch(`${API_URL}/api/doctors`);
+                    const data = await res.json();
+                    if (data.success) {
+                        data.data
+                            .filter(d => d.department_id == selectedDeptId && d.id != currentDoctorId)
+                            .forEach(d => availableDoctorMap.set(d.id, d));
+                        console.log(`📅 ${date} no-duty day → all doctors in dept ${selectedDeptId} available`);
+                    }
+                    continue;
+                }
+
                 for (const duty of dutiesOnThisDay) {
                     // ส่ง selectedDeptId เพื่อกรองแพทย์จากแผนกที่ user เลือก
                     const res = await fetch(
@@ -4282,10 +4295,8 @@
 </script>
 ```
 
-<div style="text-align:center; padding: 16px; color: #aaa; font-size: 12px;">
-    dep_rest_GEN5_V2.html
-</div>
+
 
 </body>
-<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">dep_rest GEN9 V1</div>
+<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">dep_rest GEN9 V2</div>
 </html>
