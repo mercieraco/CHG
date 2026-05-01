@@ -1436,6 +1436,9 @@
                 approved: 0,
                 rejected: 0
             };
+
+            // เก็บ leaves ที่ตรงกับวันนี้ไว้ใช้ตรวจ hasDutyOnThisDay
+            const leavesInDay = [];
             
             doctorLeaves.forEach(leave => {
                 if (dateStr >= leave.start_date && dateStr <= leave.end_date) {
@@ -1445,8 +1448,25 @@
                         leaveTypes.rejected++;
                     } else if (leave.delegation_type === 'none') {
                         leaveTypes.yellow++;
+                        leavesInDay.push(leave);
                     } else if (leave.delegation_type === 'single' || leave.delegation_type === 'custom') {
-                        leaveTypes.green++;
+                        // custom — เช็คว่าวันนั้นมีคนแทนหรือไม่
+                        if (leave.delegation_type === 'custom' && leave.duty_assignments) {
+                            const assignmentsOnDay = leave.duty_assignments.filter(a => a.duty_date === dateStr);
+                            if (assignmentsOnDay.length > 0) {
+                                const allNoDelegate = assignmentsOnDay.every(a => !a.replacement_doctor_id && !a.is_self_duty);
+                                if (allNoDelegate) {
+                                    leaveTypes.yellow++;
+                                } else {
+                                    leaveTypes.green++;
+                                }
+                            } else {
+                                leaveTypes.green++; // ไม่มี duty วันนั้น → เขียวอ่อน
+                            }
+                        } else {
+                            leaveTypes.green++;
+                        }
+                        leavesInDay.push(leave);
                     }
                 }
             });
@@ -1459,24 +1479,87 @@
             const totalLeaves = leaveTypes.green + leaveTypes.yellow + leaveTypes.rejected;
             if (totalLeaves === 0) return null;
             
+            let baseClass = '';
+
             // แดง: เขียว >= 2
             if (leaveTypes.green >= 2) {
-                return 'overlap';
+                baseClass = 'overlap';
             }
             // ส้ม: เขียว + เหลือง หรือ เหลือง >= 2
             else if ((leaveTypes.green >= 1 && leaveTypes.yellow >= 1) || (leaveTypes.yellow >= 2)) {
-                return 'overlap-no-delegation';
+                baseClass = 'overlap-no-delegation';
             }
-            // เขียว: 1 คน
+            // เขียว/เขียวอ่อน: 1 คน
             else if (leaveTypes.green === 1 && leaveTypes.yellow === 0) {
-                return 'on-leave';
+                if (leavesInDay.length === 1) {
+                    const leave = leavesInDay[0];
+                    let hasDutyOnThisDay = false;
+
+                    if (leave.delegation_type === 'custom') {
+                        if (!leave.duty_assignments || leave.duty_assignments.length === 0) {
+                            hasDutyOnThisDay = false;
+                        } else {
+                            hasDutyOnThisDay = leave.duty_assignments.some(
+                                assignment => assignment.duty_date === dateStr
+                            );
+                        }
+                    } else if (leave.delegation_type === 'single') {
+                        const doctorId = leave.doctor_id;
+                        const checkDate = new Date(dateStr);
+                        const dayOfWeek = checkDate.getDay();
+                        const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+                        const dayName = dayNames[dayOfWeek];
+
+                        if (currentDoctorDuties && currentDoctorDuties.length > 0) {
+                            hasDutyOnThisDay = currentDoctorDuties.some(dd =>
+                                dd.doctor_id === doctorId && (dd.day_of_week ? dd.day_of_week === dayName : dd[dayName] === 1)
+                            );
+                        } else {
+                            hasDutyOnThisDay = true;
+                        }
+                    } else {
+                        hasDutyOnThisDay = false;
+                    }
+
+                    baseClass = hasDutyOnThisDay ? 'on-leave' : 'on-leave-no-duty';
+                } else {
+                    baseClass = 'on-leave';
+                }
             }
-            // เหลือง: ไม่ฝาก
+            // เหลือง/เหลืองอ่อน: ไม่ฝาก
             else if (leaveTypes.yellow === 1 && leaveTypes.green === 0) {
-                return 'no-delegation';
+                if (leavesInDay.length === 1) {
+                    const leave = leavesInDay[0];
+                    let hasDutyOnThisDay = false;
+
+                    const doctorId = leave.doctor_id;
+                    const checkDate = new Date(dateStr);
+                    const dayOfWeek = checkDate.getDay();
+                    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+                    const dayName = dayNames[dayOfWeek];
+
+                    if (currentDoctorDuties && currentDoctorDuties.length > 0) {
+                        hasDutyOnThisDay = currentDoctorDuties.some(dd =>
+                            dd.doctor_id === doctorId && (dd.day_of_week ? dd.day_of_week === dayName : dd[dayName] === 1)
+                        );
+                    } else {
+                        hasDutyOnThisDay = true;
+                    }
+
+                    baseClass = hasDutyOnThisDay ? 'no-delegation' : 'no-delegation-no-duty';
+                } else {
+                    baseClass = 'no-delegation';
+                }
             } else {
-                return 'on-leave';
+                baseClass = 'on-leave';
             }
+
+            // เพิ่มกรอบดำถ้ามี rejected
+            if (leaveTypes.rejected > 0 && baseClass) {
+                return baseClass + ' rejected';
+            }
+
+            return baseClass || 'on-leave';
         };
         
         // วันในเดือน
@@ -1910,5 +1993,5 @@
 ```
 
 </body>
-<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">summary GEN7 V0</div>
+<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">summary GEN10 V0</div>
 </html>
