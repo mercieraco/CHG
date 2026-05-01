@@ -846,6 +846,19 @@
     <!-- Dummy element เพื่อไม่ให้ code เก่า error -->
     <select id="filterDepartment" style="display: none;"></select>
 
+    <!-- ปุ่มจัดเรียง และ ซ่อน/แสดง -->
+    <div id="sortToggleButtons" style="display: flex; gap: 10px; margin: 20px 0; justify-content: center; flex-wrap: wrap;">
+        <button id="sortByDateBtn" style="padding: 10px 20px; font-size: 14px; border: 2px solid #667eea; background: white; color: #667eea; border-radius: 8px; cursor: pointer; font-weight: bold; transition: all 0.3s;" onclick="sortLeaveRecords('date')">
+            📅 เรียงวันที่
+        </button>
+        <button id="sortByCreatedBtn" style="padding: 10px 20px; font-size: 14px; border: 2px solid #667eea; background: #667eea; color: white; border-radius: 8px; cursor: pointer; font-weight: bold; transition: all 0.3s;" onclick="sortLeaveRecords('created')">
+            📝 เรียงวันลา
+        </button>
+        <button id="toggleDetailsBtn" style="padding: 10px 20px; font-size: 14px; border: 2px solid #999; background: white; color: #666; border-radius: 8px; cursor: pointer; font-weight: bold; transition: all 0.3s;" onclick="toggleDetails()">
+            ซ่อน
+        </button>
+    </div>
+
     <!-- แสดงข้อมูลการลาที่บันทึกแล้ว -->
     <div id="leaveRecords" class="leave-records"></div>
     <!-- GEN3: แสดงการลาแผนกเสริม -->
@@ -1365,6 +1378,43 @@
         }
     }
 
+    // State สำหรับการจัดเรียงและซ่อน/แสดง
+    let currentSortMode = 'created'; // 'created' หรือ 'date'
+    let showDetails = false; // false = ซ่อน, true = แสดง
+
+    // ฟังก์ชันจัดเรียง
+    function sortLeaveRecords(mode) {
+        currentSortMode = mode;
+        updateSortButtons();
+        displayLeaveRecords();
+    }
+
+    // อัพเดทสถานะปุ่ม
+    function updateSortButtons() {
+        const sortByDateBtn = document.getElementById('sortByDateBtn');
+        const sortByCreatedBtn = document.getElementById('sortByCreatedBtn');
+        if (!sortByDateBtn || !sortByCreatedBtn) return;
+        if (currentSortMode === 'created') {
+            sortByCreatedBtn.style.background = '#667eea';
+            sortByCreatedBtn.style.color = 'white';
+            sortByDateBtn.style.background = 'white';
+            sortByDateBtn.style.color = '#667eea';
+        } else {
+            sortByDateBtn.style.background = '#667eea';
+            sortByDateBtn.style.color = 'white';
+            sortByCreatedBtn.style.background = 'white';
+            sortByCreatedBtn.style.color = '#667eea';
+        }
+    }
+
+    // Toggle รายละเอียด custom
+    function toggleDetails() {
+        showDetails = !showDetails;
+        const btn = document.getElementById('toggleDetailsBtn');
+        if (btn) btn.textContent = showDetails ? 'แสดง' : 'ซ่อน';
+        displayLeaveRecords();
+    }
+
     // แสดงแถบข้อมูลการลา
     function displayLeaveRecords(departmentId = null, containerId = 'leaveRecords') {
         console.log(`📋 displayLeaveRecords called:`);
@@ -1422,13 +1472,18 @@
         });
         console.log(`  ✅ Filtered for active/future leaves (end_date >= today): ${leavesToDisplay.length}`);
 
-        // ⭐ Feature 2: เรียงลำดับตามวันที่ยื่นเรื่อง (created_at) - เก่าสุดก่อน
-        leavesToDisplay.sort((a, b) => {
-            const dateA = new Date(a.created_at);
-            const dateB = new Date(b.created_at);
-            return dateA - dateB;
-        });
-        console.log('  ✅ Sorted by created_at (oldest first - ยื่นก่อนอยู่บน)');
+        // เรียงลำดับตาม currentSortMode
+        if (currentSortMode === 'created') {
+            leavesToDisplay.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+        } else if (currentSortMode === 'date') {
+            const today = new Date();
+            leavesToDisplay.sort((a, b) => {
+                const diffA = Math.abs(new Date(a.start_date) - today);
+                const diffB = Math.abs(new Date(b.start_date) - today);
+                return diffA - diffB;
+            });
+        }
+        console.log(`  ✅ Sorted by ${currentSortMode}`);
 
         leavesToDisplay.forEach(leave => {
             const startDate = formatDateThai(leave.start_date);
@@ -1484,38 +1539,40 @@
                             <span class="name-short">${startDate} - ${endDate} (${days} วัน) | ${doctorFirstName} (${doctorLastInitial})${leave.no_delegation_reason && leave.no_delegation_reason.trim() ? ` : ${leave.no_delegation_reason}` : ''}</span>
                             <span class="name-full">${startDate} - ${endDate} (${days} วัน) | ${doctorFullName}${leave.no_delegation_reason && leave.no_delegation_reason.trim() ? ` : ${leave.no_delegation_reason}` : ''}</span>
                         </div>
-                        <div class="duty-details">
                 `;
-                
-                leave.duty_assignments.forEach(assignment => {
-                    const assignmentDate = formatDateThai(assignment.duty_date);
-                    const splitNote = assignment.split_label ? ` [${assignment.split_label}]` : '';
-                    const isSelf = assignment.is_self_duty;
-                    // GEN7 V3: null replacement + not self = ไม่ฝาก
-                    const isNoDelegate = !isSelf && !assignment.replacement_doctor_id && !assignment.replacement_doctor_name;
-                    const dutyDisplay = assignment.duty_name + splitNote;
 
-                    if (isNoDelegate) {
-                        html += `
-                            <div class="duty-detail-item">
-                                <span class="name-short">${assignmentDate} [${dutyDisplay}] ไม่ฝาก</span>
-                                <span class="name-full">${assignmentDate} [${dutyDisplay}] ไม่ฝากงาน</span>
-                            </div>
-                        `;
-                    } else {
-                        const replacementFullName = isSelf ? 'อยู่เอง' : (assignment.replacement_doctor_name || 'ไม่ระบุ');
-                        const shortRepl = isSelf ? 'อยู่เอง' : `${getFirstName(replacementFullName)} (${getLastNameInitial(replacementFullName)})`;
-                        html += `
-                            <div class="duty-detail-item">
-                                <span class="name-short">${assignmentDate} [${dutyDisplay}] >> ${shortRepl}</span>
-                                <span class="name-full">${assignmentDate} [${dutyDisplay}] >> ${replacementFullName}</span>
-                            </div>
-                        `;
-                    }
-                });
-                
+                // แสดงรายละเอียดเฉพาะเมื่อ showDetails = true
+                if (showDetails) {
+                    html += `<div class="duty-details">`;
+                    leave.duty_assignments.forEach(assignment => {
+                        const assignmentDate = formatDateThai(assignment.duty_date);
+                        const splitNote = assignment.split_label ? ` [${assignment.split_label}]` : '';
+                        const isSelf = assignment.is_self_duty;
+                        const isNoDelegate = !isSelf && !assignment.replacement_doctor_id && !assignment.replacement_doctor_name;
+                        const dutyDisplay = assignment.duty_name + splitNote;
+
+                        if (isNoDelegate) {
+                            html += `
+                                <div class="duty-detail-item">
+                                    <span class="name-short">${assignmentDate} [${dutyDisplay}] ไม่ฝาก</span>
+                                    <span class="name-full">${assignmentDate} [${dutyDisplay}] ไม่ฝากงาน</span>
+                                </div>
+                            `;
+                        } else {
+                            const replacementFullName = isSelf ? 'อยู่เอง' : (assignment.replacement_doctor_name || 'ไม่ระบุ');
+                            const shortRepl = isSelf ? 'อยู่เอง' : `${getFirstName(replacementFullName)} (${getLastNameInitial(replacementFullName)})`;
+                            html += `
+                                <div class="duty-detail-item">
+                                    <span class="name-short">${assignmentDate} [${dutyDisplay}] >> ${shortRepl}</span>
+                                    <span class="name-full">${assignmentDate} [${dutyDisplay}] >> ${replacementFullName}</span>
+                                </div>
+                            `;
+                        }
+                    });
+                    html += `</div>`;
+                }
+
                 html += `
-                        </div>
                     </div>
                     <button class="btn-delete" onclick="deleteLeave(${leave.id}); event.stopPropagation();">ลบ</button>
                 `;
@@ -4298,5 +4355,5 @@
 
 
 </body>
-<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">dep_rest GEN9 V2</div>
+<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">dep_rest GEN10 V0</div>
 </html>
