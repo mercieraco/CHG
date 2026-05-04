@@ -1569,10 +1569,11 @@
                         const dutyDisplay = assignment.duty_name + splitNote;
 
                         if (isNoDelegate) {
+                            const ndReason = assignment.no_delegate_reason ? ` : ${assignment.no_delegate_reason}` : '';
                             html += `
                                 <div class="duty-detail-item">
-                                    <span class="name-short">${assignmentDate} [${dutyDisplay}] ไม่ฝาก</span>
-                                    <span class="name-full">${assignmentDate} [${dutyDisplay}] ไม่ฝากงาน</span>
+                                    <span class="name-short">${assignmentDate} [${dutyDisplay}] ไม่ฝาก${ndReason}</span>
+                                    <span class="name-full">${assignmentDate} [${dutyDisplay}] ไม่ฝากงาน${ndReason}</span>
                                 </div>
                             `;
                         } else {
@@ -4460,8 +4461,6 @@
     }
 </script>
 ```
-
-
 
 </body>
 <div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">dep_rest GEN10 V1</div>
