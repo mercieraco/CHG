@@ -532,6 +532,16 @@
         color: #374151;  /* Charcoal Gray - รายละเอียด */
     }
 
+    /* Custom Delegation + มีบางส่วนไม่ฝาก - สีเหลือง GEN10 */
+    .leave-record.custom-delegation.partial-no-delegation {
+        background: #fff9c4;
+        border-left-color: #fdd835;
+    }
+
+    .leave-record.custom-delegation.partial-no-delegation:hover {
+        background: #fff59d;
+    }
+
     /* No Delegation - สีเหลือง (รออนุมัติ) */
     .leave-record.no-delegation {
         background: #fff9c4;
@@ -1531,8 +1541,14 @@
                 `;
                 
             } else if (leave.delegation_type === 'custom' && leave.duty_assignments) {
-                // Custom Delegation - สีเทา
+                // Custom Delegation - สีเทา หรือเหลืองถ้ามีบางส่วนไม่ฝาก (GEN10)
                 recordDiv.classList.add('custom-delegation');
+                const hasPartialNoDelegate = leave.duty_assignments.some(
+                    a => !a.replacement_doctor_id && !a.is_self_duty
+                );
+                if (hasPartialNoDelegate) {
+                    recordDiv.classList.add('partial-no-delegation');
+                }
                 
                 let html = `
                     <div class="leave-record-info">
