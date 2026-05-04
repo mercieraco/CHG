@@ -896,6 +896,7 @@
     let dutyDelegationStates = {}; // key: uniqueId, value: 'delegate' | 'no-delegate'
     let dutySplitStates = {}; // GEN6: { uniqueId: splitTime }
     let splitSelfOnDutyStates = {}; // GEN7: { uid_before/uid_after: true } = อยู่เวรเอง
+    let splitNoDelegate = {}; // GEN10: { uid_before/uid_after: true } = ไม่ฝากใน split row
     
     // ระบบเลือกวันแบบใหม่
     let selectionStep = 0; // 0 = ยังไม่เริ่ม, 1 = เลือกวันเริ่มต้นแล้ว, 2 = เลือกวันสิ้นสุดแล้ว
@@ -2622,9 +2623,13 @@
 
                     // GEN7: เช็คว่า split row นี้เลือก "อยู่เอง" หรือไม่
                     const isSelfDuty = parentUid ? !!splitSelfOnDutyStates[uniqueId] : false;
+                    // GEN10: เช็คว่า split row นี้เลือก "ไม่ฝาก" หรือไม่
+                    const isSplitNoDelegate = parentUid ? !!splitNoDelegate[uniqueId] : false;
 
                     let state;
-                    if (parentUid) {
+                    if (parentUid && isSplitNoDelegate) {
+                        state = 'no-delegate'; // GEN10: split row ที่กด ไม่ฝาก
+                    } else if (parentUid) {
                         state = 'delegate';
                     } else if (splitLabel === null && dutySplitStates[uniqueId]) {
                         return; // parent ที่ split แล้ว — ข้าม
@@ -2645,7 +2650,7 @@
                 
                 console.log('Total allDuties:', allDuties.length);
                 
-                // Validation — GEN7: ข้าม row ที่ isSelfDuty = true
+                // Validation — GEN7: ข้าม row ที่ isSelfDuty = true / GEN10: เพิ่ม isSplitNoDelegate
                 for (const item of allDuties) {
                     if (item.state === 'delegate' && !item.isSelfDuty) {
                         if (!item.select.value) {
@@ -2654,9 +2659,11 @@
                             return;
                         }
                     } else if (item.state === 'no-delegate') {
+                        // GEN10: หา textarea จาก noDelegationReason_uid
+                        // — split no-delegate ใช้ id เดียวกัน noDelegationReason_${uid}
                         const textarea = document.getElementById(`noDelegationReason_${item.uniqueId}`);
                         if (!textarea || !textarea.value.trim()) {
-                            showMessage(`กรุณาระบุเหตุผลให้ครบทุก Duty ที่เลือก "ไม่ฝาก" ในแผนก ${dept.department_name}`, 'error');
+                            showMessage(`กรุณาระบุเหตุผลที่ไม่ฝากให้ครบทุก Duty/ช่วงที่เลือก "ไม่ฝาก" ในแผนก ${dept.department_name}`, 'error');
                             textarea?.focus();
                             return;
                         }
@@ -2876,6 +2883,7 @@
                 currentDutyData = [];
                 dutySplitStates = {}; // GEN6
                 splitSelfOnDutyStates = {}; // GEN7
+                splitNoDelegate = {}; // GEN10
                 dutyDelegationStates = {};
                 document.getElementById('departmentDetailsContainer').innerHTML = '';
                 
@@ -3423,10 +3431,16 @@
             <div id="splitRow_${uid1}" style="margin-bottom:10px; padding:10px; background:#fff8e1; border-radius:6px; border:1px solid #ffcc02;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                     <p style="font-weight:600; color:#e65100; margin:0;">ก่อน ${splitTime}</p>
-                    <button type="button" id="btn-self-${uid1}"
-                        onclick="toggleSelfOnDuty('${uid1}', '${uid2}')"
-                        style="padding:4px 12px; font-size:13px; border:2px solid #43a047; background:white; color:#43a047; border-radius:8px; cursor:pointer; font-weight:bold; transition:all 0.3s;"
-                        title="อยู่เวรเอง">🔒 อยู่เอง</button>
+                    <div style="display:flex; gap:6px;">
+                        <button type="button" id="btn-nodeleg-${uid1}"
+                            onclick="toggleSplitNoDelegate('${uid1}', '${uid2}')"
+                            style="padding:4px 12px; font-size:13px; border:2px solid #e65100; background:white; color:#e65100; border-radius:8px; cursor:pointer; font-weight:bold; transition:all 0.3s;"
+                            title="ไม่ฝากช่วงนี้">ไม่ฝาก</button>
+                        <button type="button" id="btn-self-${uid1}"
+                            onclick="toggleSelfOnDuty('${uid1}', '${uid2}')"
+                            style="padding:4px 12px; font-size:13px; border:2px solid #43a047; background:white; color:#43a047; border-radius:8px; cursor:pointer; font-weight:bold; transition:all 0.3s;"
+                            title="อยู่เวรเอง">🔒 อยู่เอง</button>
+                    </div>
                 </div>
                 <div id="delegateArea_${uid1}">
                     <div style="display:flex; gap:10px; margin-bottom:8px;">
@@ -3447,16 +3461,29 @@
                         style="width:100%; padding:10px; border:1px solid #ddd; border-radius:4px; font-size:14px;">
                         <option value="">-- เลือกแพทย์ที่จะมาแทน --</option>
                     </select>
+                    <!-- GEN10: textarea เหตุผลไม่ฝาก (ซ่อนไว้ก่อน) -->
+                    <div id="noDelegateReasonArea_${uid1}" style="display:none; margin-top:8px;">
+                        <label style="font-size:13px; color:#e65100; font-weight:600;">เหตุผลที่ไม่ฝาก (ช่วงนี้)</label>
+                        <textarea id="noDelegationReason_${uid1}" rows="2"
+                            style="width:100%; padding:8px; border:1px solid #e65100; border-radius:6px; font-size:13px; margin-top:4px; box-sizing:border-box;"
+                            placeholder="ระบุเหตุผลที่ไม่ฝากงานช่วงนี้..."></textarea>
+                    </div>
                 </div>
             </div>
             <!-- Split row 2: หลัง -->
             <div id="splitRow_${uid2}" style="padding:10px; background:#e8f5e9; border-radius:6px; border:1px solid #66bb6a;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                     <p style="font-weight:600; color:#2e7d32; margin:0;">หลัง ${splitTime}</p>
-                    <button type="button" id="btn-self-${uid2}"
-                        onclick="toggleSelfOnDuty('${uid2}', '${uid1}')"
-                        style="padding:4px 12px; font-size:13px; border:2px solid #43a047; background:white; color:#43a047; border-radius:8px; cursor:pointer; font-weight:bold; transition:all 0.3s;"
-                        title="อยู่เวรเอง">🔒 อยู่เอง</button>
+                    <div style="display:flex; gap:6px;">
+                        <button type="button" id="btn-nodeleg-${uid2}"
+                            onclick="toggleSplitNoDelegate('${uid2}', '${uid1}')"
+                            style="padding:4px 12px; font-size:13px; border:2px solid #e65100; background:white; color:#e65100; border-radius:8px; cursor:pointer; font-weight:bold; transition:all 0.3s;"
+                            title="ไม่ฝากช่วงนี้">ไม่ฝาก</button>
+                        <button type="button" id="btn-self-${uid2}"
+                            onclick="toggleSelfOnDuty('${uid2}', '${uid1}')"
+                            style="padding:4px 12px; font-size:13px; border:2px solid #43a047; background:white; color:#43a047; border-radius:8px; cursor:pointer; font-weight:bold; transition:all 0.3s;"
+                            title="อยู่เวรเอง">🔒 อยู่เอง</button>
+                    </div>
                 </div>
                 <div id="delegateArea_${uid2}">
                     <div style="display:flex; gap:10px; margin-bottom:8px;">
@@ -3477,11 +3504,61 @@
                         style="width:100%; padding:10px; border:1px solid #ddd; border-radius:4px; font-size:14px;">
                         <option value="">-- เลือกแพทย์ที่จะมาแทน --</option>
                     </select>
+                    <!-- GEN10: textarea เหตุผลไม่ฝาก (ซ่อนไว้ก่อน) -->
+                    <div id="noDelegateReasonArea_${uid2}" style="display:none; margin-top:8px;">
+                        <label style="font-size:13px; color:#e65100; font-weight:600;">เหตุผลที่ไม่ฝาก (ช่วงนี้)</label>
+                        <textarea id="noDelegationReason_${uid2}" rows="2"
+                            style="width:100%; padding:8px; border:1px solid #e65100; border-radius:6px; font-size:13px; margin-top:4px; box-sizing:border-box;"
+                            placeholder="ระบุเหตุผลที่ไม่ฝากงานช่วงนี้..."></textarea>
+                    </div>
                 </div>
             </div>`;
 
         loadDoctorsForCustomDuty(uid1, deptId);
         loadDoctorsForCustomDuty(uid2, deptId);
+    };
+
+    // GEN10: Toggle ไม่ฝากงาน สำหรับ split row
+    window.toggleSplitNoDelegate = function(thisUid, siblingUid) {
+        const alreadyActive = splitNoDelegate[thisUid];
+
+        if (alreadyActive) {
+            // ยกเลิก no-delegate → คืน dropdown
+            delete splitNoDelegate[thisUid];
+            const btn = document.getElementById(`btn-nodeleg-${thisUid}`);
+            if (btn) { btn.style.background = 'white'; btn.style.color = '#e65100'; btn.style.borderColor = '#e65100'; }
+            // ซ่อน textarea, คืน dropdown + filter selects
+            const reasonArea = document.getElementById(`noDelegateReasonArea_${thisUid}`);
+            if (reasonArea) reasonArea.style.display = 'none';
+            const filterDept = document.getElementById(`customFilterDept_${thisUid}`);
+            const filterWork = document.getElementById(`customFilterWorkType_${thisUid}`);
+            const docSelect = document.querySelector(`.custom-delegation-select[data-unique-id="${thisUid}"]`);
+            if (filterDept) filterDept.style.display = '';
+            if (filterWork) filterWork.style.display = '';
+            if (docSelect) docSelect.style.display = '';
+        } else {
+            // เปิด no-delegate
+            // ยกเลิก self-duty ถ้า active อยู่
+            if (splitSelfOnDutyStates[thisUid]) {
+                delete splitSelfOnDutyStates[thisUid];
+                const selfBtn = document.getElementById(`btn-self-${thisUid}`);
+                if (selfBtn) { selfBtn.style.background = 'white'; selfBtn.style.color = '#43a047'; selfBtn.style.borderColor = '#43a047'; }
+                const area = document.getElementById(`delegateArea_${thisUid}`);
+                if (area) area.style.display = '';
+            }
+            splitNoDelegate[thisUid] = true;
+            const btn = document.getElementById(`btn-nodeleg-${thisUid}`);
+            if (btn) { btn.style.background = '#e65100'; btn.style.color = 'white'; btn.style.borderColor = '#e65100'; }
+            // ซ่อน dropdown + filter selects, แสดง textarea
+            const filterDept = document.getElementById(`customFilterDept_${thisUid}`);
+            const filterWork = document.getElementById(`customFilterWorkType_${thisUid}`);
+            const docSelect = document.querySelector(`.custom-delegation-select[data-unique-id="${thisUid}"]`);
+            if (filterDept) filterDept.style.display = 'none';
+            if (filterWork) filterWork.style.display = 'none';
+            if (docSelect) docSelect.style.display = 'none';
+            const reasonArea = document.getElementById(`noDelegateReasonArea_${thisUid}`);
+            if (reasonArea) reasonArea.style.display = '';
+        }
     };
 
     // GEN7: Toggle อยู่เวรเอง สำหรับ split row
@@ -3504,6 +3581,20 @@
             if (splitSelfOnDutyStates[siblingUid]) {
                 alert('⚠️ ไม่สามารถอยู่เวรเองได้ทั้ง 2 ช่วง\nกรุณายกเลิกช่วงที่เลือกไว้ก่อน');
                 return;
+            }
+            // GEN10: ยกเลิก no-delegate ถ้า active อยู่
+            if (splitNoDelegate[thisUid]) {
+                delete splitNoDelegate[thisUid];
+                const nodelegBtn = document.getElementById(`btn-nodeleg-${thisUid}`);
+                if (nodelegBtn) { nodelegBtn.style.background = 'white'; nodelegBtn.style.color = '#e65100'; nodelegBtn.style.borderColor = '#e65100'; }
+                const reasonArea = document.getElementById(`noDelegateReasonArea_${thisUid}`);
+                if (reasonArea) reasonArea.style.display = 'none';
+                const filterDept = document.getElementById(`customFilterDept_${thisUid}`);
+                const filterWork = document.getElementById(`customFilterWorkType_${thisUid}`);
+                const docSelect = document.querySelector(`.custom-delegation-select[data-unique-id="${thisUid}"]`);
+                if (filterDept) filterDept.style.display = '';
+                if (filterWork) filterWork.style.display = '';
+                if (docSelect) docSelect.style.display = '';
             }
             // เปิด self-duty → ซ่อน delegate area
             splitSelfOnDutyStates[thisUid] = true;
@@ -4355,5 +4446,5 @@
 
 
 </body>
-<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">dep_rest GEN10 V0</div>
+<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">dep_rest GEN10 V1</div>
 </html>
