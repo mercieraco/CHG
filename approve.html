@@ -824,6 +824,34 @@
                 // เพิ่มรายการเดี่ยวตามหลัง
                 sortedLeaves.push(...ungrouped);
                 
+                // GEN10: function สร้าง HTML แสดง duty_assignments
+                function buildDutyDetail(leave) {
+                    if (leave.delegation_type !== 'custom' || !leave.duty_assignments || leave.duty_assignments.length === 0) return '';
+                    let rows = '<div style="margin-top:8px; padding:8px; background:#f5f5f5; border-radius:6px; font-size:13px;">';
+                    rows += '<p style="font-weight:600; margin:0 0 6px 0; color:#555;">📋 รายละเอียดการฝากงาน:</p>';
+                    leave.duty_assignments.forEach(function(a) {
+                        var splitNote = a.split_label ? ' [' + a.split_label + ']' : '';
+                        var dutyLabel = (a.duty_name || '') + splitNote;
+                        var dateLabel = a.duty_date || '';
+                        var statusIcon, statusText, statusColor;
+                        if (a.is_self_duty) {
+                            statusIcon = '🔒'; statusText = 'อยู่เอง'; statusColor = '#43a047';
+                        } else if (!a.replacement_doctor_id && !a.replacement_doctor_name) {
+                            var reason = a.no_delegate_reason ? ' : ' + a.no_delegate_reason : '';
+                            statusIcon = '⚠️'; statusText = 'ไม่ฝาก' + reason; statusColor = '#e65100';
+                        } else {
+                            statusIcon = '👤'; statusText = a.replacement_doctor_name || 'ไม่ระบุ'; statusColor = '#1976d2';
+                        }
+                        rows += '<div style="display:flex; gap:8px; padding:3px 0; border-bottom:1px solid #e0e0e0;">'
+                            + '<span style="color:#888; min-width:85px;">' + dateLabel + '</span>'
+                            + '<span style="flex:1; color:#333;">' + dutyLabel + '</span>'
+                            + '<span style="color:' + statusColor + '; font-weight:600;">' + statusIcon + ' ' + statusText + '</span>'
+                            + '</div>';
+                    });
+                    rows += '</div>';
+                    return rows;
+                }
+
                 let html = '';
                 let lastGroupId = null;
                 
@@ -872,33 +900,7 @@
                                         <p>📅 ${startDate} - ${endDate} (${days} วัน)</p>
                                         ${warning}
                                         <p>💬 เหตุผล: ${leave.no_delegation_reason || '-'}</p>
-                                        ${(() => {
-                                            // GEN10: แสดง duty_assignments สำหรับ custom delegation
-                                            if (leave.delegation_type !== 'custom' || !leave.duty_assignments || leave.duty_assignments.length === 0) return '';
-                                            let rows = '<div style="margin-top:8px; padding:8px; background:#f5f5f5; border-radius:6px; font-size:13px;">';
-                                            rows += '<p style="font-weight:600; margin:0 0 6px 0; color:#555;">📋 รายละเอียดการฝากงาน:</p>';
-                                            leave.duty_assignments.forEach(a => {
-                                                const splitNote = a.split_label ? ` [${a.split_label}]` : '';
-                                                const dutyLabel = (a.duty_name || '') + splitNote;
-                                                const dateLabel = a.duty_date || '';
-                                                let statusIcon, statusText, statusColor;
-                                                if (a.is_self_duty) {
-                                                    statusIcon = '🔒'; statusText = 'อยู่เอง'; statusColor = '#43a047';
-                                                } else if (!a.replacement_doctor_id && !a.replacement_doctor_name) {
-                                                    const reason = a.no_delegate_reason ? ` : ${a.no_delegate_reason}` : '';
-                                                    statusIcon = '⚠️'; statusText = 'ไม่ฝาก' + reason; statusColor = '#e65100';
-                                                } else {
-                                                    statusIcon = '👤'; statusText = a.replacement_doctor_name || 'ไม่ระบุ'; statusColor = '#1976d2';
-                                                }
-                                                rows += \`<div style="display:flex; gap:8px; padding:3px 0; border-bottom:1px solid #e0e0e0;">
-                                                    <span style="color:#888; min-width:85px;">\${dateLabel}</span>
-                                                    <span style="flex:1; color:#333;">\${dutyLabel}</span>
-                                                    <span style="color:\${statusColor}; font-weight:600;">\${statusIcon} \${statusText}</span>
-                                                </div>\`;
-                                            });
-                                            rows += '</div>';
-                                            return rows;
-                                        })()}
+                                        ${buildDutyDetail(leave)}
                                     </div>
                                 </div>
                                 <div class="approval-buttons">
@@ -1129,6 +1131,6 @@
 </div>
 ```
 
-<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">approve GEN10 V0</div>
+<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">approve GEN10 V1</div>
 </body>
 </html>
