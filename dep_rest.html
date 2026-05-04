@@ -1787,11 +1787,11 @@
                     if (leave.delegation_type === 'custom' && leave.duty_assignments) {
                         const assignmentsOnDay = leave.duty_assignments.filter(a => a.duty_date === dateStr);
                         if (assignmentsOnDay.length > 0) {
-                            const allNoDelegate = assignmentsOnDay.every(a => !a.replacement_doctor_id && !a.is_self_duty);
-                            if (allNoDelegate) {
-                                leaveTypes.yellow++; // ไม่ฝากทุก duty → เหลือง
+                            const hasNoDelegate = assignmentsOnDay.some(a => !a.replacement_doctor_id && !a.is_self_duty);
+                            if (hasNoDelegate) {
+                                leaveTypes.yellow++; // GEN10: มีแม้แต่ 1 ช่วงที่ไม่ฝาก → เหลือง (สำคัญกว่าเขียว)
                             } else {
-                                leaveTypes.green++;  // มีคนแทนอย่างน้อย 1 → เขียว
+                                leaveTypes.green++;  // ฝากครบทุกช่วง → เขียว
                             }
                         } else {
                             leaveTypes.green++; // ไม่มี duty วันนั้น → เขียวอ่อน
