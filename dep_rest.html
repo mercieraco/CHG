@@ -2161,6 +2161,7 @@
                 
                 // ⭐ Phase 2: ซ่อนแถบรายการลางานทั้งหมด + แสดงปุ่มบันทึก
                 document.getElementById('leaveRecords').style.display = 'none';
+                document.getElementById('sortToggleButtons').style.display = 'none'; // GEN10 V1
                 document.querySelectorAll('.dept-leave-records').forEach(el => {
                     el.style.display = 'none';
                 });
@@ -2889,6 +2890,7 @@
                 
                 // แสดงแถบรายการลางานกลับมา
                 document.getElementById('leaveRecords').style.display = 'block';
+                document.getElementById('sortToggleButtons').style.display = 'flex'; // GEN10 V1
                 
                 document.getElementById('confirmDatesBtn').style.display = 'none';
                 loadDoctorLeaves();
