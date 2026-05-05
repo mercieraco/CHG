@@ -1865,10 +1865,19 @@
         const dayNames = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
         const dayName = dayNames[dayIdx];
 
-        // หาแพทย์ที่ทำ duty นี้วันนี้
-        const docsOnDuty = currentDoctorDuties.filter(dd => 
-            dd.duty_id == dutyId && dd[dayName] === 1
-        );
+        // GEN10: หาแพทย์ที่ทำ duty นี้วันนี้ — เช็ค day_of_week + week_numbers
+        const wkOfMonth2 = getWeekOfMonth(date);
+        const docsOnDuty = currentDoctorDuties.filter(dd => {
+            const dayMatch = dd.duty_id == dutyId && (
+                dd.day_of_week ? dd.day_of_week === dayName : dd[dayName] === 1
+            );
+            if (!dayMatch) return false;
+            if (!dd.week_numbers) return true;
+            try {
+                const weeks = JSON.parse(dd.week_numbers);
+                return weeks.includes(wkOfMonth2);
+            } catch(e) { return true; }
+        });
 
         if (docsOnDuty.length === 0) {
             return '';
