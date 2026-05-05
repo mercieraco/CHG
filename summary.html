@@ -750,7 +750,7 @@
                 </div>`;
                 // Sub rows (ซ่อนเริ่มต้น)
                 html += `<div id="${gid}" style="display:none;">`;
-                item.subs.forEach(d => {
+                item.subs.sort((a,b) => (a.start_time||'').localeCompare(b.start_time||'')).forEach(d => {
                     const t = d.start_time && d.end_time ? `${d.start_time}–${d.end_time}` : d.duty_name;
                     html += `<div class="duty-panel-item duty-panel-sub" onclick="selectDuty('single',${d.id},'')">
                         <span>${t}</span>
@@ -2026,7 +2026,14 @@
                 l.department_id == deptId
             );
 
-            // หา duty ของ dd นี้ เพื่อดึงเวลา (กรณี group mode)
+            // GEN10 V2: เรียง docsOnDuty ตาม start_time ก่อน
+        docsOnDuty.sort((a, b) => {
+            const da = currentDuties.find(d => d.id === a.duty_id);
+            const db = currentDuties.find(d => d.id === b.duty_id);
+            return (da?.start_time || '').localeCompare(db?.start_time || '');
+        });
+
+        // หา duty ของ dd นี้ เพื่อดึงเวลา (กรณี group mode)
             const dutyInfo = currentDuties.find(d => d.id === dd.duty_id);
             const timeLabel = (selectedDutyMode === 'group' && dutyInfo && !dutyInfo.is_all_day && dutyInfo.start_time)
                 ? `<span style="font-size:10px;color:#888;margin-right:2px;">${dutyInfo.start_time}</span>` : '';
@@ -2207,5 +2214,5 @@
 ```
 
 </body>
-<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">summary GEN10 V1</div>
+<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">summary GEN10 V2</div>
 </html>
