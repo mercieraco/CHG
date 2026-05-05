@@ -601,7 +601,9 @@
                 : day.duties.map(du => {
                     // GEN6: แสดง split_label ถ้ามี
                     const splitNote = du.split_label ? ` [${du.split_label}]` : '';
-                    return `<span class="duty-chip ${chipClass[status] || ''}">${du.duty_name}${splitNote}</span>`;
+                    // GEN10: แสดงสถานะ is_self_duty
+                    const selfNote = du.is_self_duty ? ' 🔒' : '';
+                    return `<span class="duty-chip ${chipClass[status] || ''}">${du.duty_name}${splitNote}${selfNote}</span>`;
                   }).join('');
             return `
                 <div class="rep-day-row">
@@ -628,5 +630,5 @@
     }
 </script>
 </body>
-<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">user_duty GEN9 V0</div>
+<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">user_duty GEN10 V0</div>
 </html>
