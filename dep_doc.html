@@ -3427,10 +3427,11 @@
                     const safeName  = duty.duty_name.replace(/'/g, "\'");
                     // GEN9: wk label
                     const wkLabel = duty.week_numbers ? (() => { try { return '[Wk'+JSON.parse(duty.week_numbers).join(',')+']'; } catch(e){ return ''; } })() : '';
+                    const detailNote = duty.duty_details ? `<span style="font-size:11px;color:#e65100;margin-left:4px;">📝 ${duty.duty_details}</span>` : '';
                     html += `
                         <div class="doctor-duty-item doctor-duty-group-rows">
                             <span class="doctor-duty-day-col">${dayLabel}</span>
-                            <span class="doctor-duty-time-col">${timeLabel}</span>
+                            <span class="doctor-duty-time-col">${timeLabel}${detailNote}</span>
                             ${wkLabel ? `<span style="font-size:11px;color:#667eea;font-weight:600;">${wkLabel}</span>` : '<span></span>'}
                             <button onclick="event.stopPropagation(); showDeleteDoctorDutyModal(${duty.id},'${safeName}',${doctorId},${duty.department_id||'null'})" class="btn-delete-doctor-duty">ลบ</button>
                         </div>`;
@@ -3450,10 +3451,11 @@
                     const safeName  = duty.duty_name.replace(/'/g, "\'");
                     // GEN9: wk label
                     const wkLabel = duty.week_numbers ? (() => { try { return '[Wk'+JSON.parse(duty.week_numbers).join(',')+']'; } catch(e){ return ''; } })() : '';
+                    const detailNote = duty.duty_details ? `<span style="font-size:11px;color:#e65100;margin-left:4px;">📝 ${duty.duty_details}</span>` : '';
                     html += `
                         <div class="doctor-duty-item">
                             <span class="doctor-duty-day-col">${dayLabel}</span>
-                            <span class="doctor-duty-time-col">${timeLabel}</span>
+                            <span class="doctor-duty-time-col">${timeLabel}${detailNote}</span>
                             ${wkLabel ? `<span style="font-size:11px;color:#667eea;font-weight:600;">${wkLabel}</span>` : '<span></span>'}
                             <button onclick="event.stopPropagation(); showDeleteDoctorDutyModal(${duty.id},'${safeName}',${doctorId},${duty.department_id||'null'})" class="btn-delete-doctor-duty">ลบ</button>
                         </div>`;
@@ -4137,22 +4139,38 @@
     async function confirmDeleteDoctorDuty() {
         if (!deleteDoctorDutyId) return;
 
+        // GEN9 V1: save IDs ก่อน close modal เพราะ close จะ clear ตัวแปร
+        const savedDoctorId = deleteDoctorDutyDoctorId;
+        const savedDeptId   = deleteDoctorDutyDepartmentId;
+
         try {
             const response = await fetch(`${API_URL}/api/doctor-duties/${deleteDoctorDutyId}`, { method: 'DELETE' });
             const data = await response.json();
-            
+
             if (response.ok && data.success) {
                 closeDeleteDoctorDutyModal();
-                
-                // Reload Duties ของแพทย์คนนี้ทันที
-                if (deleteDoctorDutyDoctorId && deleteDoctorDutyDepartmentId) {
-                    await loadDoctorDepartmentsAndDuties(deleteDoctorDutyDoctorId, deleteDoctorDutyDepartmentId);
+
+                // GEN9 V1: reload duty list ทันที
+                if (savedDoctorId && savedDeptId) {
+                    await loadDoctorDepartmentsAndDuties(savedDoctorId, savedDeptId);
                 }
-                
-                const doctorListMessage = document.getElementById('doctorListMessage');
-                doctorListMessage.className = 'message success show';
-                doctorListMessage.textContent = '✅ ลบ Duty สำเร็จ';
-                setTimeout(() => doctorListMessage.classList.remove('show'), 3000);
+
+                // GEN9 V1: แสดง success message ใน doctorDutySaveMessage (ใกล้ duty list)
+                // ถ้ายังอยู่ใน modal เพิ่ม duty ให้แสดงที่นั่น ถ้าไม่ใช้ doctorListMessage ตามเดิม
+                const saveMsg = document.getElementById('doctorDutySaveMessage');
+                if (saveMsg) {
+                    saveMsg.style.display = 'block';
+                    saveMsg.style.background = '#d4edda';
+                    saveMsg.style.color = '#155724';
+                    saveMsg.style.borderColor = '#c3e6cb';
+                    saveMsg.textContent = '✅ ลบ Duty สำเร็จ';
+                    setTimeout(() => { saveMsg.style.display = 'none'; }, 3000);
+                } else {
+                    const doctorListMessage = document.getElementById('doctorListMessage');
+                    doctorListMessage.className = 'message success show';
+                    doctorListMessage.textContent = '✅ ลบ Duty สำเร็จ';
+                    setTimeout(() => doctorListMessage.classList.remove('show'), 3000);
+                }
             } else {
                 throw new Error(data.message || 'ไม่สามารถลบ Duty ได้');
             }
@@ -4277,7 +4295,7 @@
 ```
 
 <div style="text-align:center; padding: 16px; color: #aaa; font-size: 12px;">
-    dep_doc GEN9 V0
+    dep_doc GEN10 V0
 </div>
 
 </body>
