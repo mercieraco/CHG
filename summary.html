@@ -567,6 +567,16 @@
         background: #ecf0f1;
     }
 
+    /* Custom Delegation + มีบางส่วนไม่ฝาก - สีเหลือง GEN10 */
+    .leave-record.custom-delegation.partial-no-delegation {
+        background: #fff9c4;
+        border-left-color: #fdd835;
+    }
+
+    .leave-record.custom-delegation.partial-no-delegation:hover {
+        background: #fff59d;
+    }
+
     .leave-record.no-delegation {
         border-left-color: #f39c12;
         background: #fef5e7;
@@ -1215,6 +1225,11 @@
                 `;
             } else if (leave.delegation_type === 'custom' && leave.duty_assignments) {
                 recordDiv.classList.add('custom-delegation');
+                // GEN10: เหลืองถ้ามีบางส่วนไม่ฝาก
+                const hasPartialNoDelegate = leave.duty_assignments.some(
+                    a => !a.replacement_doctor_id && !a.is_self_duty
+                );
+                if (hasPartialNoDelegate) recordDiv.classList.add('partial-no-delegation');
                 
                 // GEN4 V2: แสดงรายละเอียดแต่ละวัน (ถ้า showDetails = true)
                 let html = `
@@ -1454,9 +1469,9 @@
                         if (leave.delegation_type === 'custom' && leave.duty_assignments) {
                             const assignmentsOnDay = leave.duty_assignments.filter(a => a.duty_date === dateStr);
                             if (assignmentsOnDay.length > 0) {
-                                const allNoDelegate = assignmentsOnDay.every(a => !a.replacement_doctor_id && !a.is_self_duty);
-                                if (allNoDelegate) {
-                                    leaveTypes.yellow++;
+                                const hasNoDelegate = assignmentsOnDay.some(a => !a.replacement_doctor_id && !a.is_self_duty);
+                                if (hasNoDelegate) {
+                                    leaveTypes.yellow++; // GEN10: มีแม้แต่ 1 ช่วงที่ไม่ฝาก → เหลือง
                                 } else {
                                     leaveTypes.green++;
                                 }
@@ -1610,6 +1625,13 @@
 
     // แสดงรายละเอียดวัน (ยังไม่ทำ - Part ถัดไป)
     // แสดงรายละเอียดวัน
+    // GEN10: คำนวณสัปดาห์ที่ในเดือน (1-5)
+    function getWeekOfMonth(date) {
+        const d = new Date(date);
+        const firstDay = new Date(d.getFullYear(), d.getMonth(), 1).getDay();
+        return Math.ceil((d.getDate() + firstDay) / 7);
+    }
+
     async function showDayDetail(dateStr) {
         const deptId = document.getElementById('departmentSelect').value;
         if (!deptId) {
@@ -1680,12 +1702,20 @@
                 console.log(`\n🔍 Duty: ${duty.duty_name} (ID: ${duty.id})`);
                 
                 // หาแพทย์ที่ทำ duty นี้วันนี้
+                // GEN10: เช็ค day_of_week + week_numbers
+                const wkOfMonth = getWeekOfMonth(date);
                 const docsOnDuty = doctorDuties.filter(dd => {
-                    const match = dd.duty_id === duty.id && dd[dayName] === 1;
-                    if (match) {
-                        console.log(`  ✓ Doctor ID ${dd.doctor_id} has ${dayName}=1`);
-                    }
-                    return match;
+                    // เช็ควัน
+                    const dayMatch = dd.duty_id === duty.id && (
+                        dd.day_of_week ? dd.day_of_week === dayName : dd[dayName] === 1
+                    );
+                    if (!dayMatch) return false;
+                    // เช็ค week_numbers
+                    if (!dd.week_numbers) return true;
+                    try {
+                        const weeks = JSON.parse(dd.week_numbers);
+                        return weeks.includes(wkOfMonth);
+                    } catch(e) { return true; }
                 });
                 
                 console.log(`  → Total doctors on duty: ${docsOnDuty.length}`);
@@ -1713,63 +1743,86 @@
                             l.department_id == deptId
                         );
 
+                        // GEN10: approval status badge
+                        const approvalBadge = leave ? (
+                            leave.approval_status === 'approved' ? ' <span style="color:#fff;background:#333;border-radius:4px;padding:1px 6px;font-size:11px;">✅ อนุมัติ</span>' :
+                            leave.approval_status === 'rejected' ? ' <span style="color:#fff;background:#c62828;border-radius:4px;padding:1px 6px;font-size:11px;">❌ ไม่อนุมัติ</span>' :
+                            ' <span style="color:#333;background:#fff9c4;border:1px solid #fdd835;border-radius:4px;padding:1px 6px;font-size:11px;">⏳ รออนุมัติ</span>'
+                        ) : '';
+
                         if (leave) {
-                            console.log(`    🏖️ On leave (${leave.delegation_type})`);
-                            
-                            // ลา - หาคนมาแทน
-                            let replacement = null;
-
-                            if (leave.delegation_type === 'single' && leave.replacement_doctor_id) {
-                                replacement = allDoctors.find(d => d.id === leave.replacement_doctor_id);
-                                console.log(`    → Single delegation, replacement: ${replacement?.name || 'NOT FOUND'}`);
-                            } else if (leave.delegation_type === 'custom' && leave.duty_assignments) {
-                                const assign = leave.duty_assignments.find(a => 
-                                    a.duty_date === dateStr && a.duty_id === duty.id
-                                );
-                                if (assign) {
-                                    if (assign.is_self_duty) {
-                                        // GEN7: อยู่เอง — ไม่ต้องหาคนแทน แสดงตัวหมอเองในปฏิทิน
-                                        replacement = null; // แสดงหมอเองตามปกติ ไม่มี replacement badge
-                                        console.log(`    → Custom delegation, self-duty (${assign.split_label || ''})`);
-                                    } else {
-                                        replacement = allDoctors.find(d => d.id === assign.replacement_doctor_id);
-                                        console.log(`    → Custom delegation, replacement: ${replacement?.name || 'NOT FOUND'}`);
-                                    }
-                                } else {
-                                    console.log(`    → Custom delegation, but no assignment for this duty/date`);
-                                }
-                            } else if (leave.delegation_type === 'none') {
-                                console.log(`    → No delegation`);
-                            }
-
-                            if (replacement) {
-                                html += `
-                                    <div class="doctor-item replacement">
+                            if (leave.delegation_type === 'single') {
+                                // Single delegation
+                                const replacement = leave.replacement_doctor_id
+                                    ? allDoctors.find(d => d.id === leave.replacement_doctor_id)
+                                    : null;
+                                if (replacement) {
+                                    html += `<div class="doctor-item replacement">
                                         <span class="doctor-name">${replacement.name}</span>
                                         <span class="replacement-badge">แทน</span>
-                                        <span class="original-doctor">${doc.name}</span>
-                                    </div>
-                                `;
+                                        <span class="original-doctor">${doc.name}${approvalBadge}</span>
+                                    </div>`;
+                                } else {
+                                    html += `<div class="doctor-item replacement">
+                                        <span class="doctor-name">${doc.name} (ลา - ฝาก 1 คน)${approvalBadge}</span>
+                                    </div>`;
+                                }
+
+                            } else if (leave.delegation_type === 'custom' && leave.duty_assignments) {
+                                // Custom delegation — อาจมีหลาย assignments (split)
+                                const assigns = leave.duty_assignments.filter(a =>
+                                    a.duty_date === dateStr && a.duty_id === duty.id
+                                );
+                                if (assigns.length === 0) {
+                                    // ไม่มี duty วันนั้น — แสดงหมอปกติ (ลาแต่ไม่มีเวรวันนี้)
+                                    html += `<div class="doctor-item">
+                                        <span class="doctor-name">${doc.name}</span>
+                                    </div>`;
+                                } else {
+                                    assigns.forEach(assign => {
+                                        const splitNote = assign.split_label ? ` [${assign.split_label}]` : '';
+                                        if (assign.is_self_duty) {
+                                            // อยู่เอง
+                                            html += `<div class="doctor-item">
+                                                <span class="doctor-name">${doc.name}${splitNote} 🔒${approvalBadge}</span>
+                                            </div>`;
+                                        } else if (!assign.replacement_doctor_id) {
+                                            // ไม่ฝาก (split)
+                                            const reason = assign.no_delegate_reason ? ` : ${assign.no_delegate_reason}` : '';
+                                            html += `<div class="doctor-item replacement">
+                                                <span class="doctor-name">${doc.name}${splitNote} (ลา - ไม่ฝาก${reason})${approvalBadge}</span>
+                                            </div>`;
+                                        } else {
+                                            // ฝากคนแทน
+                                            const replacement = allDoctors.find(d => d.id === assign.replacement_doctor_id);
+                                            if (replacement) {
+                                                html += `<div class="doctor-item replacement">
+                                                    <span class="doctor-name">${replacement.name}${splitNote}</span>
+                                                    <span class="replacement-badge">แทน</span>
+                                                    <span class="original-doctor">${doc.name}${approvalBadge}</span>
+                                                </div>`;
+                                            } else {
+                                                html += `<div class="doctor-item replacement">
+                                                    <span class="doctor-name">${doc.name}${splitNote} (ลา - หาคนแทนไม่พบ)${approvalBadge}</span>
+                                                </div>`;
+                                            }
+                                        }
+                                    });
+                                }
+
                             } else {
-                                // ⭐ เพิ่มเหตุผลการลา
-                                const reasonText = leave.no_delegation_reason && leave.no_delegation_reason.trim() 
-                                    ? ` : ${leave.no_delegation_reason}` 
-                                    : '';
-                                html += `
-                                    <div class="doctor-item replacement">
-                                        <span class="doctor-name">${doc.name} (ลางาน - ไม่ฝากงาน)${reasonText}</span>
-                                    </div>
-                                `;
+                                // none — ไม่ฝากทั้งใบ
+                                const reasonText = leave.no_delegation_reason && leave.no_delegation_reason.trim()
+                                    ? ` : ${leave.no_delegation_reason}` : '';
+                                html += `<div class="doctor-item replacement">
+                                    <span class="doctor-name">${doc.name} (ลา - ไม่ฝาก${reasonText})${approvalBadge}</span>
+                                </div>`;
                             }
                         } else {
-                            console.log(`    ✅ Working normally`);
-                            
                             // ไม่ลา
-                            html += `
-                                <div class="doctor-item">
-                                    <span class="doctor-name">${doc.name}</span>
-                                </div>
-                            `;
+                            html += `<div class="doctor-item">
+                                <span class="doctor-name">${doc.name}</span>
+                            </div>`;
                         }
                     });
                 }
