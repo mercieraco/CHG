@@ -647,11 +647,11 @@
                     <option value="">-- เลือกแผนก --</option>
                 </select>
             </div>
-            <div class="form-group">
-                <label for="dutySelect">Duty</label>
-                <select id="dutySelect" onchange="renderCalendar()">
-                    <option value="">เลือก</option>
-                </select>
+            <div class="form-group" style="min-width:180px;">
+                <label>Duty</label>
+                <div id="dutyPanel" style="border:1px solid #ddd; border-radius:8px; background:#fff; max-height:220px; overflow-y:auto; font-size:13px;">
+                    <div style="padding:6px 10px; color:#999; font-style:italic;">— เลือกแผนกก่อน —</div>
+                </div>
             </div>
             <div class="form-group">
                 <label for="monthSelect">เดือน</label>
@@ -719,6 +719,138 @@
     let currentYear = new Date().getFullYear();
     let currentMonth = new Date().getMonth();
     let doctorLeaves = [];
+
+    // GEN10: render duty panel หลังโหลด duties
+    function renderDutyPanel() {
+        const panel = document.getElementById('dutyPanel');
+        if (!panel) return;
+
+        groupedDuties = groupDuties(currentDuties);
+
+        let html = '';
+
+        // ปุ่ม "ทุก Duty"
+        html += `<div class="duty-panel-item duty-all" onclick="selectDuty('all')">
+            <span>📋 ทุก Duty</span>
+        </div>`;
+
+        groupedDuties.forEach((item, gi) => {
+            if (item.type === 'single') {
+                const d = item.duty;
+                const timeLabel = d.start_time ? ` (${d.start_time}–${d.end_time})` : ' (all day)';
+                html += `<div class="duty-panel-item" onclick="selectDuty('single',${d.id},'')">
+                    <span>${d.duty_name}${timeLabel}</span>
+                </div>`;
+            } else {
+                const gid = 'dpg_' + gi;
+                // Group header
+                html += `<div class="duty-panel-item duty-group-header" onclick="selectDuty('group',null,'${item.baseName}')">
+                    <span>${item.baseName}</span>
+                    <button class="duty-panel-toggle" onclick="event.stopPropagation(); toggleDutyGroup('${gid}')">แสดง</button>
+                </div>`;
+                // Sub rows (ซ่อนเริ่มต้น)
+                html += `<div id="${gid}" style="display:none;">`;
+                item.subs.forEach(d => {
+                    const t = d.start_time && d.end_time ? `${d.start_time}–${d.end_time}` : d.duty_name;
+                    html += `<div class="duty-panel-item duty-panel-sub" onclick="selectDuty('single',${d.id},'')">
+                        <span>${t}</span>
+                    </div>`;
+                });
+                html += `</div>`;
+            }
+        });
+
+        panel.innerHTML = html;
+        // highlight ปัจจุบัน
+        highlightDutyPanel();
+    }
+
+    function toggleDutyGroup(gid) {
+        const el = document.getElementById(gid);
+        if (!el) return;
+        const btn = el.previousElementSibling.querySelector('.duty-panel-toggle');
+        if (el.style.display === 'none') {
+            el.style.display = 'block';
+            if (btn) btn.textContent = 'ซ่อน';
+        } else {
+            el.style.display = 'none';
+            if (btn) btn.textContent = 'แสดง';
+        }
+    }
+
+    function selectDuty(mode, dutyId, groupName) {
+        selectedDutyMode = mode;
+        selectedGroupName = groupName || '';
+
+        if (mode === 'all') {
+            selectedDutyIds = currentDuties.map(d => d.id);
+        } else if (mode === 'single') {
+            selectedDutyIds = [dutyId];
+        } else if (mode === 'group') {
+            // หา group จาก groupedDuties
+            const grp = groupedDuties.find(g => g.type === 'group' && g.baseName === groupName);
+            selectedDutyIds = grp ? grp.subs.map(d => d.id) : [];
+        }
+
+        highlightDutyPanel();
+        renderCalendar();
+    }
+
+    function highlightDutyPanel() {
+        const panel = document.getElementById('dutyPanel');
+        if (!panel) return;
+        panel.querySelectorAll('.duty-panel-item, .duty-panel-sub').forEach(el => {
+            el.classList.remove('selected');
+        });
+        if (selectedDutyMode === 'all') {
+            panel.querySelector('.duty-all')?.classList.add('selected');
+        } else if (selectedDutyMode === 'group') {
+            panel.querySelectorAll('.duty-group-header').forEach(el => {
+                if (el.querySelector('span')?.textContent === selectedGroupName) {
+                    el.classList.add('selected');
+                }
+            });
+        } else if (selectedDutyMode === 'single' && selectedDutyIds.length === 1) {
+            const dutyId = selectedDutyIds[0];
+            panel.querySelectorAll('.duty-panel-item:not(.duty-all):not(.duty-group-header), .duty-panel-sub').forEach(el => {
+                if (el.getAttribute('onclick')?.includes(`selectDuty('single',${dutyId}`)) {
+                    el.classList.add('selected');
+                }
+            });
+        }
+    }
+
+    // GEN10: Duty panel state
+    let selectedDutyMode = 'all';   // 'all' | 'group' | 'single'
+    let selectedDutyIds  = [];      // duty id(s) ที่เลือก
+    let selectedGroupName = '';     // ชื่อ group ที่เลือก (กรณี group mode)
+    let groupedDuties = [];         // cache หลัง group
+
+    // จัด flat duties → grouped
+    function groupDuties(duties) {
+        const map = {};
+        const order = [];
+        duties.forEach(d => {
+            if (d.is_all_day || (!d.start_time && !d.end_time)) {
+                // all day → single item
+                const key = '__single__' + d.id;
+                map[key] = { type: 'single', duty: d };
+                order.push(key);
+            } else {
+                // มีเวลา → หา baseName (ตัดเวลาออก)
+                const base = d.duty_name
+                    .replace(/\s*\d{1,2}:\d{2}\s*[-–]\s*\d{1,2}:\d{2}\s*/g, '')
+                    .replace(/\s*\(\d{1,2}:\d{2}.*?\)\s*/g, '')
+                    .trim() || d.duty_name;
+                if (!map[base]) {
+                    map[base] = { type: 'group', baseName: base, subs: [] };
+                    order.push(base);
+                }
+                map[base].subs.push(d);
+            }
+        });
+        return order.map(k => map[k]);
+    }
     let departments = [];
     let currentDuties = [];
     let currentDoctorDuties = [];
@@ -1018,13 +1150,15 @@
     // โหลดข้อมูลแผนก (Duties + Doctor-Duties + Leaves + Doctors)
     async function loadDepartmentData() {
         const departmentId = document.getElementById('departmentSelect').value;
-        const dutySelect = document.getElementById('dutySelect');
-        
         // รีเซ็ต
-        dutySelect.innerHTML = '<option value="">เลือก</option>';
         currentDuties = [];
         currentDoctorDuties = [];
         doctorLeaves = [];
+        selectedDutyMode = 'all';
+        selectedDutyIds  = [];
+        selectedGroupName = '';
+        const dutyPanel = document.getElementById('dutyPanel');
+        if (dutyPanel) dutyPanel.innerHTML = '<div style="padding:6px 10px; color:#999; font-style:italic;">— เลือกแผนกก่อน —</div>';
         
         if (!departmentId) {
             renderCalendar();
@@ -1038,12 +1172,11 @@
             
             if (dutiesData.success) {
                 currentDuties = dutiesData.data || [];
-                currentDuties.forEach(duty => {
-                    const option = document.createElement('option');
-                    option.value = duty.id;
-                    option.textContent = duty.duty_name;
-                    dutySelect.appendChild(option);
-                });
+                // GEN10: render duty panel แทน select
+                selectedDutyMode = 'all';
+                selectedDutyIds  = currentDuties.map(d => d.id);
+                selectedGroupName = '';
+                renderDutyPanel();
             }
 
             // 2. โหลด Doctor-Duties ของแผนกหลัก (จาก dep-rest-worker)
@@ -1851,13 +1984,8 @@
 
     // ดึงชื่อแพทย์สำหรับวันนั้น
     function getDoctorNamesForDay(dateStr) {
-        const dutyId = document.getElementById('dutySelect').value;
         const deptId = document.getElementById('departmentSelect').value;
-        
-        // ถ้าไม่เลือก duty → ไม่แสดงชื่อ
-        if (!dutyId || !deptId) {
-            return '';
-        }
+        if (!deptId || selectedDutyIds.length === 0) return '';
 
         // หาวัน
         const date = new Date(dateStr);
@@ -1865,17 +1993,15 @@
         const dayNames = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
         const dayName = dayNames[dayIdx];
 
-        // GEN10: หาแพทย์ที่ทำ duty นี้วันนี้ — เช็ค day_of_week + week_numbers
+        // GEN10: filter ด้วย selectedDutyIds + day_of_week + week_numbers
         const wkOfMonth2 = getWeekOfMonth(date);
         const docsOnDuty = currentDoctorDuties.filter(dd => {
-            const dayMatch = dd.duty_id == dutyId && (
-                dd.day_of_week ? dd.day_of_week === dayName : dd[dayName] === 1
-            );
+            if (!selectedDutyIds.includes(dd.duty_id)) return false;
+            const dayMatch = dd.day_of_week ? dd.day_of_week === dayName : dd[dayName] === 1;
             if (!dayMatch) return false;
             if (!dd.week_numbers) return true;
             try {
-                const weeks = JSON.parse(dd.week_numbers);
-                return weeks.includes(wkOfMonth2);
+                return JSON.parse(dd.week_numbers).includes(wkOfMonth2);
             } catch(e) { return true; }
         });
 
@@ -1900,35 +2026,31 @@
                 l.department_id == deptId
             );
 
-            if (leave) {
-                // ลา - หาคนมาแทน
-                let replacement = null;
+            // หา duty ของ dd นี้ เพื่อดึงเวลา (กรณี group mode)
+            const dutyInfo = currentDuties.find(d => d.id === dd.duty_id);
+            const timeLabel = (selectedDutyMode === 'group' && dutyInfo && !dutyInfo.is_all_day && dutyInfo.start_time)
+                ? `<span style="font-size:10px;color:#888;margin-right:2px;">${dutyInfo.start_time}</span>` : '';
 
+            if (leave) {
+                let replacement = null;
                 if (leave.delegation_type === 'single' && leave.replacement_doctor_id) {
                     replacement = allDoctors.find(d => d.id === leave.replacement_doctor_id);
                 } else if (leave.delegation_type === 'custom' && leave.duty_assignments) {
-                    const assign = leave.duty_assignments.find(a => 
-                        a.duty_date === dateStr && a.duty_id == dutyId
+                    const assign = leave.duty_assignments.find(a =>
+                        a.duty_date === dateStr && a.duty_id == dd.duty_id
                     );
                     if (assign && !assign.is_self_duty) {
                         replacement = allDoctors.find(d => d.id === assign.replacement_doctor_id);
-                    } else if (assign && assign.is_self_duty) {
-                        // GEN7: อยู่เองในช่วงนั้น — แสดงชื่อหมอเอง (ไม่ใช่ replacement)
-                        replacement = null;
                     }
                 }
-
                 if (replacement) {
-                    // มีคนมาแทน
                     const repFirstName = getFirstName(replacement.name);
-                    names.push(`<div class="doctor-replacement"><span>${repFirstName}</span><span class="original-name">${firstName}</span></div>`);
+                    names.push(`<div class="doctor-replacement">${timeLabel}<span>${repFirstName}</span><span class="original-name">${firstName}</span></div>`);
                 } else {
-                    // ไม่มีคนมาแทน
-                    names.push(`<div class="doctor-replacement"><span class="no-replacement">✗</span><span class="original-name">${firstName}</span></div>`);
+                    names.push(`<div class="doctor-replacement">${timeLabel}<span class="no-replacement">✗</span><span class="original-name">${firstName}</span></div>`);
                 }
             } else {
-                // ไม่ลา
-                names.push(`<div class="doctor-name-item">${firstName}</div>`);
+                names.push(`<div class="doctor-name-item">${timeLabel}${firstName}</div>`);
             }
         });
 
@@ -2032,7 +2154,37 @@
                 opacity: 0.5;
                 font-weight: bold;
             }
-        </style>
+        /* GEN10: Duty Panel */
+    .duty-panel-item {
+        padding: 7px 12px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        border-bottom: 1px solid #f0f0f0;
+        transition: background 0.15s;
+        user-select: none;
+    }
+    .duty-panel-item:last-child { border-bottom: none; }
+    .duty-panel-item:hover { background: #f5f5f5; }
+    .duty-panel-item.selected { background: #667eea; color: #fff; font-weight: 600; }
+    .duty-panel-item.duty-all { font-weight: 700; background: #f8f8ff; border-bottom: 2px solid #ddd; }
+    .duty-panel-item.duty-all.selected { background: #667eea; color: #fff; }
+    .duty-panel-group-header { font-weight: 700; color: #333; }
+    .duty-panel-sub { padding-left: 28px; color: #555; font-size: 12px; }
+    .duty-panel-sub.selected { background: #667eea; color: #fff; }
+    .duty-panel-toggle {
+        margin-left: auto;
+        font-size: 11px;
+        padding: 1px 7px;
+        border: 1px solid #bbb;
+        border-radius: 4px;
+        background: white;
+        color: #555;
+        cursor: pointer;
+    }
+    .duty-panel-item.selected .duty-panel-toggle { border-color: #fff; color: #fff; background: rgba(255,255,255,0.2); }
+    </style>
         
         <div id="yearResult" style="text-align: center; margin: 20px 0; min-height: 30px;">
             <span id="yearResultText" style="font-size: 18px; font-weight: bold;"></span>
@@ -2055,5 +2207,5 @@
 ```
 
 </body>
-<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">summary GEN10 V0</div>
+<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">summary GEN10 V1</div>
 </html>
