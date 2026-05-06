@@ -1218,10 +1218,10 @@
             <label for="dutyDetailsInput">รายละเอียดเพิ่มเติม (ถ้ามี):</label>
             <input type="text" 
                    id="dutyDetailsInput" 
-                   placeholder="เช่น 7:00-8:15, ห้อง OPD A, ฯลฯ"
+                   placeholder="เฉพาะแพทย์นัด"
                    maxlength="100"
                    style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-            <small style="color: #666; font-size: 0.85em;">ตัวอย่าง: 7:00-8:15, ห้อง A, ตรวจผู้ป่วยนอก</small>
+
         </div>
 
         <div id="doctorDutySaveMessage" style="
@@ -2091,8 +2091,10 @@
                             const fri = isSummary ? d.fri : d.fri_count;
                             const sat = isSummary ? d.sat : d.sat_count;
                             const sun = isSummary ? d.sun : d.sun_count;
+                            // GEN10: เช็คว่าทุกวัน = 0
+                            const allZero = [mon,tue,wed,thu,fri,sat,sun].every(v => v === 0);
                             return `
-                                <div class="duty-schedule">
+                                <div class="duty-schedule" ${allZero ? 'data-all-zero="1"' : ''}>
                                     <span class="duty-day">จ ${formatCount(mon)}</span>
                                     <span class="duty-day">อ ${formatCount(tue)}</span>
                                     <span class="duty-day">พ ${formatCount(wed)}</span>
@@ -2103,6 +2105,13 @@
                                 </div>
                             `;
                         };
+                        // GEN10: ฟังก์ชันตรวจว่า duty นี้ all-zero ไหม
+                        const isAllZero = (d, isSummary = false) => {
+                            const vals = isSummary
+                                ? [d.mon,d.tue,d.wed,d.thu,d.fri,d.sat,d.sun]
+                                : [d.mon_count,d.tue_count,d.wed_count,d.thu_count,d.fri_count,d.sat_count,d.sun_count];
+                            return vals.every(v => v === 0);
+                        };
 
                         html += `<div id="dept-duties-${dept.id}" class="duty-list" style="display:none;">`;
                         grouped.forEach(item => {
@@ -2111,9 +2120,12 @@
                                 const duty = item.duty;
                                 const dutyId = duty.duty_id || duty.id;
                                 const dutyName = duty.duty_name;
+                                // GEN10: all day + all-zero → ชื่อแดง
+                                const singleAllZero = isAllZero(duty, false);
+                                const singleNameStyle = singleAllZero ? 'color:#ff4757;font-weight:700;' : '';
                                 html += `
                                     <div class="duty-item">
-                                        <span class="duty-name">${dutyName}</span>
+                                        <span class="duty-name" style="${singleNameStyle}">${dutyName}</span>
                                         ${renderSchedule(duty, false)}
                                         <button onclick="showRenameDutyModal(${dutyId})" class="btn-delete-duty" style="background:#5352ed;" title="เปลี่ยนชื่อ">🔧</button>
                                         <button onclick="showDeleteDutyModal(${dutyId}, '${dutyName.replace(/'/g, "\\'")}')" class="btn-delete-duty">ลบ</button>
@@ -2157,9 +2169,12 @@
                                     const dutyId = duty.duty_id || duty.id;
                                     const dutyName = duty.duty_name;
                                     const timeLabel = '(' + duty._parsed.startTime + '-' + duty._parsed.endTime + ')';
+                                    // GEN10: time + all-zero → timeLabel แดง
+                                    const subAllZero = isAllZero(duty, false);
+                                    const subTimeStyle = subAllZero ? 'color:#ff4757;font-weight:700;padding-left:16px;' : 'color:#555;padding-left:16px;';
                                     html += `
                                         <div class="duty-item duty-group-subrow">
-                                            <span class="duty-name" style="color: #555; padding-left: 16px;">${timeLabel}</span>
+                                            <span class="duty-name" style="${subTimeStyle}">${timeLabel}</span>
                                             ${renderSchedule(duty, false)}
                                             <button onclick="showDeleteDutyModal(${dutyId}, '${dutyName.replace(/'/g, "\\'")}')" class="btn-delete-duty">ลบ</button>
                                         </div>
@@ -4295,7 +4310,7 @@
 ```
 
 <div style="text-align:center; padding: 16px; color: #aaa; font-size: 12px;">
-    dep_doc GEN10 V0
+    dep_doc GEN10 V1
 </div>
 
 </body>
