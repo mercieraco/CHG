@@ -1218,7 +1218,7 @@
             <label for="dutyDetailsInput">รายละเอียดเพิ่มเติม (ถ้ามี):</label>
             <input type="text" 
                    id="dutyDetailsInput" 
-                   placeholder="เฉพาะแพทย์นัด"
+                   placeholder="เช่น : เฉพาะแพทย์นัด, VIP, etc."
                    maxlength="100"
                    style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
 
@@ -2128,7 +2128,7 @@
                                         <span class="duty-name" style="${singleNameStyle}">${dutyName}</span>
                                         ${renderSchedule(duty, false)}
                                         <button onclick="showRenameDutyModal(${dutyId})" class="btn-delete-duty" style="background:#5352ed;" title="เปลี่ยนชื่อ">🔧</button>
-                                        <button onclick="showDeleteDutyModal(${dutyId}, '${dutyName.replace(/'/g, "\\'")}')" class="btn-delete-duty">ลบ</button>
+                                        <button onclick="showDeleteDutyModal(${dutyId}, '${dutyName.replace(/'/g, "\\'")}', ${!singleAllZero})" class="btn-delete-duty">ลบ</button>
                                     </div>
                                 `;
                             } else {
@@ -2176,7 +2176,7 @@
                                         <div class="duty-item duty-group-subrow">
                                             <span class="duty-name" style="${subTimeStyle}">${timeLabel}</span>
                                             ${renderSchedule(duty, false)}
-                                            <button onclick="showDeleteDutyModal(${dutyId}, '${dutyName.replace(/'/g, "\\'")}')" class="btn-delete-duty">ลบ</button>
+                                            <button onclick="showDeleteDutyModal(${dutyId}, '${dutyName.replace(/'/g, "\\'")}', ${!subAllZero})" class="btn-delete-duty">ลบ</button>
                                         </div>
                                     `;
                                 });
@@ -2799,18 +2799,23 @@
     // Modal ลบ Duty ของแผนก
     // GEN6: ลบ duty ทั้งกลุ่ม (subrows ทั้งหมดที่มี baseName เดียวกัน)
     async function showDeleteGroupDutyModal(groupId) {
-        const subrows = document.querySelectorAll(`#subrows_${groupId} .btn-delete-duty`);
-        const count = subrows.length;
-        if (!confirm(`⚠️ จะลบ duty ทั้งกลุ่ม (${count} ช่วงเวลา) ใช่หรือไม่?`)) return;
-        // ลบทีละ subrow โดยดึง dutyId จาก onclick attribute
         const deleteButtons = Array.from(document.querySelectorAll(`#subrows_${groupId} button.btn-delete-duty`));
+        const count = deleteButtons.length;
+        // GEN10: เช็คว่ามี sub ที่มี assignment ไหม (hasAssignment ใน onclick)
+        const hasAny = deleteButtons.some(btn => {
+            const match = btn.getAttribute('onclick')?.match(/showDeleteDutyModal\(\d+,\s*'[^']*',\s*(true|false)/);
+            return match && match[1] === 'true';
+        });
+        if (hasAny) {
+            alert('⚠️ ไม่สามารถลบกลุ่ม Duty นี้ได้\nเนื่องจากบางช่วงเวลามีการมอบหมายงานแล้ว\nกรุณาลบทีละช่วงเวลาที่ไม่มีงาน');
+            return;
+        }
+        if (!confirm(`⚠️ จะลบ duty ทั้งกลุ่ม (${count} ช่วงเวลา) ใช่หรือไม่?`)) return;
         for (const btn of deleteButtons) {
             const match = btn.getAttribute('onclick')?.match(/showDeleteDutyModal\((\d+)/);
             if (match) {
-                const dutyId = match[1];
-                try {
-                    await fetch(`${API_URL}/api/duties/${dutyId}`, { method: 'DELETE' });
-                } catch(e) { console.error('delete error', e); }
+                try { await fetch(`${API_URL}/api/duties/${match[1]}`, { method: 'DELETE' }); }
+                catch(e) { console.error('delete error', e); }
             }
         }
         loadDepartments();
@@ -2931,7 +2936,12 @@
         }
     }
 
-    function showDeleteDutyModal(dutyId, dutyName) {
+    function showDeleteDutyModal(dutyId, dutyName, hasAssignment) {
+        // GEN10: ถ้า hasAssignment = true → แสดงคำเตือน ไม่ให้ลบ
+        if (hasAssignment) {
+            alert('⚠️ ไม่สามารถลบ Duty นี้ได้\nเนื่องจากมีการมอบหมายงานแล้ว\n(' + dutyName + ')');
+            return;
+        }
         deleteDutyId = dutyId;
         document.getElementById('deleteDutyName').textContent = dutyName;
         document.getElementById('deleteDutyModal').classList.add('show');
