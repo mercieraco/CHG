@@ -1708,7 +1708,7 @@
                         const splitNote = assignment.split_label ? ` [${assignment.split_label}]` : '';
                         const isSelf = assignment.is_self_duty;
                         const isNoDelegate = !isSelf && !assignment.replacement_doctor_id && !assignment.replacement_doctor_name;
-                        const dutyDisplay = assignment.duty_name + splitNote;
+                        const dutyDisplay = assignment.duty_name + splitNote + (assignment.duty_details ? ` 📝${assignment.duty_details}` : '');
                         if (isNoDelegate) {
                             const ndReason = assignment.no_delegate_reason ? ` : ${assignment.no_delegate_reason}` : '';
                             html += `
@@ -2652,7 +2652,7 @@
                     
                     // Header row (วันที่ + filters ในบรรทัดเดียวกัน)
                     html += `<div class="duty-assignment-header-row">`;
-                    html += `<div class="duty-assignment-header">วันที่ ${thaiDate}: ${duty.duty_name}</div>`;
+                    html += `<div class="duty-assignment-header">วันที่ ${thaiDate}: ${duty.duty_name}${duty.duty_details ? ' 📝'+duty.duty_details : ''}</div>`;
                     
                     // Filter row
                     html += `<div class="duty-assignment-filters">`;
@@ -3793,7 +3793,7 @@
         duties.forEach(item => {
             const dateStr = formatDateThai(item.date);
             const dutyNames = item.duties.length > 0 
-                ? item.duties.map(d => d.duty_name).join(', ')
+                ? item.duties.map(d => d.duty_name + (d.duty_details ? ' 📝'+d.duty_details : '')).join(', ')
                 : 'ไม่มีงาน';
             
             html += `<p style="margin: 5px 0;">วันที่ ${dateStr}: <strong>${dutyNames}</strong></p>`;
@@ -4817,5 +4817,5 @@
 ```
 
 </body>
-<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">user GEN10 V0</div>
+<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">user GEN10 V1</div>
 </html>
