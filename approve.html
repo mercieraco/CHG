@@ -831,7 +831,7 @@
                     rows += '<p style="font-weight:600; margin:0 0 6px 0; color:#555;">📋 รายละเอียดการฝากงาน:</p>';
                     leave.duty_assignments.forEach(function(a) {
                         var splitNote = a.split_label ? ' [' + a.split_label + ']' : '';
-                        var dutyLabel = (a.duty_name || '') + splitNote;
+                        var dutyLabel = (a.duty_name || '') + splitNote + (a.duty_details ? ' 📝'+a.duty_details : '');
                         var dateLabel = a.duty_date || '';
                         var statusIcon, statusText, statusColor;
                         if (a.is_self_duty) {
@@ -1131,6 +1131,6 @@
 </div>
 ```
 
-<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">approve GEN10 V1</div>
+<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">approve GEN10 V2</div>
 </body>
 </html>
