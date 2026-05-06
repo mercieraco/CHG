@@ -738,8 +738,9 @@
             if (item.type === 'single') {
                 const d = item.duty;
                 const timeLabel = d.start_time ? ` (${d.start_time}–${d.end_time})` : ' (all day)';
+                const detailNote = d.duty_details ? ' 📝'+d.duty_details : '';
                 html += `<div class="duty-panel-item" onclick="selectDuty('single',${d.id},'')">
-                    <span>${d.duty_name}${timeLabel}</span>
+                    <span>${d.duty_name}${timeLabel}${detailNote}</span>
                 </div>`;
             } else {
                 const gid = 'dpg_' + gi;
@@ -752,8 +753,9 @@
                 html += `<div id="${gid}" style="display:none;">`;
                 item.subs.sort((a,b) => (a.start_time||'').localeCompare(b.start_time||'')).forEach(d => {
                     const t = d.start_time && d.end_time ? `${d.start_time}–${d.end_time}` : d.duty_name;
+                    const dNote = d.duty_details ? ` 📝${d.duty_details}` : '';
                     html += `<div class="duty-panel-item duty-panel-sub" onclick="selectDuty('single',${d.id},'')">
-                        <span>${t}</span>
+                        <span>${t}${dNote}</span>
                     </div>`;
                 });
                 html += `</div>`;
@@ -1854,7 +1856,8 @@
                 console.log(`  → Total doctors on duty: ${docsOnDuty.length}`);
 
                 html += `<div class="duty-section">`;
-                html += `<div class="duty-name">${duty.duty_name}</div>`;
+                const dutyDisplayName = duty.duty_name + (duty.duty_details ? ' 📝'+duty.duty_details : '');
+                html += `<div class="duty-name">${dutyDisplayName}</div>`;
 
                 if (docsOnDuty.length === 0) {
                     html += `<div class="no-doctor">ไม่มีแพทย์</div>`;
@@ -2214,5 +2217,5 @@
 ```
 
 </body>
-<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">summary GEN10 V2</div>
+<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">summary GEN10 V3</div>
 </html>
