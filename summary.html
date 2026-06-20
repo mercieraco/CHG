@@ -846,9 +846,7 @@
             } else {
                 // มีเวลา → หา baseName (ตัดเวลาออก)
                 const base = d.duty_name
-                    .replace(/\(\+\)/g, '()')
-                    .replace(/\s*\d{1,2}:\d{2}\s*[-–]\s*\d{1,2}:\d{2}\s*/g, '')
-                    .replace(/\s*\(\d{1,2}:\d{2}.*?\)\s*/g, '')
+                    .replace(/\s*\(\d{1,2}:\d{2}\s*[-–]\s*\d{1,2}:\d{2}\+?\)\s*$/, '')
                     .trim() || d.duty_name;
                 if (!map[base]) {
                     map[base] = { type: 'group', baseName: base, subs: [] };
@@ -2223,5 +2221,5 @@
 ```
 
 </body>
-<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">summary GEN11 V0</div>
+<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">summary GEN11 V1</div>
 </html>
