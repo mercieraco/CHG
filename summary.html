@@ -751,7 +751,12 @@
                 </div>`;
                 // Sub rows (ซ่อนเริ่มต้น)
                 html += `<div id="${gid}" style="display:none;">`;
-                item.subs.sort((a,b) => (a.start_time||'').localeCompare(b.start_time||'')).forEach(d => {
+                item.subs.sort((a,b) => {
+                    const aOver = (a.end_time||'').includes('+') ? 1 : 0;
+                    const bOver = (b.end_time||'').includes('+') ? 1 : 0;
+                    if (aOver !== bOver) return aOver - bOver;
+                    return (a.start_time||'').localeCompare(b.start_time||'');
+                }).forEach(d => {
                     const t = d.start_time && d.end_time ? `${d.start_time}–${d.end_time}` : d.duty_name;
                     const dNote = d.duty_details ? ` 📝${d.duty_details}` : '';
                     html += `<div class="duty-panel-item duty-panel-sub" onclick="selectDuty('single',${d.id},'')">
@@ -841,6 +846,7 @@
             } else {
                 // มีเวลา → หา baseName (ตัดเวลาออก)
                 const base = d.duty_name
+                    .replace(/\(\+\)/g, '()')
                     .replace(/\s*\d{1,2}:\d{2}\s*[-–]\s*\d{1,2}:\d{2}\s*/g, '')
                     .replace(/\s*\(\d{1,2}:\d{2}.*?\)\s*/g, '')
                     .trim() || d.duty_name;
@@ -2039,7 +2045,7 @@
         // หา duty ของ dd นี้ เพื่อดึงเวลา (กรณี group mode)
             const dutyInfo = currentDuties.find(d => d.id === dd.duty_id);
             const timeLabel = (selectedDutyMode === 'group' && dutyInfo && !dutyInfo.is_all_day && dutyInfo.start_time)
-                ? `<span style="font-size:10px;color:#888;margin-right:2px;">${dutyInfo.start_time}</span>` : '';
+                ? `<span style="font-size:10px;color:#888;margin-right:2px;">${dutyInfo.start_time}${dutyInfo.end_time ? ' - ' + dutyInfo.end_time : ''}</span>` : '';
 
             if (leave) {
                 let replacement = null;
@@ -2217,5 +2223,5 @@
 ```
 
 </body>
-<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">summary GEN10 V3</div>
+<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">summary GEN11 V0</div>
 </html>
