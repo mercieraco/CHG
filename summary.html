@@ -2016,6 +2016,14 @@
             return '';
         }
 
+        // GEN10 V2 (ย้ายออกนอก forEach — เดิม sort ข้างใน loop ทำให้ render ซ้ำ):
+        // เรียง docsOnDuty ตาม start_time ก่อน loop
+        docsOnDuty.sort((a, b) => {
+            const da = currentDuties.find(d => d.id === a.duty_id);
+            const db = currentDuties.find(d => d.id === b.duty_id);
+            return (da?.start_time || '').localeCompare(db?.start_time || '');
+        });
+
         // สร้างรายชื่อ
         let names = [];
         
@@ -2033,17 +2041,14 @@
                 l.department_id == deptId
             );
 
-            // GEN10 V2: เรียง docsOnDuty ตาม start_time ก่อน
-        docsOnDuty.sort((a, b) => {
-            const da = currentDuties.find(d => d.id === a.duty_id);
-            const db = currentDuties.find(d => d.id === b.duty_id);
-            return (da?.start_time || '').localeCompare(db?.start_time || '');
-        });
-
-        // หา duty ของ dd นี้ เพื่อดึงเวลา (กรณี group mode)
+            // หา duty ของ dd นี้ เพื่อดึงเวลา (กรณี group mode)
             const dutyInfo = currentDuties.find(d => d.id === dd.duty_id);
             const timeLabel = (selectedDutyMode === 'group' && dutyInfo && !dutyInfo.is_all_day && dutyInfo.start_time)
                 ? `<span style="font-size:10px;color:#888;margin-right:2px;">${dutyInfo.start_time}${dutyInfo.end_time ? ' - ' + dutyInfo.end_time : ''}</span>` : '';
+
+            // GEN11: แสดงรายละเอียดเพิ่มเติมของ duty (ถ้ามี) เช่น "เฉพาะแพทย์นัด VIP"
+            const detailNote = dd.duty_details
+                ? `<span style="font-size:9px;color:#e65100;margin-left:3px;">📝${dd.duty_details}</span>` : '';
 
             if (leave) {
                 let replacement = null;
@@ -2059,12 +2064,12 @@
                 }
                 if (replacement) {
                     const repFirstName = getFirstName(replacement.name);
-                    names.push(`<div class="doctor-replacement">${timeLabel}<span>${repFirstName}</span><span class="original-name">${firstName}</span></div>`);
+                    names.push(`<div class="doctor-replacement">${timeLabel}<span>${repFirstName}</span><span class="original-name">${firstName}</span>${detailNote}</div>`);
                 } else {
-                    names.push(`<div class="doctor-replacement">${timeLabel}<span class="no-replacement">✗</span><span class="original-name">${firstName}</span></div>`);
+                    names.push(`<div class="doctor-replacement">${timeLabel}<span class="no-replacement">✗</span><span class="original-name">${firstName}</span>${detailNote}</div>`);
                 }
             } else {
-                names.push(`<div class="doctor-name-item">${timeLabel}${firstName}</div>`);
+                names.push(`<div class="doctor-name-item">${timeLabel}${firstName}${detailNote}</div>`);
             }
         });
 
@@ -2221,5 +2226,5 @@
 ```
 
 </body>
-<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">summary GEN11 V1</div>
+<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">summary GEN11 V3</div>
 </html>
