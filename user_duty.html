@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="th">
 <head>
     <meta charset="UTF-8">
@@ -8,314 +7,309 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
-```
-    body {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Sarabun', sans-serif;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        min-height: 100vh;
-        padding: 20px;
-    }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Sarabun', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
 
-    .container {
-        max-width: 900px;
-        margin: 0 auto;
-        background: white;
-        border-radius: 20px;
-        padding: 30px;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-    }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
 
-    /* ── Header ── */
-    .header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 30px;
-        flex-wrap: wrap;
-        gap: 10px;
-    }
-    .header h1 { color: #333; font-size: 26px; }
-    .header-right { display: flex; gap: 10px; }
+        /* ── Header ── */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .header h1 { color: #333; font-size: 26px; }
+        .header-right { display: flex; gap: 10px; }
 
-    .btn-back {
-        padding: 10px 18px;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        font-size: 15px;
-        font-weight: 600;
-        transition: all 0.2s;
-        color: white;
-    }
-    .btn-back:hover { transform: translateY(-1px); opacity: 0.9; }
-    .btn-leave  { background: #667eea; }
-    .btn-logout { background: #ff6b6b; }
+        .btn-back {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            transition: all 0.2s;
+            color: white;
+        }
+        .btn-back:hover { transform: translateY(-1px); opacity: 0.9; }
+        .btn-leave  { background: #667eea; }
+        .btn-logout { background: #ff6b6b; }
 
-    /* ── Doctor Info ── */
-    .doctor-info-bar {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 14px 20px;
-        border-radius: 10px;
-        margin-bottom: 25px;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    }
-    .doctor-info-bar .name { font-size: 18px; font-weight: 700; }
-    .doctor-info-bar .dept { font-size: 14px; opacity: 0.85; }
+        /* ── Doctor Info ── */
+        .doctor-info-bar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 14px 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .doctor-info-bar .name { font-size: 18px; font-weight: 700; }
+        .doctor-info-bar .dept { font-size: 14px; opacity: 0.85; }
 
-    /* ── Section Card ── */
-    .section-card {
-        background: #f9f9fb;
-        border-radius: 14px;
-        margin-bottom: 25px;
-        border: 1px solid #e8e8f0;
-        overflow: hidden;
-    }
-    .section-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 14px 20px;
-        font-size: 16px;
-        font-weight: 700;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-    .section-body { padding: 18px 20px; }
+        /* ── Section Card ── */
+        .section-card {
+            background: #f9f9fb;
+            border-radius: 14px;
+            margin-bottom: 25px;
+            border: 1px solid #e8e8f0;
+            overflow: hidden;
+        }
+        .section-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 14px 20px;
+            font-size: 16px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .section-body { padding: 18px 20px; }
 
-    /* ── Dept Block ── */
-    .dept-block { margin-bottom: 20px; }
-    .dept-block:last-child { margin-bottom: 0; }
+        /* ── Dept Block ── */
+        .dept-block { margin-bottom: 20px; }
+        .dept-block:last-child { margin-bottom: 0; }
 
-    .dept-label {
-        font-size: 13px;
-        font-weight: 700;
-        color: white;
-        background: #667eea;
-        display: inline-block;
-        padding: 3px 12px;
-        border-radius: 20px;
-        margin-bottom: 10px;
-    }
-    .dept-label.secondary { background: #a29bfe; }
+        .dept-label {
+            font-size: 13px;
+            font-weight: 700;
+            color: white;
+            background: #667eea;
+            display: inline-block;
+            padding: 3px 12px;
+            border-radius: 20px;
+            margin-bottom: 10px;
+        }
+        .dept-label.secondary { background: #a29bfe; }
 
-    /* ── Duty Items ── */
-    .doctor-duties-list { margin-top: 4px; }
+        /* ── Duty Items ── */
+        .doctor-duties-list { margin-top: 4px; }
 
-    .doctor-duty-item {
-        background: white;
-        padding: 8px 12px;
-        border-radius: 6px;
-        margin-bottom: 6px;
-        display: grid;
-        grid-template-columns: 1fr auto;
-        gap: 12px;
-        align-items: center;
-        border: 1px solid #e0e0e0;
-        font-size: 14px;
-    }
-    .doctor-duty-name { font-weight: 600; color: #667eea; }
-    .doctor-duty-days { color: #666; font-size: 13px; text-align: right; }
+        .doctor-duty-item {
+            background: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-bottom: 6px;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 12px;
+            align-items: center;
+            border: 1px solid #e0e0e0;
+            font-size: 14px;
+        }
+        .doctor-duty-name { font-weight: 600; color: #667eea; }
+        .doctor-duty-days { color: #666; font-size: 13px; text-align: right; }
 
-    .doctor-duty-group-header {
-        background: #f0f2ff;
-        border: 1px solid #c5caf5;
-    }
-    .doctor-duty-group-summary {
-        background: #fafafa;
-        border: 1px dashed #d0d0d0;
-        margin-bottom: 4px;
-        margin-left: 8px;
-    }
-    .doctor-duty-group-subrow {
-        background: white;
-        border: 1px solid #e8e8e8;
-        margin-bottom: 4px;
-        margin-left: 8px;
-    }
+        .doctor-duty-group-header {
+            background: #f0f2ff;
+            border: 1px solid #c5caf5;
+        }
+        .doctor-duty-group-summary {
+            background: #fafafa;
+            border: 1px dashed #d0d0d0;
+            margin-bottom: 4px;
+            margin-left: 8px;
+        }
+        .doctor-duty-group-subrow {
+            background: white;
+            border: 1px solid #e8e8e8;
+            margin-bottom: 4px;
+            margin-left: 8px;
+        }
 
-    .btn-toggle-group {
-        background: #667eea;
-        color: white;
-        border: none;
-        padding: 4px 12px;
-        border-radius: 12px;
-        font-size: 13px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s;
-        white-space: nowrap;
-        margin-left: auto;
-    }
-    .btn-toggle-group:hover { background: #5568d3; }
+        .btn-toggle-group {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+            margin-left: auto;
+        }
+        .btn-toggle-group:hover { background: #5568d3; }
 
-    .no-duty-text {
-        color: #aaa;
-        font-size: 13px;
-        font-style: italic;
-        padding: 8px 0;
-    }
-    .doctor-duty-group-label { padding: 4px 0 2px 0; }
-    .doctor-duty-base-name { font-weight: 700; color: #333; font-size: 14px; }
-    .doctor-duty-group-rows { padding-left: 8px; border-left: 3px solid #667eea; margin-bottom: 6px; }
+        .no-duty-text {
+            color: #aaa;
+            font-size: 13px;
+            font-style: italic;
+            padding: 8px 0;
+        }
+        .doctor-duty-group-label { padding: 4px 0 2px 0; }
+        .doctor-duty-base-name { font-weight: 700; color: #333; font-size: 14px; }
+        .doctor-duty-group-rows { padding-left: 8px; border-left: 3px solid #667eea; margin-bottom: 6px; }
 
-    /* ── Replacement Cards ── */
-    .rep-card {
-        background: white;
-        border-radius: 10px;
-        margin-bottom: 14px;
-        border: 1px solid #e0e0e0;
-        overflow: hidden;
-    }
+        /* ── Replacement Cards ── */
+        .rep-card {
+            background: white;
+            border-radius: 10px;
+            margin-bottom: 14px;
+            border: 1px solid #e0e0e0;
+            overflow: hidden;
+        }
 
-    .rep-card-header {
-        padding: 12px 16px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        flex-wrap: wrap;
-    }
-    .rep-card-header.status-pending  { background: #fff8e1; border-left: 5px solid #ffb300; }
-    .rep-card-header.status-approved { background: #212121; border-left: 5px solid #000; }
-    .rep-card-header.status-rejected {
-        background: #f5f5f5;
-        border-left: 5px solid #333;
-    }
+        .rep-card-header {
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .rep-card-header.status-pending  { background: #fff8e1; border-left: 5px solid #ffb300; }
+        .rep-card-header.status-approved { background: #212121; border-left: 5px solid #000; }
+        .rep-card-header.status-rejected {
+            background: #f5f5f5;
+            border-left: 5px solid #333;
+        }
 
-    .rep-doctor-name { font-weight: 700; font-size: 15px; }
-    .rep-card-header.status-approved .rep-doctor-name { color: white; }
-    .rep-card-header.status-rejected .rep-doctor-name {
-        color: #555;
-        position: relative;
-        display: inline-block;
-    }
-    .rep-card-header.status-rejected .rep-doctor-name::after {
-        content: '';
-        position: absolute;
-        left: 0; right: 0;
-        top: 50%;
-        height: 2px;
-        background: #e53935;
-        transform: translateY(-50%);
-    }
+        .rep-doctor-name { font-weight: 700; font-size: 15px; }
+        .rep-card-header.status-approved .rep-doctor-name { color: white; }
+        .rep-card-header.status-rejected .rep-doctor-name {
+            color: #555;
+            position: relative;
+            display: inline-block;
+        }
+        .rep-card-header.status-rejected .rep-doctor-name::after {
+            content: '';
+            position: absolute;
+            left: 0; right: 0;
+            top: 50%;
+            height: 2px;
+            background: #e53935;
+            transform: translateY(-50%);
+        }
 
-    .rep-dept-name { font-size: 13px; opacity: 0.75; }
-    .rep-card-header.status-approved .rep-dept-name { color: #ddd; }
+        .rep-dept-name { font-size: 13px; opacity: 0.75; }
+        .rep-card-header.status-approved .rep-dept-name { color: #ddd; }
 
-    .status-badge {
-        margin-left: auto;
-        padding: 3px 10px;
-        border-radius: 12px;
-        font-size: 12px;
-        font-weight: 700;
-        white-space: nowrap;
-    }
-    .status-badge.approved { background: #444; color: white; border: 1px solid #888; }
-    .status-badge.rejected { background: #bbb; color: #333; border: 1px solid #888; }
+        .status-badge {
+            margin-left: auto;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .status-badge.approved { background: #444; color: white; border: 1px solid #888; }
+        .status-badge.rejected { background: #bbb; color: #333; border: 1px solid #888; }
 
-    .rep-date-bar {
-        padding: 8px 16px;
-        font-size: 13px;
-        background: #f5f5f5;
-        color: #555;
-        border-bottom: 1px solid #eee;
-    }
-    .rep-card-header.status-approved + .rep-date-bar {
-        background: #333;
-        color: #ccc;
-        border-bottom: 1px solid #555;
-    }
+        .rep-date-bar {
+            padding: 8px 16px;
+            font-size: 13px;
+            background: #f5f5f5;
+            color: #555;
+            border-bottom: 1px solid #eee;
+        }
+        .rep-card-header.status-approved + .rep-date-bar {
+            background: #333;
+            color: #ccc;
+            border-bottom: 1px solid #555;
+        }
 
-    .rep-day-list { padding: 10px 16px; }
+        .rep-day-list { padding: 10px 16px; }
 
-    .rep-day-row {
-        display: flex;
-        align-items: flex-start;
-        gap: 8px;
-        padding: 5px 0;
-        border-bottom: 1px solid #f0f0f0;
-        font-size: 13px;
-    }
-    .rep-day-row:last-child { border-bottom: none; }
+        .rep-day-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            padding: 5px 0;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 13px;
+        }
+        .rep-day-row:last-child { border-bottom: none; }
 
-    .rep-day-label { min-width: 90px; color: #555; font-weight: 600; }
-    .rep-day-duties { color: #333; flex: 1; }
-    .rep-day-duties .no-duty { color: #bbb; font-style: italic; }
+        .rep-day-label { min-width: 90px; color: #555; font-weight: 600; }
+        .rep-day-duties { color: #333; flex: 1; }
+        .rep-day-duties .no-duty { color: #bbb; font-style: italic; }
 
-    .duty-chip {
-        display: inline-block;
-        background: #e8eaff;
-        color: #3d3d8f;
-        border-radius: 10px;
-        padding: 2px 9px;
-        font-size: 12px;
-        font-weight: 600;
-        margin: 2px 3px 2px 0;
-    }
-    .duty-chip.approved-chip { background: #444; color: #ddd; }
-    .duty-chip.rejected-chip { background: #ddd; color: #888; }
+        .duty-chip {
+            display: inline-block;
+            background: #e8eaff;
+            color: #3d3d8f;
+            border-radius: 10px;
+            padding: 2px 9px;
+            font-size: 12px;
+            font-weight: 600;
+            margin: 2px 3px 2px 0;
+        }
+        .duty-chip.approved-chip { background: #444; color: #ddd; }
+        .duty-chip.rejected-chip { background: #ddd; color: #888; }
 
-    .empty-state {
-        text-align: center;
-        padding: 30px;
-        color: #aaa;
-        font-size: 15px;
-    }
-    .loading {
-        text-align: center;
-        padding: 20px;
-        color: #888;
-        font-size: 14px;
-    }
+        .empty-state {
+            text-align: center;
+            padding: 30px;
+            color: #aaa;
+            font-size: 15px;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #888;
+            font-size: 14px;
+        }
 
-    @media (max-width: 600px) {
-        .container { padding: 16px; }
-        .header h1 { font-size: 20px; }
-        .doctor-duty-item { grid-template-columns: 1fr; gap: 4px; }
-        .doctor-duty-days { text-align: left; }
-    }
-</style>
-```
-
+        @media (max-width: 600px) {
+            .container { padding: 16px; }
+            .header h1 { font-size: 20px; }
+            .doctor-duty-item { grid-template-columns: 1fr; gap: 4px; }
+            .doctor-duty-days { text-align: left; }
+        }
+    </style>
 </head>
 <body>
 <div class="container">
 
-```
-<div class="header">
-    <h1>⚡ ภาระงาน</h1>
-    <div class="header-right">
-        <button class="btn-back btn-leave" onclick="window.location.href='user.html'">← จัดการการลา</button>
-        <button class="btn-back btn-logout" onclick="logout()">ออกจากระบบ</button>
+    <div class="header">
+        <h1>⚡ ภาระงาน</h1>
+        <div class="header-right">
+            <button class="btn-back btn-leave" onclick="window.location.href='user.html'">← จัดการการลา</button>
+            <button class="btn-back btn-logout" onclick="logout()">ออกจากระบบ</button>
+        </div>
     </div>
-</div>
 
-<div class="doctor-info-bar">
-    <div>
-        <div class="name" id="doctorNameDisplay">กำลังโหลด...</div>
-        <div class="dept" id="doctorDeptDisplay"></div>
+    <div class="doctor-info-bar">
+        <div>
+            <div class="name" id="doctorNameDisplay">กำลังโหลด...</div>
+            <div class="dept" id="doctorDeptDisplay"></div>
+        </div>
     </div>
-</div>
 
-<div class="section-card">
-    <div class="section-header" style="display:flex; align-items:center; gap:8px;">
-        📅 ตารางเวรประจำ
-        <button id="sort-toggle-btn" onclick="toggleSortMode()" class="btn-toggle-group" style="margin-left:auto; background:rgba(255,255,255,0.25);">duty</button>
+    <div class="section-card">
+        <div class="section-header" style="display:flex; align-items:center; gap:8px;">
+            📅 ตารางเวรประจำ
+            <button id="sort-toggle-btn" onclick="toggleSortMode()" class="btn-toggle-group" style="margin-left:auto; background:rgba(255,255,255,0.25);">duty</button>
+        </div>
+        <div class="section-body" id="scheduleBody">
+            <div class="loading">กำลังโหลดข้อมูล...</div>
+        </div>
     </div>
-    <div class="section-body" id="scheduleBody">
-        <div class="loading">กำลังโหลดข้อมูล...</div>
-    </div>
-</div>
 
-<div class="section-card">
-    <div class="section-header">🤝 รายการที่รับฝาก</div>
-    <div class="section-body" id="replacementBody">
-        <div class="loading">กำลังโหลดข้อมูล...</div>
+    <div class="section-card">
+        <div class="section-header">🤝 รายการที่รับฝาก</div>
+        <div class="section-body" id="replacementBody">
+            <div class="loading">กำลังโหลดข้อมูล...</div>
+        </div>
     </div>
-</div>
-```
 
 </div>
 <script>
@@ -324,321 +318,318 @@
     var cachedDuties = [];
     var cachedDepts  = [];
 
-```
-window.onload = async function() {
-    const loggedIn = sessionStorage.getItem('loggedIn');
-    const role     = sessionStorage.getItem('role');
-    const doctorId = sessionStorage.getItem('doctor_id');
-    if (!loggedIn || role !== 'doctor' || !doctorId) {
-        window.location.href = 'index.html';
-        return;
-    }
-    await Promise.all([loadSchedule(doctorId), loadReplacements(doctorId)]);
-};
-
-function logout() {
-    if (confirm('ต้องการออกจากระบบหรือไม่?')) {
-        sessionStorage.clear();
-        window.location.href = 'index.html';
-    }
-}
-
-// ================================================================
-// SECTION 1: ตารางเวรประจำ
-// ================================================================
-async function loadSchedule(doctorId) {
-    const body = document.getElementById('scheduleBody');
-    try {
-        const docRes  = await fetch(`${API_URL}/api/doctors/${doctorId}`);
-        const docData = await docRes.json();
-        if (!docData.success) throw new Error('ไม่พบข้อมูลแพทย์');
-        const doctor = docData.data;
-        document.getElementById('doctorNameDisplay').textContent = doctor.name;
-
-        const deptsRes  = await fetch(`${API_URL}/api/doctors/${doctorId}/departments`);
-        const deptsData = await deptsRes.json();
-        const allDepts  = deptsData.success ? deptsData.data : [];
-
-        const primaryDept    = allDepts.find(d => d.is_primary)
-                            || { department_id: doctor.department_id, department_name: 'แผนกหลัก', is_primary: 1 };
-        const secondaryDepts = allDepts.filter(d => !d.is_primary);
-        document.getElementById('doctorDeptDisplay').textContent = `แผนกหลัก: ${primaryDept.department_name}`;
-
-        const dutiesRes  = await fetch(`${API_URL}/api/doctor-duties/doctor/${doctorId}`);
-        const dutiesData = await dutiesRes.json();
-        const allDuties  = dutiesData.success ? dutiesData.data : [];
-
-        cachedDuties = allDuties;
-        cachedDepts  = [primaryDept, ...secondaryDepts];
-
-        let html = renderDeptBlock(primaryDept, allDuties, true);
-        for (const dept of secondaryDepts) {
-            html += renderDeptBlock(dept, allDuties, false);
-        }
-        body.innerHTML = html || '<div class="empty-state">ไม่มีข้อมูลตารางเวร</div>';
-    } catch (err) {
-        body.innerHTML = `<div class="empty-state">❌ ${err.message}</div>`;
-    }
-}
-
-function renderDeptBlock(dept, allDuties, isPrimary) {
-    const deptDuties = allDuties.filter(d => d.department_id === dept.department_id);
-    const labelClass = isPrimary ? '' : 'secondary';
-    const labelText  = isPrimary
-        ? `🏥 ${dept.department_name} (แผนกหลัก)`
-        : `🔗 ${dept.department_name} (แผนกเสริม)`;
-    const inner = deptDuties.length === 0
-        ? '<div class="no-duty-text">ไม่มี Duty ที่กำหนด</div>'
-        : sortMode === 'day'
-            ? renderDoctorDutiesHTML_byDay(deptDuties, `dept${dept.department_id}`)
-            : renderDoctorDutiesHTML(deptDuties, `dept${dept.department_id}`);
-    return `<div class="dept-block"><div class="dept-label ${labelClass}">${labelText}</div>${inner}</div>`;
-}
-
-function parseDutyName(dutyName) {
-    const match = dutyName.match(/^(.*?)\s*\((\d{2}:\d{2})-(\d{2}:\d{2})\)$/);
-    if (match) return { baseName: match[1].trim(), startTime: match[2], endTime: match[3] };
-    return { baseName: dutyName, startTime: null, endTime: null };
-}
-
-const DAY_LABEL_UD = {
-    monday:'จ', tuesday:'อ', wednesday:'พ',
-    thursday:'พฤ', friday:'ศ', saturday:'ส', sunday:'อา'
-};
-
-// GEN8 V1: renderDoctorDutiesHTML — Map-based grouping (merge same baseName)
-function renderDoctorDutiesHTML(duties, prefix) {
-    if (duties.length === 0) return '';
-
-    // worker expand + sort ให้แล้ว แต่ fallback สำหรับ backward compat
-    const dayKeys = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
-    const expanded = [];
-    duties.forEach(d => {
-        if (d.day_of_week) {
-            expanded.push(d);
-        } else {
-            dayKeys.forEach(k => {
-                if (d[k] === 1 || d[k] === true) expanded.push({ ...d, day_of_week: k });
-            });
-        }
-    });
-
-    expanded.sort((a,b) => {
-        const dd = dayKeys.indexOf(a.day_of_week) - dayKeys.indexOf(b.day_of_week);
-        if (dd !== 0) return dd;
-        return (a.start_time||'00:00').localeCompare(b.start_time||'00:00');
-    });
-
-    // Map-based grouping — merge ทุก baseName เดียวกัน
-    const groupMap = new Map();
-    expanded.forEach(d => {
-        const p = parseDutyName(d.duty_name);
-        if (!groupMap.has(p.baseName)) groupMap.set(p.baseName, { baseName: p.baseName, rows: [] });
-        groupMap.get(p.baseName).rows.push({ duty: d, parsed: p });
-    });
-    const groups = Array.from(groupMap.values());
-
-    let html = '<div class="doctor-duties-list">';
-    groups.forEach((group, gi) => {
-        const gid = `${prefix}_${gi}_${group.baseName.replace(/[^a-zA-Z0-9]/g,'_')}`;
-        const hasTime = group.rows.some(r => r.parsed.startTime);
-
-        if (hasTime && group.rows.length > 1) {
-            const sumDays  = group.rows.map(r => DAY_LABEL_UD[r.duty.day_of_week]||'').join(', ');
-            const starts   = group.rows.map(r=>r.parsed.startTime).filter(Boolean);
-            const ends     = group.rows.map(r=>r.parsed.endTime).filter(Boolean);
-            const timeRange = starts.length
-                ? `(${starts.reduce((a,b)=>a<b?a:b)}-${ends.reduce((a,b)=>a>b?a:b)})`
-                : '';
-            html += `
-                <div class="doctor-duty-group-header doctor-duty-item">
-                    <span class="doctor-duty-name" style="font-weight:700;">${group.baseName}</span>
-                    <button onclick="toggleDutyGroup('${gid}')" id="dg_btn_${gid}" class="btn-toggle-group">แสดง</button>
-                </div>
-                <div class="doctor-duty-item doctor-duty-group-summary" id="dg_sum_${gid}">
-                    <span class="doctor-duty-name" style="color:#888;padding-left:16px;">${timeRange}</span>
-                    <span class="doctor-duty-days">${sumDays}</span>
-                </div>
-                <div id="dg_sub_${gid}" style="display:none;">`;
-            group.rows.forEach(({ duty, parsed }) => {
-                const dl = DAY_LABEL_UD[duty.day_of_week] || '';
-                const tl = parsed.startTime ? `(${parsed.startTime}-${parsed.endTime})` : '';
-                // GEN9: wk label
-                const wkLabel = duty.week_numbers ? (() => { try { return ' [Wk'+JSON.parse(duty.week_numbers).join(',')+']'; } catch(e){ return ''; } })() : '';
-                html += `
-                    <div class="doctor-duty-item doctor-duty-group-subrow">
-                        <span class="doctor-duty-name" style="color:#555;padding-left:16px;">${dl} ${tl}<span style="font-size:11px;color:#667eea;font-weight:600;">${wkLabel}</span></span>
-                    </div>`;
-            });
-            html += `</div>`;
-        } else {
-            html += `
-                <div class="doctor-duty-group-label">
-                    <span class="doctor-duty-base-name">${group.baseName}</span>
-                </div>
-                <div class="doctor-duty-group-rows">`;
-            group.rows.forEach(({ duty, parsed }) => {
-                const dl = DAY_LABEL_UD[duty.day_of_week] || '';
-                const tl = parsed.startTime ? `(${parsed.startTime}-${parsed.endTime})` : '';
-                // GEN9: wk label
-                const wkLabel = duty.week_numbers ? (() => { try { return '[Wk'+JSON.parse(duty.week_numbers).join(',')+']'; } catch(e){ return ''; } })() : '';
-                html += `
-                    <div class="doctor-duty-item">
-                        <span class="doctor-duty-day-col">${dl}</span>
-                        <span class="doctor-duty-time-col">${tl}</span>
-                        ${wkLabel ? `<span style="font-size:11px;color:#667eea;font-weight:600;">${wkLabel}</span>` : ''}
-                    </div>`;
-            });
-            html += `</div>`;
-        }
-    });
-    html += '</div>';
-    return html;
-}
-
-function toggleDutyGroup(gid) {
-    const sub = document.getElementById('dg_sub_' + gid);
-    const sum = document.getElementById('dg_sum_' + gid);
-    const btn = document.getElementById('dg_btn_' + gid);
-    const open = sub.style.display !== 'none';
-    sub.style.display = open ? 'none'  : 'block';
-    sum.style.display = open ? ''      : 'none';
-    btn.textContent   = open ? 'แสดง'  : 'ซ่อน';
-}
-
-// GEN8 V1: เรียงตามวัน (priority: วัน > duty)
-function renderDoctorDutiesHTML_byDay(duties, prefix) {
-    if (duties.length === 0) return '';
-    const dayKeys = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
-
-    const expanded = [];
-    duties.forEach(d => {
-        if (d.day_of_week) {
-            expanded.push(d);
-        } else {
-            dayKeys.forEach(k => {
-                if (d[k] === 1 || d[k] === true) expanded.push({ ...d, day_of_week: k });
-            });
-        }
-    });
-
-    const dayMap = {};
-    dayKeys.forEach(d => { dayMap[d] = []; });
-    expanded.forEach(d => { if (dayMap[d.day_of_week]) dayMap[d.day_of_week].push(d); });
-
-    let html = '<div class="doctor-duties-list">';
-    dayKeys.forEach(day => {
-        const dayDuties = dayMap[day];
-        if (dayDuties.length === 0) return;
-        const dl = DAY_LABEL_UD[day];
-        dayDuties.forEach((d, idx) => {
-            const p = parseDutyName(d.duty_name);
-            const tl = p.startTime ? ` (${p.startTime}-${p.endTime})` : '';
-            // GEN9: wk label
-            const wkLabel = d.week_numbers ? (() => { try { return ' <span style="font-size:11px;color:#667eea;font-weight:600;">[Wk'+JSON.parse(d.week_numbers).join(',')+']</span>'; } catch(e){ return ''; } })() : '';
-            html += `
-                <div class="doctor-duty-item" style="grid-template-columns:28px 1fr;">
-                    <span style="font-weight:700;color:#667eea;font-size:13px;">${idx === 0 ? dl : ''}</span>
-                    <span style="color:#555;font-size:13px;">${p.baseName}${tl}${wkLabel}</span>
-                </div>`;
-        });
-    });
-    html += '</div>';
-    return html;
-}
-
-// GEN8 V1: toggle sort mode
-function toggleSortMode() {
-    sortMode = sortMode === 'duty' ? 'day' : 'duty';
-    const btn = document.getElementById('sort-toggle-btn');
-    if (btn) btn.textContent = sortMode === 'duty' ? 'duty' : 'วัน';
-    if (!cachedDepts.length) return;
-    const body = document.getElementById('scheduleBody');
-    const [primary, ...secondary] = cachedDepts;
-    let html = renderDeptBlock(primary, cachedDuties, true);
-    secondary.forEach(dept => { html += renderDeptBlock(dept, cachedDuties, false); });
-    body.innerHTML = html || '<div class="empty-state">ไม่มีข้อมูลตารางเวร</div>';
-}
-
-// ================================================================
-// SECTION 2: รายการรับฝาก
-// ================================================================
-async function loadReplacements(doctorId) {
-    const body = document.getElementById('replacementBody');
-    try {
-        const res  = await fetch(`${API_URL}/api/leaves/replacement/${doctorId}`);
-        const data = await res.json();
-        if (!data.success) throw new Error(data.message || 'เกิดข้อผิดพลาด');
-        if (!data.data || data.data.length === 0) {
-            body.innerHTML = '<div class="empty-state">ไม่มีรายการที่รับฝาก</div>';
+    window.onload = async function() {
+        const loggedIn = sessionStorage.getItem('loggedIn');
+        const role     = sessionStorage.getItem('role');
+        const doctorId = sessionStorage.getItem('doctor_id');
+        if (!loggedIn || role !== 'doctor' || !doctorId) {
+            window.location.href = 'index.html';
             return;
         }
-        body.innerHTML = data.data.map(leave => renderRepCard(leave)).join('');
-    } catch (err) {
-        body.innerHTML = `<div class="empty-state">❌ ${err.message}</div>`;
+        await Promise.all([loadSchedule(doctorId), loadReplacements(doctorId)]);
+    };
+
+    function logout() {
+        if (confirm('ต้องการออกจากระบบหรือไม่?')) {
+            sessionStorage.clear();
+            window.location.href = 'index.html';
+        }
     }
-}
 
-function formatDateThai(dateStr) {
-    const d = new Date(dateStr);
-    const months = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
-    return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()+543}`;
-}
-function formatDateShort(dateStr) {
-    const d = new Date(dateStr);
-    return `${d.getDate()}/${d.getMonth()+1}/${(d.getFullYear()+543).toString().slice(-2)}`;
-}
+    // ================================================================
+    // SECTION 1: ตารางเวรประจำ
+    // ================================================================
+    async function loadSchedule(doctorId) {
+        const body = document.getElementById('scheduleBody');
+        try {
+            const docRes  = await fetch(`${API_URL}/api/doctors/${doctorId}`);
+            const docData = await docRes.json();
+            if (!docData.success) throw new Error('ไม่พบข้อมูลแพทย์');
+            const doctor = docData.data;
+            document.getElementById('doctorNameDisplay').textContent = doctor.name;
 
-function renderRepCard(leave) {
-    const status   = leave.approval_status;
-    // pending ไม่มี label แสดง — แสดงแค่ approved / rejected
-    const statusTH  = { approved:'✅ อนุมัติแล้ว', rejected:'❌ ปฏิเสธ' };
-    const chipClass = { pending:'', approved:'approved-chip', rejected:'rejected-chip' };
+            const deptsRes  = await fetch(`${API_URL}/api/doctors/${doctorId}/departments`);
+            const deptsData = await deptsRes.json();
+            const allDepts  = deptsData.success ? deptsData.data : [];
 
-    const dateRange = leave.start_date === leave.end_date
-        ? formatDateThai(leave.start_date)
-        : `${formatDateThai(leave.start_date)} – ${formatDateThai(leave.end_date)}`;
+            const primaryDept    = allDepts.find(d => d.is_primary)
+                                || { department_id: doctor.department_id, department_name: 'แผนกหลัก', is_primary: 1 };
+            const secondaryDepts = allDepts.filter(d => !d.is_primary);
+            document.getElementById('doctorDeptDisplay').textContent = `แผนกหลัก: ${primaryDept.department_name}`;
 
-    const delegateLabel = leave.delegation_type === 'single' ? 'ฝาก 1 คน' : 'กำหนดเอง';
+            const dutiesRes  = await fetch(`${API_URL}/api/doctor-duties/doctor/${doctorId}`);
+            const dutiesData = await dutiesRes.json();
+            const allDuties  = dutiesData.success ? dutiesData.data : [];
 
-    const dayRows = (leave.duty_per_day || []).map(day => {
-        const dateLabel = `${formatDateShort(day.date)} (${day.day_label})`;
-        const dutiesHtml = day.duties.length === 0
-            ? `<span class="no-duty">ไม่มี duty</span>`
-            : day.duties.map(du => {
-                // GEN6: แสดง split_label ถ้ามี
-                const splitNote = du.split_label ? ` [${du.split_label}]` : '';
-                // GEN10: แสดงสถานะ is_self_duty
-                const selfNote = du.is_self_duty ? ' 🔒' : '';
-                const detailNote = du.duty_details ? ` 📝${du.duty_details}` : '';
-                return `<span class="duty-chip ${chipClass[status] || ''}">${du.duty_name}${splitNote}${selfNote}${detailNote}</span>`;
-              }).join('');
+            cachedDuties = allDuties;
+            cachedDepts  = [primaryDept, ...secondaryDepts];
+
+            let html = renderDeptBlock(primaryDept, allDuties, true);
+            for (const dept of secondaryDepts) {
+                html += renderDeptBlock(dept, allDuties, false);
+            }
+            body.innerHTML = html || '<div class="empty-state">ไม่มีข้อมูลตารางเวร</div>';
+        } catch (err) {
+            body.innerHTML = `<div class="empty-state">❌ ${err.message}</div>`;
+        }
+    }
+
+    function renderDeptBlock(dept, allDuties, isPrimary) {
+        const deptDuties = allDuties.filter(d => d.department_id === dept.department_id);
+        const labelClass = isPrimary ? '' : 'secondary';
+        const labelText  = isPrimary
+            ? `🏥 ${dept.department_name} (แผนกหลัก)`
+            : `🔗 ${dept.department_name} (แผนกเสริม)`;
+        const inner = deptDuties.length === 0
+            ? '<div class="no-duty-text">ไม่มี Duty ที่กำหนด</div>'
+            : sortMode === 'day'
+                ? renderDoctorDutiesHTML_byDay(deptDuties, `dept${dept.department_id}`)
+                : renderDoctorDutiesHTML(deptDuties, `dept${dept.department_id}`);
+        return `<div class="dept-block"><div class="dept-label ${labelClass}">${labelText}</div>${inner}</div>`;
+    }
+
+    function parseDutyName(dutyName) {
+        const match = dutyName.match(/^(.*?)\s*\((\d{2}:\d{2})-(\d{2}:\d{2})\)$/);
+        if (match) return { baseName: match[1].trim(), startTime: match[2], endTime: match[3] };
+        return { baseName: dutyName, startTime: null, endTime: null };
+    }
+
+    const DAY_LABEL_UD = {
+        monday:'จ', tuesday:'อ', wednesday:'พ',
+        thursday:'พฤ', friday:'ศ', saturday:'ส', sunday:'อา'
+    };
+
+    // GEN8 V1: renderDoctorDutiesHTML — Map-based grouping (merge same baseName)
+    function renderDoctorDutiesHTML(duties, prefix) {
+        if (duties.length === 0) return '';
+
+        // worker expand + sort ให้แล้ว แต่ fallback สำหรับ backward compat
+        const dayKeys = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
+        const expanded = [];
+        duties.forEach(d => {
+            if (d.day_of_week) {
+                expanded.push(d);
+            } else {
+                dayKeys.forEach(k => {
+                    if (d[k] === 1 || d[k] === true) expanded.push({ ...d, day_of_week: k });
+                });
+            }
+        });
+
+        expanded.sort((a,b) => {
+            const dd = dayKeys.indexOf(a.day_of_week) - dayKeys.indexOf(b.day_of_week);
+            if (dd !== 0) return dd;
+            return (a.start_time||'00:00').localeCompare(b.start_time||'00:00');
+        });
+
+        // Map-based grouping — merge ทุก baseName เดียวกัน
+        const groupMap = new Map();
+        expanded.forEach(d => {
+            const p = parseDutyName(d.duty_name);
+            if (!groupMap.has(p.baseName)) groupMap.set(p.baseName, { baseName: p.baseName, rows: [] });
+            groupMap.get(p.baseName).rows.push({ duty: d, parsed: p });
+        });
+        const groups = Array.from(groupMap.values());
+
+        let html = '<div class="doctor-duties-list">';
+        groups.forEach((group, gi) => {
+            const gid = `${prefix}_${gi}_${group.baseName.replace(/[^a-zA-Z0-9]/g,'_')}`;
+            const hasTime = group.rows.some(r => r.parsed.startTime);
+
+            if (hasTime && group.rows.length > 1) {
+                const sumDays  = group.rows.map(r => DAY_LABEL_UD[r.duty.day_of_week]||'').join(', ');
+                const starts   = group.rows.map(r=>r.parsed.startTime).filter(Boolean);
+                const ends     = group.rows.map(r=>r.parsed.endTime).filter(Boolean);
+                const timeRange = starts.length
+                    ? `(${starts.reduce((a,b)=>a<b?a:b)}-${ends.reduce((a,b)=>a>b?a:b)})`
+                    : '';
+                html += `
+                    <div class="doctor-duty-group-header doctor-duty-item">
+                        <span class="doctor-duty-name" style="font-weight:700;">${group.baseName}</span>
+                        <button onclick="toggleDutyGroup('${gid}')" id="dg_btn_${gid}" class="btn-toggle-group">แสดง</button>
+                    </div>
+                    <div class="doctor-duty-item doctor-duty-group-summary" id="dg_sum_${gid}">
+                        <span class="doctor-duty-name" style="color:#888;padding-left:16px;">${timeRange}</span>
+                        <span class="doctor-duty-days">${sumDays}</span>
+                    </div>
+                    <div id="dg_sub_${gid}" style="display:none;">`;
+                group.rows.forEach(({ duty, parsed }) => {
+                    const dl = DAY_LABEL_UD[duty.day_of_week] || '';
+                    const tl = parsed.startTime ? `(${parsed.startTime}-${parsed.endTime})` : '';
+                    // GEN9: wk label
+                    const wkLabel = duty.week_numbers ? (() => { try { return ' [Wk'+JSON.parse(duty.week_numbers).join(',')+']'; } catch(e){ return ''; } })() : '';
+                    html += `
+                        <div class="doctor-duty-item doctor-duty-group-subrow">
+                            <span class="doctor-duty-name" style="color:#555;padding-left:16px;">${dl} ${tl}<span style="font-size:11px;color:#667eea;font-weight:600;">${wkLabel}</span></span>
+                        </div>`;
+                });
+                html += `</div>`;
+            } else {
+                html += `
+                    <div class="doctor-duty-group-label">
+                        <span class="doctor-duty-base-name">${group.baseName}</span>
+                    </div>
+                    <div class="doctor-duty-group-rows">`;
+                group.rows.forEach(({ duty, parsed }) => {
+                    const dl = DAY_LABEL_UD[duty.day_of_week] || '';
+                    const tl = parsed.startTime ? `(${parsed.startTime}-${parsed.endTime})` : '';
+                    // GEN9: wk label
+                    const wkLabel = duty.week_numbers ? (() => { try { return '[Wk'+JSON.parse(duty.week_numbers).join(',')+']'; } catch(e){ return ''; } })() : '';
+                    html += `
+                        <div class="doctor-duty-item">
+                            <span class="doctor-duty-day-col">${dl}</span>
+                            <span class="doctor-duty-time-col">${tl}</span>
+                            ${wkLabel ? `<span style="font-size:11px;color:#667eea;font-weight:600;">${wkLabel}</span>` : ''}
+                        </div>`;
+                });
+                html += `</div>`;
+            }
+        });
+        html += '</div>';
+        return html;
+    }
+
+    function toggleDutyGroup(gid) {
+        const sub = document.getElementById('dg_sub_' + gid);
+        const sum = document.getElementById('dg_sum_' + gid);
+        const btn = document.getElementById('dg_btn_' + gid);
+        const open = sub.style.display !== 'none';
+        sub.style.display = open ? 'none'  : 'block';
+        sum.style.display = open ? ''      : 'none';
+        btn.textContent   = open ? 'แสดง'  : 'ซ่อน';
+    }
+
+    // GEN8 V1: เรียงตามวัน (priority: วัน > duty)
+    function renderDoctorDutiesHTML_byDay(duties, prefix) {
+        if (duties.length === 0) return '';
+        const dayKeys = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
+
+        const expanded = [];
+        duties.forEach(d => {
+            if (d.day_of_week) {
+                expanded.push(d);
+            } else {
+                dayKeys.forEach(k => {
+                    if (d[k] === 1 || d[k] === true) expanded.push({ ...d, day_of_week: k });
+                });
+            }
+        });
+
+        const dayMap = {};
+        dayKeys.forEach(d => { dayMap[d] = []; });
+        expanded.forEach(d => { if (dayMap[d.day_of_week]) dayMap[d.day_of_week].push(d); });
+
+        let html = '<div class="doctor-duties-list">';
+        dayKeys.forEach(day => {
+            const dayDuties = dayMap[day];
+            if (dayDuties.length === 0) return;
+            const dl = DAY_LABEL_UD[day];
+            dayDuties.forEach((d, idx) => {
+                const p = parseDutyName(d.duty_name);
+                const tl = p.startTime ? ` (${p.startTime}-${p.endTime})` : '';
+                // GEN9: wk label
+                const wkLabel = d.week_numbers ? (() => { try { return ' <span style="font-size:11px;color:#667eea;font-weight:600;">[Wk'+JSON.parse(d.week_numbers).join(',')+']</span>'; } catch(e){ return ''; } })() : '';
+                html += `
+                    <div class="doctor-duty-item" style="grid-template-columns:28px 1fr;">
+                        <span style="font-weight:700;color:#667eea;font-size:13px;">${idx === 0 ? dl : ''}</span>
+                        <span style="color:#555;font-size:13px;">${p.baseName}${tl}${wkLabel}</span>
+                    </div>`;
+            });
+        });
+        html += '</div>';
+        return html;
+    }
+
+    // GEN8 V1: toggle sort mode
+    function toggleSortMode() {
+        sortMode = sortMode === 'duty' ? 'day' : 'duty';
+        const btn = document.getElementById('sort-toggle-btn');
+        if (btn) btn.textContent = sortMode === 'duty' ? 'duty' : 'วัน';
+        if (!cachedDepts.length) return;
+        const body = document.getElementById('scheduleBody');
+        const [primary, ...secondary] = cachedDepts;
+        let html = renderDeptBlock(primary, cachedDuties, true);
+        secondary.forEach(dept => { html += renderDeptBlock(dept, cachedDuties, false); });
+        body.innerHTML = html || '<div class="empty-state">ไม่มีข้อมูลตารางเวร</div>';
+    }
+
+    // ================================================================
+    // SECTION 2: รายการรับฝาก
+    // ================================================================
+    async function loadReplacements(doctorId) {
+        const body = document.getElementById('replacementBody');
+        try {
+            const res  = await fetch(`${API_URL}/api/leaves/replacement/${doctorId}`);
+            const data = await res.json();
+            if (!data.success) throw new Error(data.message || 'เกิดข้อผิดพลาด');
+            if (!data.data || data.data.length === 0) {
+                body.innerHTML = '<div class="empty-state">ไม่มีรายการที่รับฝาก</div>';
+                return;
+            }
+            body.innerHTML = data.data.map(leave => renderRepCard(leave)).join('');
+        } catch (err) {
+            body.innerHTML = `<div class="empty-state">❌ ${err.message}</div>`;
+        }
+    }
+
+    function formatDateThai(dateStr) {
+        const d = new Date(dateStr);
+        const months = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+        return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()+543}`;
+    }
+    function formatDateShort(dateStr) {
+        const d = new Date(dateStr);
+        return `${d.getDate()}/${d.getMonth()+1}/${(d.getFullYear()+543).toString().slice(-2)}`;
+    }
+
+    function renderRepCard(leave) {
+        const status   = leave.approval_status;
+        // pending ไม่มี label แสดง — แสดงแค่ approved / rejected
+        const statusTH  = { approved:'✅ อนุมัติแล้ว', rejected:'❌ ปฏิเสธ' };
+        const chipClass = { pending:'', approved:'approved-chip', rejected:'rejected-chip' };
+
+        const dateRange = leave.start_date === leave.end_date
+            ? formatDateThai(leave.start_date)
+            : `${formatDateThai(leave.start_date)} – ${formatDateThai(leave.end_date)}`;
+
+        const delegateLabel = leave.delegation_type === 'single' ? 'ฝาก 1 คน' : 'กำหนดเอง';
+
+        const dayRows = (leave.duty_per_day || []).map(day => {
+            const dateLabel = `${formatDateShort(day.date)} (${day.day_label})`;
+            const dutiesHtml = day.duties.length === 0
+                ? `<span class="no-duty">ไม่มี duty</span>`
+                : day.duties.map(du => {
+                    // GEN6: แสดง split_label ถ้ามี
+                    const splitNote = du.split_label ? ` [${du.split_label}]` : '';
+                    // GEN10: แสดงสถานะ is_self_duty
+                    const selfNote = du.is_self_duty ? ' 🔒' : '';
+                    const detailNote = du.duty_details ? ` 📝${du.duty_details}` : '';
+                    return `<span class="duty-chip ${chipClass[status] || ''}">${du.duty_name}${splitNote}${selfNote}${detailNote}</span>`;
+                  }).join('');
+            return `
+                <div class="rep-day-row">
+                    <div class="rep-day-label">${dateLabel}</div>
+                    <div class="rep-day-duties">${dutiesHtml}</div>
+                </div>`;
+        }).join('');
+
+        // badge — pending ไม่มี badge
+        const badgeHtml = statusTH[status]
+            ? `<span class="status-badge ${status}">${statusTH[status]}</span>`
+            : '';
+
         return `
-            <div class="rep-day-row">
-                <div class="rep-day-label">${dateLabel}</div>
-                <div class="rep-day-duties">${dutiesHtml}</div>
+            <div class="rep-card">
+                <div class="rep-card-header status-${status}">
+                    <span class="rep-doctor-name">${leave.doctor_name}</span>
+                    <span class="rep-dept-name">${leave.department_name} · ${delegateLabel}</span>
+                    ${badgeHtml}
+                </div>
+                <div class="rep-date-bar">📅 ${dateRange}</div>
+                ${dayRows ? `<div class="rep-day-list">${dayRows}</div>` : ''}
             </div>`;
-    }).join('');
-
-    // badge — pending ไม่มี badge
-    const badgeHtml = statusTH[status]
-        ? `<span class="status-badge ${status}">${statusTH[status]}</span>`
-        : '';
-
-    return `
-        <div class="rep-card">
-            <div class="rep-card-header status-${status}">
-                <span class="rep-doctor-name">${leave.doctor_name}</span>
-                <span class="rep-dept-name">${leave.department_name} · ${delegateLabel}</span>
-                ${badgeHtml}
-            </div>
-            <div class="rep-date-bar">📅 ${dateRange}</div>
-            ${dayRows ? `<div class="rep-day-list">${dayRows}</div>` : ''}
-        </div>`;
-}
-```
-
+    }
 </script>
+<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">user_duty GEN11 V0</div>
 </body>
-<div style="text-align:center; color:#aaa; font-size:11px; padding:4px;">user_duty GEN10 V1</div>
 </html>
